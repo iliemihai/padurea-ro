@@ -1,0 +1,242 @@
+{
+ "despre": "Alerte verificate la ochi (Claude, 30 oct 2026) din prima rulare (29 sept - 29 oct 2026). Categorii: taiere, toamna, nori, agricol, neclar.",
+ "etichete": {
+  "34TFQ-2233": {
+   "eticheta": "nori",
+   "nota": "Imaginea „după” e acoperită de nori.",
+   "county": "Caraș-Severin",
+   "ha": 1147.8,
+   "lat": 44.90868,
+   "lon": 22.47146,
+   "before": {
+    "file": "34TFQ-2233_before.webp",
+    "date": "2025-10-19"
+   },
+   "after": {
+    "file": "34TFQ-2233_after.webp",
+    "date": "2026-10-04"
+   }
+  },
+  "35TPL-792": {
+   "eticheta": "agricol",
+   "nota": "Câmpuri arate în Deltă; Hansen le-a socotit pădure.",
+   "county": "Tulcea",
+   "ha": 137.3,
+   "lat": 45.18848,
+   "lon": 29.46792,
+   "before": {
+    "file": "35TPL-792_before.webp",
+    "date": "2025-10-20"
+   },
+   "after": {
+    "file": "35TPL-792_after.webp",
+    "date": "2026-10-03"
+   }
+  },
+  "34TFQ-2290": {
+   "eticheta": "nori",
+   "nota": "Ceață și nori subțiri peste imaginea „după”.",
+   "county": "Mehedinți",
+   "ha": 94.2,
+   "lat": 44.92317,
+   "lon": 22.66046,
+   "before": {
+    "file": "34TFQ-2290_before.webp",
+    "date": "2025-10-19"
+   },
+   "after": {
+    "file": "34TFQ-2290_after.webp",
+    "date": "2026-10-04"
+   }
+  },
+  "35TPL-803": {
+   "eticheta": "agricol",
+   "nota": "Câmpuri arate în Deltă.",
+   "county": "Tulcea",
+   "ha": 40.6,
+   "lat": 45.19828,
+   "lon": 29.44887,
+   "before": {
+    "file": "35TPL-803_before.webp",
+    "date": "2025-10-20"
+   },
+   "after": {
+    "file": "35TPL-803_after.webp",
+    "date": "2026-10-03"
+   }
+  },
+  "34TES-3211": {
+   "eticheta": "toamna",
+   "nota": "Aceeași pădure, doar frunzele s-au făcut maro.",
+   "county": "Arad",
+   "ha": 35.8,
+   "lat": 46.29418,
+   "lon": 22.15198,
+   "before": {
+    "file": "34TES-3211_before.webp",
+    "date": "2025-10-19"
+   },
+   "after": {
+    "file": "34TES-3211_after.webp",
+    "date": "2026-10-24"
+   }
+  },
+  "34TES-3418": {
+   "eticheta": "toamna",
+   "nota": "Frunze de toamnă, nicio formă nouă.",
+   "county": "Arad",
+   "ha": 22.6,
+   "lat": 46.28187,
+   "lon": 22.17608,
+   "before": {
+    "file": "34TES-3418_before.webp",
+    "date": "2025-10-19"
+   },
+   "after": {
+    "file": "34TES-3418_after.webp",
+    "date": "2026-10-24"
+   }
+  },
+  "34TES-3322": {
+   "eticheta": "toamna",
+   "nota": "Frunze de toamnă.",
+   "county": "Arad",
+   "ha": 20.6,
+   "lat": 46.28869,
+   "lon": 22.13265,
+   "before": {
+    "file": "34TES-3322_before.webp",
+    "date": "2025-10-19"
+   },
+   "after": {
+    "file": "34TES-3322_after.webp",
+    "date": "2026-10-24"
+   }
+  },
+  "34TFQ-2982": {
+   "eticheta": "nori",
+   "nota": "Nori peste imaginea „după”.",
+   "county": "Mehedinți",
+   "ha": 19.0,
+   "lat": 44.88785,
+   "lon": 22.62105,
+   "before": {
+    "file": "34TFQ-2982_before.webp",
+    "date": "2025-10-19"
+   },
+   "after": {
+    "file": "34TFQ-2982_after.webp",
+    "date": "2026-10-04"
+   }
+  },
+  "34TFQ-2276": {
+   "eticheta": "nori",
+   "nota": "Nori peste imaginea „după”; fără imagine clară „înainte”.",
+   "county": "Caraș-Severin",
+   "ha": 18.4,
+   "lat": 44.93745,
+   "lon": 22.47707,
+   "before": null,
+   "after": {
+    "file": "34TFQ-2276_after.webp",
+    "date": "2026-10-04"
+   }
+  },
+  "34TES-2900": {
+   "eticheta": "neclar",
+   "nota": "Zonă deja deschisă în 2025; dublură cu 34TFS-4316.",
+   "county": "Arad",
+   "ha": 18.1,
+   "lat": 46.3506,
+   "lon": 22.32471,
+   "before": {
+    "file": "34TES-2900_before.webp",
+    "date": "2025-10-07"
+   },
+   "after": {
+    "file": "34TES-2900_after.webp",
+    "date": "2026-10-24"
+   }
+  },
+  "34TES-5379": {
+   "eticheta": "toamna",
+   "nota": "Frunze de toamnă pe un deal întreg.",
+   "county": "Arad",
+   "ha": 18.1,
+   "lat": 46.13041,
+   "lon": 21.86603,
+   "before": {
+    "file": "34TES-5379_before.webp",
+    "date": "2025-10-19"
+   },
+   "after": {
+    "file": "34TES-5379_after.webp",
+    "date": "2026-10-24"
+   }
+  },
+  "34TFT-4766": {
+   "eticheta": "taiere",
+   "nota": "Pădure înlocuită de sol gol, margini drepte, drumuri de scos lemnul.",
+   "county": "Sălaj",
+   "ha": 17.4,
+   "lat": 46.97029,
+   "lon": 23.13712,
+   "before": {
+    "file": "34TFT-4766_before.webp",
+    "date": "2025-10-17"
+   },
+   "after": {
+    "file": "34TFT-4766_after.webp",
+    "date": "2026-09-29"
+   }
+  },
+  "34TFS-4316": {
+   "eticheta": "neclar",
+   "nota": "Aceeași zonă ca 34TES-2900.",
+   "county": "Arad",
+   "ha": 14.7,
+   "lat": 46.35071,
+   "lon": 22.32361,
+   "before": {
+    "file": "34TFS-4316_before.webp",
+    "date": "2025-10-29"
+   },
+   "after": {
+    "file": "34TFS-4316_after.webp",
+    "date": "2026-10-04"
+   }
+  },
+  "35TPL-815": {
+   "eticheta": "agricol",
+   "nota": "Câmp recoltat în Deltă.",
+   "county": "Tulcea",
+   "ha": 14.1,
+   "lat": 45.19746,
+   "lon": 29.39983,
+   "before": {
+    "file": "35TPL-815_before.webp",
+    "date": "2025-10-20"
+   },
+   "after": {
+    "file": "35TPL-815_after.webp",
+    "date": "2026-10-03"
+   }
+  },
+  "34TES-5362": {
+   "eticheta": "toamna",
+   "nota": "Frunze de toamnă.",
+   "county": "Arad",
+   "ha": 13.4,
+   "lat": 46.13097,
+   "lon": 21.87741,
+   "before": {
+    "file": "34TES-5362_before.webp",
+    "date": "2025-10-19"
+   },
+   "after": {
+    "file": "34TES-5362_after.webp",
+    "date": "2026-10-24"
+   }
+  }
+ }
+}

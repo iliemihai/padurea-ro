@@ -1,0 +1,43 @@
+name: Testează judecătorul AI
+
+on:
+  workflow_dispatch:
+    inputs:
+      models:
+        description: "Modele (JSON)"
+        default: '["qwen3.5:4b", "qwen3-vl:4b", "qwen3.5:2b", "qwen3.5:9b"]'
+
+permissions:
+  contents: read
+
+jobs:
+  eval:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        model: ${{ fromJSON(inputs.models) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pillow
+      - name: Ollama
+        if: matrix.model != 'claude'
+        run: |
+          curl -fsSL https://ollama.com/install.sh | sh
+          sudo systemctl stop ollama || true
+          (OLLAMA_MODELS=$HOME/.ollama/models ollama serve > /tmp/ollama.log 2>&1 &)
+          sleep 5
+          OLLAMA_MODELS=$HOME/.ollama/models ollama pull "${{ matrix.model }}"
+          ollama --version
+      - name: Test
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: python -m pipeline.eval_judge "${{ matrix.model }}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: eval-${{ strategy.job-index }}
+          path: out/

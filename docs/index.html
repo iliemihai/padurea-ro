@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="ro">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pădurea RO</title>
+<meta name="description" content="Schimbări în pădurile României, văzute din satelit și actualizate zilnic. Arătăm ce s-a schimbat și când, cu imagini înainte și după. Nu judecăm legalitatea.">
+<meta property="og:title" content="Pădurea RO">
+<meta property="og:description" content="Schimbări în pădurile României, văzute din satelit, actualizate zilnic.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 3l9 13h-5l6 9H6l6-9H7z' fill='%232e7d4f'/%3E%3Crect x='14' y='25' width='4' height='5' fill='%236b4f2a'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bitter:wght@600;700&family=IBM+Plex+Mono:wght@400;500&family=Source+Sans+3:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+  <aside class="panel" id="panel">
+    <header class="brand">
+      <h1>Pădurea RO</h1>
+      <p class="tag">Schimbări în pădurile României, văzute din satelit. Actualizat zilnic.</p>
+      <p class="updated" id="updated">Se încarcă datele…</p>
+    </header>
+
+    <section class="block" aria-labelledby="h-per">
+      <h2 id="h-per" class="lbl">Perioada</h2>
+      <div class="seg" id="periods" role="group" aria-label="Perioada">
+        <button type="button" data-days="1">Ultima zi</button>
+        <button type="button" data-days="7" aria-pressed="true">7 zile</button>
+        <button type="button" data-days="30">30 de zile</button>
+        <label class="custom"><input type="number" id="ndays" min="1" max="365" value="14" inputmode="numeric" aria-label="Număr de zile"><span>zile</span></label>
+      </div>
+      <p class="range" id="range"></p>
+      <div class="stats" id="stats"></div>
+    </section>
+
+    <section class="block" aria-labelledby="h-conf">
+      <h2 id="h-conf" class="lbl">Cât de sigur e semnalul</h2>
+      <div class="chips" id="conf"></div>
+    </section>
+
+    <section class="block grow" id="listbox" aria-labelledby="h-list">
+      <h2 id="h-list" class="lbl">Schimbări găsite</h2>
+      <ol class="list" id="list"></ol>
+    </section>
+
+    <section class="block detail" id="detail" hidden aria-live="polite"></section>
+
+    <section class="block" aria-labelledby="h-lay">
+      <h2 id="h-lay" class="lbl">Straturi</h2>
+      <div class="seg small" id="base" role="group" aria-label="Fundal">
+        <button type="button" data-base="sat" aria-pressed="true">Satelit</button>
+        <button type="button" data-base="osm">Hartă</button>
+      </div>
+      <label class="tg"><input type="checkbox" id="lyr-loss" checked><span>Pădure pierdută, Hansen</span></label>
+      <div class="seg small" id="years" role="group" aria-label="Anii pierderilor"></div>
+      <div class="ramp"><i id="ramp"></i><span>2001</span><span>2025</span></div>
+      <label class="tg"><input type="checkbox" id="lyr-counties" checked><span>Județe</span></label>
+    </section>
+
+    <details class="block about">
+      <summary>Cum funcționează și ce nu știm</summary>
+      <div class="prose">
+        <p><strong>În fiecare zi</strong>, un program descarcă imaginile Sentinel-2 noi pentru România și caută locurile din pădure unde verdele a dispărut brusc.</p>
+        <ol>
+          <li><strong>Detectorul</strong> (cod, fără AI) compară fiecare imagine nouă cu pădurea de dinainte și cu aceeași perioadă de anul trecut. Păstrează doar ce rămâne schimbat în imaginile următoare și ignoră schimbările care cuprind tot dealul (toamna, ceața).</li>
+          <li><strong>Analistul AI</strong> se uită la perechea de imagini înainte/după și spune ce crede că vede: pădure dispărută, nori, frunze de toamnă sau câmp.</li>
+          <li><strong>Contextul</strong>: cea mai apropiată localitate, vântul din acele zile, pierderile din anii trecuți.</li>
+          <li><strong>Criticul</strong> pune dovezile cap la cap și dă un nivel de încredere.</li>
+          <li><strong>Redactorul</strong> scrie fișa, în cuvinte neutre.</li>
+        </ol>
+        <p><strong>Ce nu știm:</strong> dacă o tăiere e autorizată. Autorizațiile nu sunt publice, așa că nu spunem niciodată „ilegal”. Arătăm doar ce s-a schimbat și când, cu imaginile, ca oricine să poată verifica.</p>
+        <p><strong>Limite:</strong> norii ascund pădurea uneori zile întregi. Iarna, fără frunze, vedem mai ales pădurile de rășinoase. Nu vedem zone mai mici de 1 ha și nici tăierile de sub coronament. AI-ul greșește și el.</p>
+        <p><strong>Date:</strong> imagini Copernicus Sentinel-2 (ESA), prin Microsoft Planetary Computer · ESA WorldCover 2021 · Hansen et al. Global Forest Change 2025 (Universitatea Maryland) · GeoNames · Open-Meteo · fundal: Sentinel-2 cloudless de EOX, © OpenStreetMap, CARTO.</p>
+        <p><a href="https://github.com/iliemihai/padurea-ro" target="_blank" rel="noopener">Codul e public pe GitHub</a>. Dacă vezi o greșeală, deschide un issue.</p>
+      </div>
+    </details>
+  </aside>
+  <main class="mapwrap">
+    <div id="map" role="region" aria-label="Harta schimbărilor din pădure"></div>
+    <div class="legend" id="legend">
+      <span><i class="dot hi"></i>încredere ridicată</span>
+      <span><i class="dot mid"></i>medie</span>
+      <span><i class="dot lo"></i>scăzută</span>
+    </div>
+  </main>
+</div>
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,266 @@
+"""Detectorul (cod, fără AI). Pentru o placă Sentinel-2:
+
+  referință = cel mai mic dintre: verdele din lunile dinaintea ferestrei și verdele de acum un an
+  pentru fiecare imagine nouă din fereastră: unde a dispărut verdele în pădure?
+  păstrăm doar ce rămâne schimbat în imaginile următoare și nu e o schimbare a întregului deal
+"""
+import datetime as dt
+from concurrent.futures import ThreadPoolExecutor
+
+import numpy as np
+
+from . import config as C
+from .sat import item_date, log, read_grid, read_scene
+
+
+def tile_grid(it):
+    """Grila de 40 m a plăcii, în proiecția ei UTM."""
+    from affine import Affine
+    from .sat import open_at_res
+    from .sat import fresh
+    with open_at_res(fresh(it.assets["B04"].href), C.RES) as src:
+        b, crs = src.bounds, src.crs
+    w, h = round((b.right - b.left) / C.RES), round((b.top - b.bottom) / C.RES)
+    return (crs, Affine(C.RES, 0, b.left, 0, -C.RES, b.top), w, h)
+
+
+def county_raster(grid):
+    """Indicele județului (1..42, 0 = în afara României) pentru fiecare pixel al grilei."""
+    import json
+    from affine import Affine
+    from PIL import Image
+    from rasterio.warp import Resampling, reproject
+    meta = json.load(open(C.DATA / "counties.json", encoding="utf-8"))
+    src = np.array(Image.open(C.DATA / "counties_grid.png"))
+    crs, transform, w, h = grid
+    dst = np.zeros((h, w), np.uint8)
+    reproject(src.astype(np.uint8), dst,
+              src_transform=Affine(meta["cell"], 0, meta["west"], 0, -meta["cell"], meta["north"]),
+              src_crs="EPSG:4326", dst_transform=transform, dst_crs=crs, resampling=Resampling.nearest)
+    return dst, meta["names"]
+
+
+def forest_mask(cat, grid, lonlat_bbox, lossyear_path):
+    """Pădure = copaci în ESA WorldCover 2021 (10 m) și fără pierdere Hansen în 2021–2025."""
+    from rasterio.enums import Resampling
+    from .sat import search
+    wc = np.zeros((grid[3], grid[2]), np.uint8)
+    for it in search(cat, "esa-worldcover", lonlat_bbox, "2021-01-01", "2021-12-31"):
+        arr = read_grid(it.assets["map"].href, grid, Resampling.mode, C.RES, 0, "uint8")
+        wc = np.where(wc == 0, arr, wc)
+    trees = wc == 10
+    if lossyear_path is not None:
+        ly = read_grid(str(lossyear_path), grid, Resampling.max, C.RES, None, "uint8")
+        trees &= ~((ly >= 21) & (ly <= 25))
+    return trees
+
+
+def neighbor_drop(drop, ok, win=C.NEIGH_PX):
+    """Cât a scăzut, în medie, verdele pădurii din jur (fereastră de win pixeli), doar pe pixelii `ok`."""
+    from scipy import ndimage
+    d = np.where(ok, drop, 0).astype("float32")
+    n = ndimage.uniform_filter(ok.astype("float32"), win)
+    return ndimage.uniform_filter(d, win) / np.maximum(n, 1e-6)
+
+
+def composite(items, grid, pool, forest, label):
+    """Mediana NDVI și NBR din cele mai curate imagini (max C.MAX_REF_SCENES)."""
+    nd, nb, dates = [], [], []
+    for it in sorted(items, key=lambda i: i.properties.get("eo:cloud_cover", 100)):
+        if len(nd) >= C.MAX_REF_SCENES:
+            break
+        try:
+            clear, ndvi, nbr = read_scene(it, grid, pool)
+        except Exception as exc:
+            log("    imagine sărită:", it.id, repr(exc)[:100])
+            continue
+        frac = float((clear & forest).sum()) / max(float(forest.sum()), 1.0)
+        if frac < C.MIN_SCENE_CLEAR:
+            continue
+        nd.append(ndvi)
+        nb.append(nbr)
+        dates.append(item_date(it))
+    if not nd:
+        return None, None, []
+    with np.errstate(all="ignore"):
+        return np.nanmedian(np.stack(nd), 0), np.nanmedian(np.stack(nb), 0), dates
+
+
+def detect_tile(cat, tile, items, d0, d1, lossyear_path, ro_check):
+    """items = {"recent": [...], "lastyear": [...], "window": [...]} pentru această placă."""
+    from scipy import ndimage
+
+    if not items["window"]:
+        return {"tile": tile, "status": "fără imagini noi în fereastră"}, [], []
+    first = items["window"][0]
+    grid = tile_grid(first)
+    crs, transform, W, H = grid
+    from rasterio.warp import transform_bounds
+    lon0, lat0, lon1, lat1 = transform_bounds(crs, "EPSG:4326", transform.c, transform.f + H * transform.e,
+                                              transform.c + W * transform.a, transform.f)
+    info = {"tile": tile, "bbox": [round(lon0, 3), round(lat0, 3), round(lon1, 3), round(lat1, 3)]}
+    if not ro_check(lon0, lat0, lon1, lat1):
+        info["status"] = "în afara României"
+        return info, [], []
+
+    county, names = county_raster(grid)
+    forest = forest_mask(cat, grid, [lon0, lat0, lon1, lat1], lossyear_path) & (county > 0)
+    n_forest = int(forest.sum())
+    info["forest_ha"] = round(n_forest * C.PX_HA)
+    if n_forest < 2000:
+        info["status"] = "prea puțină pădure"
+        return info, [], []
+
+    pool = ThreadPoolExecutor(max_workers=6)
+    try:
+        r_nd, r_nb, r_dates = composite(items["recent"], grid, pool, forest, "recent")
+        y_nd, y_nb, y_dates = composite(items["lastyear"], grid, pool, forest, "lastyear")
+        info["ref_recent"] = [d.isoformat() for d in r_dates]
+        info["ref_lastyear"] = [d.isoformat() for d in y_dates]
+        if r_nd is None and y_nd is None:
+            info["status"] = "fără imagine de referință curată"
+            return info, [], []
+        ref_nd = np.fmin(r_nd, y_nd) if (r_nd is not None and y_nd is not None) else (r_nd if r_nd is not None else y_nd)
+        ref_nb = np.fmin(r_nb, y_nb) if (r_nb is not None and y_nb is not None) else (r_nb if r_nb is not None else y_nb)
+        ref_ok = forest & (ref_nd > C.NDVI_REF_MIN)
+
+        # urmărim fiecare pixel de la o imagine la alta
+        first_day = np.full((H, W), -1, np.int16)     # ziua (față de d0) în care s-a văzut prima dată schimbat
+        n_change = np.zeros((H, W), np.uint8)
+        n_clear_after = np.zeros((H, W), np.uint8)
+        neigh_first = np.zeros((H, W), np.float32)    # cât a scăzut pădurea din jur în acea zi
+        scenes = []                                   # (data, clar, schimbat) pentru calculul datelor pe zonă
+        used, skipped = [], []
+        for it in sorted(items["window"], key=item_date):
+            day = item_date(it)
+            try:
+                clear, ndvi, nbr = read_scene(it, grid, pool)
+            except Exception as exc:
+                log("    imagine sărită:", it.id, repr(exc)[:100])
+                continue
+            ok = clear & ref_ok
+            if ok.sum() < C.MIN_SCENE_CLEAR * n_forest:
+                skipped.append((day.isoformat(), "nori"))
+                continue
+            with np.errstate(invalid="ignore"):
+                drop = ref_nd - ndvi
+                chg = ok & (drop > C.NDVI_DROP) & (ndvi < C.NDVI_NOW_MAX) & ((ref_nb - nbr) > C.NBR_DROP)
+            frac = float(chg.sum()) / max(float(ok.sum()), 1.0)
+            if frac > C.SCENE_MAX_CHANGED:
+                skipped.append((day.isoformat(), f"schimbare pe {round(100 * frac, 1)}% din pădure (ceață sau toamnă)"))
+                continue
+            nd_map = neighbor_drop(drop, ok & ~chg)
+            k = (day - d0).days
+            new = chg & (first_day < 0)
+            first_day[new] = k
+            neigh_first[new] = nd_map[new]
+            seen_after = ok & (first_day >= 0)
+            n_clear_after[seen_after] += 1
+            n_change[chg & (first_day >= 0)] += 1
+            scenes.append((day, ok, chg))
+            used.append(day.isoformat())
+        info["window_scenes"] = used
+        info["skipped"] = skipped
+    finally:
+        pool.shutdown(wait=True)
+
+    with np.errstate(invalid="ignore", divide="ignore"):
+        persist = n_change / np.maximum(n_clear_after, 1)
+    cand = (first_day >= 0) & (persist >= C.PERSIST_MIN)
+    lab, n = ndimage.label(cand, structure=np.ones((3, 3)))
+    patches, rejected = [], []
+    if n == 0:
+        info["status"] = "ok"
+        info["patches"] = 0
+        return info, patches, rejected
+    idx = np.arange(1, n + 1)
+    sizes = ndimage.sum(cand, lab, idx) * C.PX_HA
+    slices = ndimage.find_objects(lab)
+    from pyproj import Transformer
+    to_ll = Transformer.from_crs(crs, "EPSG:4326", always_xy=True)
+    for k in idx[sizes >= C.MIN_HA]:
+        s = slices[k - 1]
+        m = lab[s] == k
+        fd = first_day[s][m]
+        neigh = float(np.median(neigh_first[s][m]))
+        first_seen = d0 + dt.timedelta(days=int(np.median(fd)))
+        # ultima imagine clară în care zona era încă pădure și prima/ultima în care apare schimbată
+        before, after, changed_days = None, None, set()
+        for day, ok, chg in scenes:
+            okm, chm = ok[s][m], chg[s][m]
+            if okm.mean() < 0.5:
+                continue
+            ch_frac = float(chm[okm].mean())
+            if ch_frac < 0.2 and day < first_seen:
+                before = day
+            if ch_frac >= 0.5:
+                changed_days.add(day)
+                after = day
+        n_dates = len(changed_days)
+        if before is None and r_dates:
+            before = max(r_dates)
+        cy, cx = ndimage.center_of_mass(m)
+        x, y = transform * (s[1].start + cx + 0.5, s[0].start + cy + 0.5)
+        lon, lat = to_ll.transform(x, y)
+        cnt = np.bincount(county[s][m].ravel(), minlength=len(names) + 1)
+        cnt[0] = 0
+        p = {
+            "tile": tile,
+            "ha": round(float(sizes[k - 1]), 1),
+            "lat": round(lat, 5), "lon": round(lon, 5),
+            "county": names[int(cnt.argmax()) - 1] if cnt.max() > 0 else None,
+            "first_seen": first_seen.isoformat(),
+            "before_date": before.isoformat() if before else None,
+            "after_date": (after or first_seen).isoformat(),
+            "n_dates": n_dates,
+            "ndvi_ref": round(float(np.nanmean(ref_nd[s][m])), 2),
+            "nbr_ref": round(float(np.nanmean(ref_nb[s][m])), 2),
+            "neigh_drop": round(neigh, 2),
+            "persist": round(float(np.mean(persist[s][m])), 2),
+            "geometry": polygon(m, s, transform, to_ll),
+        }
+        p["bbox"] = bbox_of(p["geometry"])
+        if neigh > C.NEIGH_MAX:
+            p["motiv"] = "pădurea din jur a pierdut și ea verde (toamnă sau ceață)"
+            rejected.append(p)
+        else:
+            patches.append(p)
+    info["status"] = "ok"
+    info["patches"] = len(patches)
+    info["rejected"] = len(rejected)
+    return info, patches, rejected
+
+
+def polygon(mask, s, transform, to_ll):
+    """Conturul zonei, în grade, simplificat."""
+    from rasterio.features import shapes
+    from shapely.geometry import mapping, shape
+    from shapely.ops import transform as shp_transform, unary_union
+    t = transform * transform.translation(s[1].start, s[0].start)
+    polys = [shape(g) for g, v in shapes(mask.astype("uint8"), mask=mask, transform=t) if v == 1]
+    geom = unary_union(polys)
+    geom = shp_transform(lambda x, y, z=None: to_ll.transform(x, y), geom)
+    geom = geom.simplify(0.00015, preserve_topology=True)
+    g = mapping(geom)
+    return round_coords(g)
+
+
+def round_coords(g, nd=5):
+    def r(c):
+        if isinstance(c, (list, tuple)) and c and isinstance(c[0], (int, float)):
+            return [round(c[0], nd), round(c[1], nd)]
+        return [r(x) for x in c]
+    return {"type": g["type"], "coordinates": r(g["coordinates"])}
+
+
+def bbox_of(g):
+    xs, ys = [], []
+
+    def walk(c):
+        if isinstance(c[0], (int, float)):
+            xs.append(c[0]); ys.append(c[1])
+        else:
+            for x in c:
+                walk(x)
+    walk(g["coordinates"])
+    return [min(xs), min(ys), max(xs), max(ys)]

@@ -1,0 +1,9 @@
+out/
+out_test/
+docs_test/
+data/hansen/
+data/geonames_RO.txt
+data/RO.zip
+__pycache__/
+*.pyc
+.venv/

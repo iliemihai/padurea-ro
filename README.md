@@ -1,0 +1,64 @@
+# Pădurea RO
+
+Hartă publică a schimbărilor din pădurile României, din imagini de satelit gratuite, actualizată zilnic.
+
+**Site:** https://iliemihai.github.io/padurea-ro/
+
+Arătăm unde și când a dispărut pădurea, cu imagini înainte și după, ca oricine să poată verifica. **Nu spunem dacă o tăiere e legală sau nu**: autorizațiile nu sunt publice. O alertă înseamnă doar „aici s-a schimbat ceva și merită verificat”.
+
+## Cum merge
+
+```
+imagini Sentinel-2 noi (la 2–5 zile)
+        │
+        ▼
+1. Detectorul (cod, fără AI)          pipeline/detect.py
+   - referința: pădurea din lunile dinainte și din aceeași perioadă de anul trecut
+   - pentru fiecare imagine nouă: unde a dispărut verdele (NDVI) și a crescut solul gol (NBR, SWIR)
+   - păstrează doar ce rămâne schimbat în imaginile următoare
+   - respinge schimbările care cuprind tot dealul (toamnă, ceață)
+        │  candidați
+        ▼
+2. Analistul AI                        pipeline/judge.py
+   - un model de viziune se uită la perechea înainte/după: tăiere, nori, toamnă, câmp sau neclar
+   - Claude Haiku 5.5 dacă există cheia ANTHROPIC_API_KEY, altfel un model local (Qwen) prin Ollama
+        │
+        ▼
+3. Contextul                           pipeline/context.py
+   - localitatea cea mai apropiată, vântul din acele zile, pierderile Hansen din jur
+        │
+        ▼
+4. Criticul                            pipeline/critic.py
+   - pune dovezile cap la cap: încredere ridicată, medie sau scăzută
+        │
+        ▼
+5. Redactorul                          pipeline/writer.py
+   - textul fișei, în cuvinte neutre
+        │
+        ▼
+docs/data/alerts.json  →  harta (docs/)
+```
+
+Totul rulează în fiecare dimineață în GitHub Actions (`.github/workflows/daily.yml`): detectorul pe 8 grupe de plăci în paralel, apoi agenții, apoi publicarea pe GitHub Pages.
+
+## Rulare locală
+
+```bash
+pip install -r requirements.txt
+python -m pipeline.run_tiles --group 0 --groups 8 --days 30      # o grupă de plăci
+python -m pipeline.run_finish                                     # agenții și publicarea în docs/
+python -m tests.test_synthetic                                    # test pe date inventate
+python -m pipeline.eval_judge qwen3.5:4b                          # testează judecătorul AI pe alertele verificate
+```
+
+## Date
+
+- Copernicus Sentinel-2 L2A (ESA), prin [Microsoft Planetary Computer](https://planetarycomputer.microsoft.com/)
+- [ESA WorldCover 2021](https://esa-worldcover.org/) (10 m), pentru masca de pădure
+- Hansen et al., [Global Forest Change 2000–2025](https://glad.earthengine.app/view/global-forest-change), Universitatea Maryland
+- [GeoNames](https://www.geonames.org/) (localități), [Open-Meteo](https://open-meteo.com/) (vânt)
+- Fundalul hărții: [Sentinel-2 cloudless](https://s2maps.eu) de EOX IT Services GmbH (CC BY-NC-SA 4.0), © OpenStreetMap, © CARTO
+
+## Limite
+
+Norii ascund pădurea uneori zile întregi. Iarna, fără frunze, vedem mai ales pădurile de rășinoase. Nu vedem zone mai mici de 1 ha și nici tăierile de sub coronament. Și AI-ul greșește. Dacă vezi o alertă greșită, deschide un issue.
