@@ -121,11 +121,36 @@
     [[fmt(v.length), "zone"], [fmt(ha, ha < 100 ? 1 : 0), "hectare"], [fmt(Object.keys(cty).length), "județe"]].forEach(function (x) {
       var d = el("div"); d.appendChild(el("b", null, x[0])); d.appendChild(el("span", null, x[1])); st.appendChild(d);
     });
+    renderSpark(v);
     var all = DATA.alerts.filter(inPeriod);
     Array.prototype.forEach.call(document.querySelectorAll("#conf .chip"), function (b) {
       var n = all.filter(function (a) { return a.incredere === b.dataset.conf; }).length;
       b.querySelector(".n").textContent = "· " + fmt(n);
     });
+  }
+
+  function renderSpark(v) {
+    /* câte zone noi pe zi (sau pe săptămână, dacă perioada e lungă) */
+    var sp = document.getElementById("spark");
+    sp.replaceChildren();
+    if (!DATA.data_until || state.days < 3) return;
+    var step = state.days > 70 ? 7 : 1, n = Math.ceil(state.days / step), start = periodStart(), counts = [];
+    for (var i = 0; i < n; i++) counts.push(0);
+    v.forEach(function (a) { var k = Math.floor((pd(a.first_seen) - pd(start)) / 864e5 / step); if (k >= 0 && k < n) counts[k]++; });
+    var mx = Math.max.apply(null, counts) || 1, bars = el("div", "bars");
+    counts.forEach(function (c, i) {
+      var b = el("i", c ? null : "z");
+      if (c) b.style.height = Math.max(8, 100 * c / mx) + "%";
+      b.title = (step === 1 ? zi(addDays(start, i)) : "săptămâna din " + zi(addDays(start, i * step))) + ": " + c + " " + (c === 1 ? "zonă" : de(c) + "zone");
+      bars.appendChild(b);
+    });
+    sp.appendChild(bars);
+    var ax = el("div", "ax");
+    ax.appendChild(el("span", null, ziScurt(start)));
+    ax.appendChild(el("span", null, "cel mult " + mx + (step === 1 ? " pe zi" : " pe săptămână")));
+    ax.appendChild(el("span", null, ziScurt(DATA.data_until)));
+    sp.appendChild(ax);
+    sp.setAttribute("aria-label", "Zone noi " + (step === 1 ? "pe zi" : "pe săptămână") + ", cel mult " + mx);
   }
 
   function renderList() {
