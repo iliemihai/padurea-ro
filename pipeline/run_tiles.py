@@ -113,13 +113,15 @@ def main():
     rejected.sort(key=lambda p: -p["ha"])
     every = list(by_tile.values())
     items_by_tile = {t: v["window"] + v["recent"] for t, v in by_tile.items()}
-    log(f"Imagini înainte/după pentru {len(patches)} zone (+{min(6, len(rejected))} respinse, pentru control)")
-    thumbs_for(patches + rejected[:6], items_by_tile, out_img)
+    conf = [p for p in patches if p.get("confirmed")]
+    singles = [p for p in patches if not p.get("confirmed")][:C.THUMB_SINGLES]
+    log(f"Imagini înainte/după: {len(conf)} zone confirmate, {len(singles)} neconfirmate, {min(6, len(rejected))} respinse")
+    thumbs_for(conf + singles + rejected[:6], items_by_tile, out_img)
 
-    if a.judge and patches:
-        which = backend()
-        log(f"Judecătorul AI ({which}) pentru cel mult {C.JUDGE_MAX_PER_GROUP} zone")
-        for p in patches[:C.JUDGE_MAX_PER_GROUP] + rejected[:6]:
+    which = backend() if a.judge else None
+    if which and conf:
+        log(f"Judecătorul AI ({which}) pentru cel mult {C.JUDGE_MAX_PER_GROUP} zone confirmate")
+        for p in conf[:C.JUDGE_MAX_PER_GROUP] + rejected[:3]:
             b, af = p.get("img_before"), p.get("img_after")
             if not af:
                 continue
@@ -135,7 +137,7 @@ def main():
            "tiles": infos, "patches": patches, "rejected": rejected,
            "n_tiles_total": len(tiles), "n_items": sum(len(v["window"]) for v in every)}
     (C.OUT / f"group_{a.group}.json").write_text(json.dumps(res, ensure_ascii=False))
-    log(f"Gata grupa {a.group}: {len(patches)} zone, {len(rejected)} respinse.")
+    log(f"Gata grupa {a.group}: {len(conf)} zone confirmate, {len(patches) - len(conf)} neconfirmate, {len(rejected)} respinse.")
 
 
 if __name__ == "__main__":

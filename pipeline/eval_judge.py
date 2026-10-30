@@ -15,6 +15,9 @@ LAB = C.DATA / "labels"
 
 def run(model_spec, labels):
     which = "claude" if model_spec == "claude" else "local"
+    n = int(os.environ.get("EVAL_N", "0")) or None
+    if n:
+        labels = dict(list(labels.items())[:n])
     model = None if which == "claude" else model_spec
     rows = []
     for k, v in labels.items():
@@ -33,8 +36,8 @@ def run(model_spec, labels):
     false = [r for r in clear if r["noi"] != "taiere"]
     summary = {
         "model": model_spec, "corecte": ok, "total": len(clear),
-        "taieri_gasite": sum(r["categorie"] == "taiere" for r in cuts), "taieri": len(cuts),
-        "false_eliminate": sum(r["categorie"] != "taiere" for r in false), "false": len(false),
+        "taieri_gasite": sum(r["categorie"] in ("taiere", "incendiu") for r in cuts), "taieri": len(cuts),
+        "false_eliminate": sum(r["categorie"] not in ("taiere", "incendiu") for r in false), "false": len(false),
         "sec_medie": round(sum(r["secunde"] for r in rows) / max(1, len(rows)), 1),
     }
     return summary, rows
@@ -42,7 +45,10 @@ def run(model_spec, labels):
 
 def main():
     labels = json.loads((LAB / "labels.json").read_text())["etichete"]
-    specs = sys.argv[1:] or [C.LOCAL_MODEL]
+    specs = sys.argv[1:] or (["claude"] if os.environ.get("ANTHROPIC_API_KEY") else [])
+    if not specs:
+        print("Fără cheie ANTHROPIC_API_KEY: nu testez analistul AI.")
+        return
     out = []
     for s in specs:
         if s == "claude" and not os.environ.get("ANTHROPIC_API_KEY"):

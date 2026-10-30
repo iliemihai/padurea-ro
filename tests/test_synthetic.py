@@ -40,6 +40,9 @@ def fake_scene(it, grid, pool=None):
         nbr[230:300, 200:300] = 0.35
         ndvi[250:270, 250:280] = 0.40
         nbr[250:270, 250:280] = 0.25
+    if day >= 27:                     # o tăiere văzută doar în ultima imagine: încă neconfirmată
+        ndvi[30:45, 30:45] = 0.20
+        nbr[30:45, 30:45] = 0.00
     return clear, ndvi, nbr
 
 
@@ -55,10 +58,14 @@ def main():
         print("PĂSTRAT ", p["ha"], "ha", p["first_seen"], "înainte", p["before_date"], "după", p["after_date"], "n_dates", p["n_dates"], "vecini", p["neigh_drop"], p["geometry"]["type"])
     for p in rejected:
         print("RESPINS ", p["ha"], "ha", p["first_seen"], "vecini", p["neigh_drop"], p["motiv"])
-    assert len(patches) == 1 and abs(patches[0]["ha"] - 20 * 30 * 0.16) < 1, "tăierea trebuia păstrată"
-    assert patches[0]["first_seen"] == "2026-10-06" and patches[0]["n_dates"] == 4
-    assert len(rejected) == 1, "toamna trebuia respinsă"
+    conf = [p for p in patches if p["confirmed"]]
+    single = [p for p in patches if not p["confirmed"]]
+    assert len(conf) == 1 and abs(conf[0]["ha"] - 20 * 30 * 0.16) < 1, "tăierea trebuia păstrată și confirmată"
+    assert conf[0]["first_seen"] == "2026-10-06" and conf[0]["n_dates"] == 4 and conf[0]["before_date"] == "2026-09-11"
+    assert len(single) == 1 and single[0]["n_dates"] == 1, "tăierea din ultima zi trebuia să fie neconfirmată"
+    assert not any(p["lat"] < conf[0]["lat"] - 0.05 for p in patches + rejected), "toamna nu trebuia să apară"
     print("detectorul: OK")
+    patches = conf
 
     # pasul 2 pe rezultatul de mai sus (fără rețea: contextul se dă bătut elegant)
     from pipeline import run_finish

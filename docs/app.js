@@ -3,13 +3,13 @@
   "use strict";
 
   var REPO = "https://github.com/iliemihai/padurea-ro";
-  var CONF = [["ridicată", "hi"], ["medie", "mid"], ["scăzută", "lo"]];
-  var CONF_COLOR = { "ridicată": "#ff4d4f", "medie": "#ffb020", "scăzută": "#9fb1ba" };
+  var CONF = [["ridicată", "hi"], ["medie", "mid"], ["scăzută", "lo"], ["de confirmat", "un"]];
+  var CONF_COLOR = { "ridicată": "#ff4d4f", "medie": "#ffb020", "scăzută": "#9fb1ba", "de confirmat": "#a99cf0" };
   var LUNI = ["ian.", "feb.", "mar.", "apr.", "mai", "iun.", "iul.", "aug.", "sept.", "oct.", "nov.", "dec."];
   var LUNI_L = ["ianuarie", "februarie", "martie", "aprilie", "mai", "iunie", "iulie", "august", "septembrie", "octombrie", "noiembrie", "decembrie"];
-  var AI_TXT = { taiere: "AI: pădure dispărută", toamna: "AI: frunze de toamnă", nori: "AI: nori sau ceață", agricol: "AI: teren agricol", neclar: "AI: neclar" };
+  var AI_TXT = { taiere: "AI: pădure dispărută", incendiu: "AI: zonă arsă", toamna: "AI: frunze de toamnă", nori: "AI: nori sau ceață", agricol: "AI: teren agricol", neclar: "AI: neclar" };
 
-  var state = { days: 7, conf: { "ridicată": true, "medie": true, "scăzută": false }, shown: 40, sel: null, years: [21, 25] };
+  var state = { days: 7, conf: { "ridicată": true, "medie": true, "scăzută": true, "de confirmat": false }, shown: 40, sel: null, years: [21, 25] };
   var DATA = { alerts: [], data_until: null, generated: null }, RUNS = [], map, hansen = null;
 
   /* ---------- unelte ---------- */
@@ -21,7 +21,7 @@
   function addDays(s, k) { var d = pd(s); d.setUTCDate(d.getUTCDate() + k); return iso(d); }
   function zi(s, lung) { if (!s) return "—"; var d = pd(s); return d.getUTCDate() + " " + (lung ? LUNI_L : LUNI)[d.getUTCMonth()] + " " + d.getUTCFullYear(); }
   function ziScurt(s) { var d = pd(s); return d.getUTCDate() + " " + LUNI[d.getUTCMonth()]; }
-  function confCls(c) { return c === "ridicată" ? "hi" : c === "medie" ? "mid" : "lo"; }
+  function confCls(c) { return c === "ridicată" ? "hi" : c === "medie" ? "mid" : c === "scăzută" ? "lo" : "un"; }
 
   /* ---------- datele ---------- */
   function getJSON(u) { return fetch(u, { cache: "no-cache" }).then(function (r) { if (!r.ok) throw new Error(u + " " + r.status); return r.json(); }); }
@@ -207,7 +207,7 @@
     back.addEventListener("click", unselect);
     d.appendChild(back);
     var bd = el("div", "badges");
-    var c1 = el("span", "badge"); c1.appendChild(el("i", "dot " + confCls(a.incredere))); c1.appendChild(document.createTextNode("încredere " + a.incredere)); bd.appendChild(c1);
+    var c1 = el("span", "badge"); c1.appendChild(el("i", "dot " + confCls(a.incredere))); c1.appendChild(document.createTextNode(a.incredere === "de confirmat" ? "de confirmat" : "încredere " + a.incredere)); bd.appendChild(c1);
     if (a.ai) bd.appendChild(el("span", "badge", (AI_TXT[a.ai.categorie] || "AI") + " (" + fmt(a.ai.incredere * 100) + "%)"));
     if (a.vant) bd.appendChild(el("span", "badge", "vânt puternic"));
     d.appendChild(bd);
@@ -327,7 +327,7 @@
       map.addSource("alerts", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
       map.addSource("points", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
       map.addSource("sel", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
-      var color = ["match", ["get", "c"], "ridicată", CONF_COLOR["ridicată"], "medie", CONF_COLOR["medie"], CONF_COLOR["scăzută"]];
+      var color = ["match", ["get", "c"], "ridicată", CONF_COLOR["ridicată"], "medie", CONF_COLOR["medie"], "scăzută", CONF_COLOR["scăzută"], CONF_COLOR["de confirmat"]];
       map.addLayer({ id: "a-fill", type: "fill", source: "alerts", minzoom: 9, paint: { "fill-color": color, "fill-opacity": 0.32 } });
       map.addLayer({ id: "a-line", type: "line", source: "alerts", minzoom: 9, paint: { "line-color": color, "line-width": ["interpolate", ["linear"], ["zoom"], 9, 1.2, 14, 2.6] } });
       map.addLayer({ id: "a-pt", type: "circle", source: "points", maxzoom: 12.5, paint: {

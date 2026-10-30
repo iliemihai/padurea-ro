@@ -11,11 +11,15 @@ from .sat import log
 
 def main():
     which = backend()
+    if which is None:
+        log("Fără analist AI (nu există ANTHROPIC_API_KEY)")
+        return
     img = C.OUT / "img"
     n = 0
     for f in sorted(C.OUT.glob("group_*.json")):
         g = json.loads(f.read_text())
-        for p in g["patches"][:C.JUDGE_MAX_PER_GROUP] + g["rejected"][:6]:
+        conf = [p for p in g["patches"] if p.get("confirmed")][:C.JUDGE_MAX_PER_GROUP]
+        for p in conf + g["rejected"][:3]:
             b, a = p.get("img_before"), p.get("img_after")
             if p.get("ai") or not a:
                 continue

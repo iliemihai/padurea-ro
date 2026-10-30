@@ -144,7 +144,10 @@ def detect_tile(cat, tile, items, d0, d1, lossyear_path, ro_check):
             return info, [], []
         ref_nd = np.fmin(r_nd, y_nd) if (r_nd is not None and y_nd is not None) else (r_nd if r_nd is not None else y_nd)
         ref_nb = np.fmin(r_nb, y_nb) if (r_nb is not None and y_nb is not None) else (r_nb if r_nb is not None else y_nb)
-        ref_ok = forest & (ref_nd > C.NDVI_REF_MIN)
+        # fără marginea pădurii (40 m): acolo se amestecă cu câmpuri, drumuri, pajiști
+        core = ndimage.binary_erosion(forest, iterations=1)
+        with np.errstate(invalid="ignore"):
+            ref_ok = core & (ref_nd > C.NDVI_REF_MIN) & (ref_nb > C.NBR_REF_MIN)
 
         # urmărim fiecare pixel de la o imagine la alta
         first_day = np.full((H, W), -1, np.int16)     # ziua (față de d0) în care s-a văzut prima dată schimbat
@@ -166,12 +169,20 @@ def detect_tile(cat, tile, items, d0, d1, lossyear_path, ro_check):
                 continue
             with np.errstate(invalid="ignore"):
                 drop = ref_nd - ndvi
-                chg = ok & (drop > C.NDVI_DROP) & (ndvi < C.NDVI_NOW_MAX) & ((ref_nb - nbr) > C.NBR_DROP)
+                drop_nb = ref_nb - nbr
+                # 1. candidații: pixeli care arată ca sol gol sau ars, nu ca frunze de toamnă
+                chg0 = (ok & (drop > C.NDVI_DROP) & (drop_nb > C.NBR_DROP)
+                        & (ndvi < C.NDVI_NOW_MAX) & (nbr < C.NBR_NOW_MAX))
+                # 2. cât s-a schimbat restul pădurii din jur (toamnă, ceață) se scade din schimbarea fiecărui candidat
+                base = ok & ~chg0
+                loc_nd = np.maximum(neighbor_drop(drop, base), 0)
+                loc_nb = np.maximum(neighbor_drop(drop_nb, base), 0)
+                chg = chg0 & ((drop - loc_nd) > C.NDVI_DROP) & ((drop_nb - loc_nb) > C.NBR_DROP)
             frac = float(chg.sum()) / max(float(ok.sum()), 1.0)
             if frac > C.SCENE_MAX_CHANGED:
                 skipped.append((day.isoformat(), f"schimbare pe {round(100 * frac, 1)}% din pădure (ceață sau toamnă)"))
                 continue
-            nd_map = neighbor_drop(drop, ok & ~chg)
+            nd_map = loc_nd
             k = (day - d0).days
             new = chg & (first_day < 0)
             first_day[new] = k
@@ -205,19 +216,16 @@ def detect_tile(cat, tile, items, d0, d1, lossyear_path, ro_check):
         m = lab[s] == k
         fd = first_day[s][m]
         neigh = float(np.median(neigh_first[s][m]))
-        first_seen = d0 + dt.timedelta(days=int(np.median(fd)))
-        # ultima imagine clară în care zona era încă pădure și prima/ultima în care apare schimbată
-        before, after, changed_days = None, None, set()
+        # pentru fiecare imagine clară: ce parte din zonă apare schimbată
+        obs = []
         for day, ok, chg in scenes:
             okm, chm = ok[s][m], chg[s][m]
-            if okm.mean() < 0.5:
-                continue
-            ch_frac = float(chm[okm].mean())
-            if ch_frac < 0.2 and day < first_seen:
-                before = day
-            if ch_frac >= 0.5:
-                changed_days.add(day)
-                after = day
+            if okm.mean() >= 0.5:
+                obs.append((day, float(chm[okm].mean())))
+        first_seen = next((d for d, f in obs if f >= 0.3), d0 + dt.timedelta(days=int(np.median(fd))))
+        before = next((d for d, f in reversed(obs) if d < first_seen and f < 0.1), None)
+        changed_days = {d for d, f in obs if f >= 0.5}
+        after = max(changed_days) if changed_days else None
         n_dates = len(changed_days)
         if before is None and r_dates:
             before = max(r_dates)
@@ -235,6 +243,7 @@ def detect_tile(cat, tile, items, d0, d1, lossyear_path, ro_check):
             "before_date": before.isoformat() if before else None,
             "after_date": (after or first_seen).isoformat(),
             "n_dates": n_dates,
+            "confirmed": n_dates >= C.CONFIRM_DATES,
             "ndvi_ref": round(float(np.nanmean(ref_nd[s][m])), 2),
             "nbr_ref": round(float(np.nanmean(ref_nb[s][m])), 2),
             "neigh_drop": round(neigh, 2),

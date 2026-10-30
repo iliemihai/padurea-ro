@@ -93,6 +93,7 @@ def read_scene(it, grid, pool=None):
 
     jobs = {
         "scl": (it.assets["SCL"].href, Resampling.nearest, None),
+        "b02": (it.assets["B02"].href, Resampling.average, 0),
         "b04": (it.assets["B04"].href, Resampling.average, 0),
         "b08": (it.assets["B08"].href, Resampling.average, 0),
         "b12": (it.assets["B12"].href, Resampling.average, 0),
@@ -108,7 +109,9 @@ def read_scene(it, grid, pool=None):
         bad = ndimage.binary_dilation(bad, iterations=C.BAD_DILATE_PX)
     off = s2_offset(it)
     b04, b08, b12 = arr["b04"], arr["b08"], arr["b12"]
-    clear = np.isin(scl, C.SCL_OK) & ~bad & (b04 > off) & (b08 > off) & (b12 > off)
+    b02 = arr["b02"]
+    haze = (b02 - off) / 1e4 > C.HAZE_BLUE
+    clear = np.isin(scl, C.SCL_OK) & ~bad & ~haze & (b02 > off) & (b04 > off) & (b08 > off) & (b12 > off)
     red, nir, swir = (b04 - off) / 1e4, (b08 - off) / 1e4, (b12 - off) / 1e4
     with np.errstate(all="ignore"):
         ndvi = np.clip((nir - red) / np.maximum(nir + red, 1e-6), -1, 1)

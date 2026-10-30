@@ -29,9 +29,14 @@ BAD_DILATE_PX = 3         # 3 × 40 m = 120 m în jurul norilor
 
 # Ce înseamnă „pădure care a dispărut" într-o imagine
 NDVI_REF_MIN = 0.60       # înainte: pădure verde
-NDVI_DROP = 0.30          # verdele a scăzut cu cel puțin atât
+NBR_REF_MIN = 0.30        # și deasă (indicele cu SWIR)
+NDVI_DROP = 0.30          # verdele a scăzut cu cel puțin atât MAI MULT decât în pădurea din jur
 NDVI_NOW_MAX = 0.45       # acum: nu mai arată a pădure
-NBR_DROP = 0.20           # și indicele cu SWIR (sol gol, lemn tăiat) a scăzut
+NBR_DROP = 0.30           # și indicele cu SWIR a scăzut cu atât mai mult decât în jur (sol gol, lemn tăiat, ars)
+NBR_NOW_MAX = 0.20        # acum: sol gol sau ars, nu frunze de toamnă
+HAZE_BLUE = 0.09          # albastru peste atât în pădure = ceață sau nor subțire: nu credem pixelul
+CONFIRM_DATES = 2         # o zonă e confirmată când se vede schimbată în cel puțin atâtea zile diferite
+THUMB_SINGLES = 20        # imagini și pentru cele mai mari zone încă neconfirmate
 
 # Teste contra alarmelor false
 SCENE_MAX_CHANGED = 0.05  # dacă într-o imagine s-a „schimbat" peste 5% din pădure, e ceață sau toamnă: o sărim
@@ -46,7 +51,7 @@ THUMB_PAD_M = 350         # margine în jurul zonei
 THUMB_MAX_PX = 320
 
 # Judecătorul AI
-JUDGE_MAX_PER_GROUP = int(os.environ.get("JUDGE_MAX_PER_GROUP", "80"))
+JUDGE_MAX_PER_GROUP = int(os.environ.get("JUDGE_MAX_PER_GROUP", "25"))
 OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://localhost:11434")
 LOCAL_MODEL = os.environ.get("LOCAL_MODEL", "qwen3.5:4b")
 CLAUDE_MODEL = os.environ.get("CLAUDE_MODEL", "claude-haiku-5-5")
