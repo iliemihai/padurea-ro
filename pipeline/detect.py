@@ -76,8 +76,11 @@ def neighbor_drop(drop, ok, win=C.NEIGH_PX):
     return ndimage.uniform_filter(d, win) / np.maximum(n, 1e-6)
 
 
-def composite(items, grid, pool, forest, label):
-    """Mediana NDVI și NBR din cele mai curate imagini (max C.MAX_REF_SCENES)."""
+def composite(items, grid, pool, forest, label, keep=False):
+    """Mediana NDVI și NBR din cele mai curate imagini (max C.MAX_REF_SCENES).
+
+    keep=True: întoarce și imaginile una câte una (float16), ca să vedem pe fiecare zonă
+    dacă schimbarea se vedea deja înainte de perioada analizată."""
     nd, nb, dates = [], [], []
     for it in sorted(items, key=lambda i: i.properties.get("eo:cloud_cover", 100)):
         if len(nd) >= C.MAX_REF_SCENES:
@@ -94,9 +97,13 @@ def composite(items, grid, pool, forest, label):
         nb.append(nbr)
         dates.append(item_date(it))
     if not nd:
-        return None, None, []
+        return (None, None, [], []) if keep else (None, None, [])
     with np.errstate(all="ignore"):
-        return np.nanmedian(np.stack(nd), 0), np.nanmedian(np.stack(nb), 0), dates
+        med_nd, med_nb = np.nanmedian(np.stack(nd), 0), np.nanmedian(np.stack(nb), 0)
+    if keep:
+        scenes = sorted(zip(dates, [a.astype(np.float16) for a in nd], [b.astype(np.float16) for b in nb]), key=lambda t: t[0])
+        return med_nd, med_nb, dates, scenes
+    return med_nd, med_nb, dates
 
 
 def detect_tile(cat, tile, items, d0, d1, lossyear_path, ro_check):
@@ -135,7 +142,7 @@ def detect_tile(cat, tile, items, d0, d1, lossyear_path, ro_check):
 
     pool = ThreadPoolExecutor(max_workers=6)
     try:
-        r_nd, r_nb, r_dates = composite(items["recent"], grid, pool, forest, "recent")
+        r_nd, r_nb, r_dates, r_scenes = composite(items["recent"], grid, pool, forest, "recent", keep=True)
         y_nd, y_nb, y_dates = composite(items["lastyear"], grid, pool, forest, "lastyear")
         info["ref_recent"] = [d.isoformat() for d in r_dates]
         info["ref_lastyear"] = [d.isoformat() for d in y_dates]
@@ -148,6 +155,16 @@ def detect_tile(cat, tile, items, d0, d1, lossyear_path, ro_check):
         edge = forest & ~ndimage.binary_erosion(forest, iterations=1)
         with np.errstate(invalid="ignore"):
             ref_ok = forest & (ref_nd > C.NDVI_REF_MIN) & (ref_nb > C.NBR_REF_MIN)
+        # imaginile de referință, una câte una: unde arăta zona deja schimbată, înainte de perioada analizată
+        ref_scenes = []
+        for day, s_nd, s_nb in r_scenes:
+            s_nd, s_nb = s_nd.astype(np.float32), s_nb.astype(np.float32)
+            with np.errstate(invalid="ignore"):
+                s_ok = ref_ok & ~np.isnan(s_nd) & ~np.isnan(s_nb)
+                s_chg = (s_ok & ((ref_nd - s_nd) > C.NDVI_DROP) & ((ref_nb - s_nb) > C.NBR_DROP)
+                         & (s_nd < C.NDVI_NOW_MAX) & (s_nb < C.NBR_NOW_MAX))
+            ref_scenes.append((day, s_ok, s_chg))
+        del r_scenes
 
         # urmărim fiecare pixel de la o imagine la alta
         first_day = np.full((H, W), -1, np.int16)     # ziua (față de d0) în care s-a văzut prima dată schimbat
@@ -226,8 +243,18 @@ def detect_tile(cat, tile, items, d0, d1, lossyear_path, ro_check):
             okm, chm = ok[s][m], chg[s][m]
             if okm.mean() >= 0.5:
                 obs.append((day, float(chm[okm].mean())))
+        # aceeași întrebare pe imaginile de referință (dinaintea perioadei), ca să știm de când e intactă zona
+        obs_ref = []
+        for day, ok, chg in ref_scenes:
+            okm, chm = ok[s][m], chg[s][m]
+            if okm.mean() >= 0.5:
+                obs_ref.append((day, float(chm[okm].mean())))
         first_seen = next((d for d, f in obs if f >= 0.3), d0 + dt.timedelta(days=int(np.median(fd))))
-        before = next((d for d, f in reversed(obs) if d < first_seen and f < 0.1), None)
+        before = next((d for d, f in reversed(obs_ref + obs) if d < first_seen and f < 0.1), None)
+        # schimbată deja în ultima imagine de referință curată și nevăzută intactă de atunci: e mai veche
+        early = obs_ref[-1][0] if obs_ref and obs_ref[-1][1] >= 0.5 else None
+        if early and before and before > early:
+            early = None
         changed_days = {d for d, f in obs if f >= 0.5}
         after = max(changed_days) if changed_days else None
         n_dates = len(changed_days)
@@ -257,8 +284,13 @@ def detect_tile(cat, tile, items, d0, d1, lossyear_path, ro_check):
             "geometry": polygon(m, s, transform, to_ll),
         }
         p["bbox"] = bbox_of(p["geometry"])
+        if early:
+            p["early"] = early.isoformat()
         if neigh > C.NEIGH_MAX:
             p["motiv"] = "pădurea din jur a pierdut și ea verde (toamnă sau ceață)"
+            rejected.append(p)
+        elif early:
+            p["motiv"] = f"se vedea deja schimbată pe {early.isoformat()}, înainte de perioada analizată"
             rejected.append(p)
         else:
             patches.append(p)

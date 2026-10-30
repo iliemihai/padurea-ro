@@ -43,6 +43,9 @@ def fake_scene(it, grid, pool=None, full=False):
     if day >= 27:                     # o tăiere văzută doar în ultima imagine: încă neconfirmată
         ndvi[30:45, 30:45] = 0.20
         nbr[30:45, 30:45] = 0.00
+    if day >= -25:                    # o tăiere mai veche: se vede deja în ultima imagine de referință
+        ndvi[150:170, 200:230] = 0.20
+        nbr[150:170, 200:230] = 0.00
     if full:
         blue = np.full((N, N), 0.03, np.float32)
         red = np.where(ndvi < 0.5, 0.09, 0.03).astype(np.float32)
@@ -55,7 +58,7 @@ def main():
     detect.tile_grid = lambda it: (CRS.from_epsg(32634), Affine(40, 0, 600000, 0, -40, 5200000), N, N)
     detect.county_raster = lambda grid: (np.ones((N, N), np.uint8), ["Test"])
     detect.forest_mask = lambda cat, grid, bb, ly: np.ones((N, N), bool)
-    items = {"window": [item(d) for d in (5, 12, 20, 27)], "recent": [item(-30), item(-20)], "lastyear": [item(-365)]}
+    items = {"window": [item(d) for d in (5, 12, 20, 27)], "recent": [item(-40), item(-30), item(-20)], "lastyear": [item(-365)]}
     info, patches, rejected = detect.detect_tile(None, "34TXX", items, D0, D0 + dt.timedelta(days=29), None, lambda *a: True)
     print("info:", {k: info.get(k) for k in ("status", "patches", "rejected", "window_scenes")})
     from pipeline.rules import split
@@ -71,6 +74,9 @@ def main():
     assert conf[0]["first_seen"] == "2026-10-06" and conf[0]["n_dates"] == 4 and conf[0]["before_date"] == "2026-09-11"
     assert len(single) == 1 and single[0]["n_dates"] == 1, "tăierea din ultima zi trebuia să fie neconfirmată"
     assert not any(p["lat"] < conf[0]["lat"] - 0.05 for p in patches + rejected), "toamna nu trebuia să apară"
+    old = [p for p in rejected if p.get("early")]
+    assert len(old) == 1 and old[0]["early"] == "2026-09-11" and abs(old[0]["ha"] - 20 * 30 * 0.16) < 1, "tăierea veche trebuia respinsă ca veche"
+    assert not any(p.get("early") for p in patches), "o zonă veche a scăpat printre cele noi"
     print("detectorul: OK")
     patches = conf
 
@@ -88,6 +94,8 @@ def main():
     run_finish.C.DOCS = docs
     patches[0]["key"] = "34TXX-0"
     patches[0]["ai"] = {"categorie": "taiere", "incredere": 0.8, "motiv": "Sol gol cu margini drepte.", "model": "test"}
+    patches[0]["img_before"] = {"file": "34TXX-0_b.webp", "date": "2026-09-11"}
+    patches[0]["img_after"] = {"file": "34TXX-0_a.webp", "date": "2026-10-28"}
     twin = json.loads(json.dumps(patches[0]))
     twin["tile"], twin["key"], twin["ha"] = "34TYY", "34TYY-0", 9.0
     (tmp / "group_0.json").write_text(json.dumps({"d0": "2026-10-01", "d1": "2026-10-30", "tiles": [info, {"tile": "34TYY", "status": "ok"}],
@@ -97,6 +105,7 @@ def main():
     assert len(out["alerts"]) == 1, "dublura trebuia unită"
     a = out["alerts"][0]
     print("ALERTĂ:", a["id"], a["incredere"], a["dovezi"])
+    assert a["incredere"] == "ridicată", a["dovezi"]
     print("TEXT:", a["text"])
     run_finish.main()  # a doua rulare: aceeași zonă trebuie recunoscută, nu dublată
     assert len(json.loads(run_finish.ALERTS.read_text())["alerts"]) == 1
@@ -105,5 +114,20 @@ def main():
     shutil.rmtree(docs, ignore_errors=True)
 
 
+def test_critic():
+    """Criticul: fără poză de dinainte nu dăm încredere; o poză veche sau un AI nehotărât scad scorul."""
+    from pipeline.critic import score
+    base = {"confirmed": True, "n_dates": 3, "ha": 4.0, "neigh_drop": 0.01, "first_seen": "2026-10-04",
+            "before_date": "2026-09-17", "img_before": {"date": "2026-09-17"},
+            "ai": {"categorie": "taiere", "incredere": 0.8}}
+    assert score(base)[0] == "ridicată"
+    assert score({**base, "img_before": None})[0] == "de confirmat"
+    assert score({**base, "before_date": "2026-08-13"})[1] == score(base)[1] - 1
+    assert score({**base, "ai": {"categorie": "neclar", "incredere": 0.3}})[0] == "medie"
+    assert score({**base, "ai": {"categorie": "toamna", "incredere": 0.8}})[0] == "scăzută"
+    print("criticul: OK")
+
+
 if __name__ == "__main__":
+    test_critic()
     main()

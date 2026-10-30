@@ -187,11 +187,29 @@ def backend():
     return None
 
 
+SEASON_NOTE = """
+Careful: BEFORE and AFTER are {days} days apart and AFTER is in autumn. Whole stands that turned brown, red-brown,
+orange or yellow with soft edges are autumn colours ("toamna"), even if they look dark. Pick "taiere" only for a new
+bare patch with sharp edges, and "incendiu" only for a black or charcoal burn scar."""
+
+
+def season_note(d0, d1):
+    """Notă pentru AI când poza de dinainte e de la sfârșitul verii și cea de după e din toamnă."""
+    import datetime as dt
+    try:
+        a, b = dt.date.fromisoformat(d0), dt.date.fromisoformat(d1)
+    except (TypeError, ValueError):
+        return ""
+    days = (b - a).days
+    return SEASON_NOTE.format(days=days) if days > 45 and b.month in (9, 10, 11) else ""
+
+
 def judge(before_path, after_path, d0, d1, which=None, model=None, box=None):
     png = pair_png(before_path, after_path, d0, d1, box=box)
     t0 = time.time()
     which = which or backend()
-    r, used = (ask_claude if which == "claude" else ask_local)(png, d0, d1, model, BOX_NOTE if box else "")
+    note = (BOX_NOTE if box else "") + season_note(d0, d1)
+    r, used = (ask_claude if which == "claude" else ask_local)(png, d0, d1, model, note)
     r["model"] = used
     r["secunde"] = round(time.time() - t0, 1)
     return r

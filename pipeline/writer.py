@@ -36,7 +36,10 @@ def text(a):
     hj = a.get("hansen_jur")
     if hj and hj.get("ani"):
         s.append("În jur s-a mai pierdut pădure în " + ", ".join(str(y) for y in hj["ani"]) + " (Hansen).")
-    s.append("Nu știm dacă e o tăiere autorizată: autorizațiile nu sunt publice. E o schimbare care merită verificată.")
+    if ai and ai.get("categorie") == "incendiu":
+        s.append("Nu știm ce a provocat schimbarea. E o schimbare care merită verificată.")
+    else:
+        s.append("Nu știm dacă e o tăiere autorizată: autorizațiile nu sunt publice. E o schimbare care merită verificată.")
     return " ".join(s)
 
 

@@ -42,8 +42,10 @@ def make_thumbs(p, items, out_dir, name):
     before_d = dt.date.fromisoformat(p["before_date"]) if p.get("before_date") else None
     after_d = dt.date.fromisoformat(p["after_date"])
     pool = sorted(items, key=item_date)
-    # înainte: imaginea „ultima dată intactă", apoi celelalte dinaintea schimbării, de la cea mai nouă
-    before_c = sorted([i for i in pool if item_date(i) < first_seen],
+    # înainte: imaginea din ziua „ultima dată intactă", apoi cele mai vechi, de la cea mai nouă.
+    # Niciodată una dintre „ultima dată intactă" și „prima dată schimbată": acolo zona poate fi deja tăiată.
+    last_ok = before_d or (first_seen - dt.timedelta(days=1))
+    before_c = sorted([i for i in pool if item_date(i) <= last_ok],
                       key=lambda i: (item_date(i) != before_d, -item_date(i).toordinal()))
     # după: imaginea în care se vede schimbarea, apoi celelalte de după, de la cea mai nouă
     after_c = sorted([i for i in pool if item_date(i) >= first_seen],

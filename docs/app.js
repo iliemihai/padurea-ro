@@ -9,7 +9,7 @@
   var LUNI_L = ["ianuarie", "februarie", "martie", "aprilie", "mai", "iunie", "iulie", "august", "septembrie", "octombrie", "noiembrie", "decembrie"];
   var AI_TXT = { taiere: "AI: pădure dispărută", incendiu: "AI: zonă arsă", toamna: "AI: frunze de toamnă", nori: "AI: nori sau ceață", agricol: "AI: teren agricol", neclar: "AI: neclar" };
 
-  var state = { days: 30, conf: { "ridicată": true, "medie": true, "scăzută": false, "de confirmat": false }, shown: 40, sel: null, years: [21, 25] };
+  var state = { days: 30, conf: { "ridicată": true, "medie": false, "scăzută": false, "de confirmat": false }, shown: 40, sel: null, years: [21, 25] };
   var DATA = { alerts: [], data_until: null, generated: null }, RUNS = [], map, hansen = null;
 
   /* ---------- unelte ---------- */
