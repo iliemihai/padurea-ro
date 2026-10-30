@@ -9,7 +9,7 @@
   var LUNI_L = ["ianuarie", "februarie", "martie", "aprilie", "mai", "iunie", "iulie", "august", "septembrie", "octombrie", "noiembrie", "decembrie"];
   var AI_TXT = { taiere: "AI: pădure dispărută", incendiu: "AI: zonă arsă", toamna: "AI: frunze de toamnă", nori: "AI: nori sau ceață", agricol: "AI: teren agricol", neclar: "AI: neclar" };
 
-  var state = { days: 7, conf: { "ridicată": true, "medie": true, "scăzută": true, "de confirmat": false }, shown: 40, sel: null, years: [21, 25] };
+  var state = { days: 30, conf: { "ridicată": true, "medie": true, "scăzută": false, "de confirmat": false }, shown: 40, sel: null, years: [21, 25] };
   var DATA = { alerts: [], data_until: null, generated: null }, RUNS = [], map, hansen = null;
 
   /* ---------- unelte ---------- */
@@ -84,9 +84,11 @@
     document.getElementById("base").addEventListener("click", function (e) {
       var b = e.target.closest("button"); if (!b) return;
       Array.prototype.forEach.call(this.children, function (c) { c.setAttribute("aria-pressed", String(c === b)); });
-      var sat = b.dataset.base === "sat";
-      setVis("sat", sat); setVis("labels", sat); setVis("osm", !sat);
+      var base = b.dataset.base;
+      setVis("sat", base === "sat"); setVis("hd", base === "hd"); setVis("osm", base === "osm"); setVis("labels", base !== "osm");
     });
+    document.getElementById("splitbtn").addEventListener("click", function () { toggleSplit(this.getAttribute("aria-pressed") !== "true"); });
+    document.getElementById("lyr-split").addEventListener("change", function (e) { toggleSplit(e.target.checked); });
   }
 
   function setVis(id, on) { if (map && map.getLayer(id)) map.setLayoutProperty(id, "visibility", on ? "visible" : "none"); }
@@ -229,7 +231,7 @@
     d.appendChild(kv);
     var act = el("div", "actions");
     function link(t, h) { var x = el("a", null, t); x.href = h; x.target = "_blank"; x.rel = "noopener"; act.appendChild(x); }
-    link("Google Maps", "https://www.google.com/maps/search/?api=1&query=" + a.lat + "," + a.lon);
+    link("Google Maps (satelit)", "https://www.google.com/maps/@?api=1&map_action=map&center=" + a.lat + "," + a.lon + "&zoom=16&basemap=satellite");
     link("OpenStreetMap", "https://www.openstreetmap.org/?mlat=" + a.lat + "&mlon=" + a.lon + "#map=15/" + a.lat + "/" + a.lon);
     link("Raportează o greșeală", REPO + "/issues/new?title=" + encodeURIComponent("Alerta " + a.id) + "&body=" + encodeURIComponent("Ce e greșit la alerta " + a.id + "?\n\n" + location.href));
     d.appendChild(act);
@@ -299,12 +301,15 @@
                  attribution: '<a href="https://s2maps.eu" target="_blank">Sentinel-2 cloudless</a> de EOX IT Services GmbH (date Copernicus Sentinel modificate)' },
           osm: { type: "raster", tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"], tileSize: 256, maxzoom: 19,
                  attribution: '© <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a>' },
+          hd: { type: "raster", tiles: ["https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"], tileSize: 256, maxzoom: 18,
+                attribution: 'Imagini: Esri, Maxar, Earthstar Geographics (pot fi mai vechi)' },
           labels: { type: "raster", tiles: ["https://a.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}.png", "https://b.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}.png"], tileSize: 256,
                     attribution: '© <a href="https://carto.com/attributions" target="_blank">CARTO</a>' }
         },
         layers: [
           { id: "bg", type: "background", paint: { "background-color": "#0f1411" } },
           { id: "sat", type: "raster", source: "sat" },
+          { id: "hd", type: "raster", source: "hd", layout: { visibility: "none" } },
           { id: "osm", type: "raster", source: "osm", layout: { visibility: "none" } }
         ]
       }
@@ -370,24 +375,72 @@
     tryNext();
   }
 
-  function updateMapData() {
-    if (!map || !map.getSource || !map.getSource("alerts")) return;
-    var v = visible();
-    map.getSource("alerts").setData({ type: "FeatureCollection", features: v.map(function (a) {
+  function alertsFC(v) {
+    return { type: "FeatureCollection", features: v.map(function (a) {
       return { type: "Feature", geometry: a.geometry, properties: { id: a.id, c: a.incredere, ha: a.ha, d: a.first_seen, county: a.county, loc: a.localitate } };
-    }) });
-    map.getSource("points").setData({ type: "FeatureCollection", features: v.map(function (a) {
+    }) };
+  }
+  function pointsFC(v) {
+    return { type: "FeatureCollection", features: v.map(function (a) {
       return { type: "Feature", geometry: { type: "Point", coordinates: [a.lon, a.lat] }, properties: { id: a.id, c: a.incredere, ha: a.ha, d: a.first_seen, county: a.county, loc: a.localitate } };
-    }).sort(function (x, y) { return y.properties.ha - x.properties.ha; }) });
+    }).sort(function (x, y) { return y.properties.ha - x.properties.ha; }) };
+  }
+  function updateMapData() {
+    var v = visible();
+    [map, map2].forEach(function (m) {
+      if (!m || !m.getSource || !m.getSource("alerts")) return;
+      m.getSource("alerts").setData(alertsFC(v));
+      m.getSource("points").setData(pointsFC(v));
+    });
+  }
+
+  /* ---------- harta normală alături, mișcată odată cu prima ---------- */
+  var map2 = null, syncing = false;
+  function sync(a, b) { b.jumpTo({ center: a.getCenter(), zoom: a.getZoom(), bearing: a.getBearing(), pitch: a.getPitch() }); }
+  function toggleSplit(on) {
+    document.querySelector(".mapwrap").classList.toggle("split", on);
+    document.getElementById("map2").hidden = !on;
+    document.getElementById("splitbtn").setAttribute("aria-pressed", String(on));
+    document.getElementById("lyr-split").checked = on;
+    if (on && !map2) initMap2();
+    setTimeout(function () { map.resize(); if (map2) { map2.resize(); sync(map, map2); } }, 60);
+  }
+  function initMap2() {
+    map2 = new maplibregl.Map({
+      container: "map2", center: map.getCenter(), zoom: map.getZoom(), maxZoom: 18, minZoom: 5,
+      attributionControl: { compact: true },
+      style: { version: 8, sources: { osm: { type: "raster", tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"], tileSize: 256, maxzoom: 19,
+        attribution: '© <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a>' } },
+        layers: [{ id: "osm", type: "raster", source: "osm" }] }
+    });
+    map2.on("load", function () {
+      var color = ["match", ["get", "c"], "ridicată", CONF_COLOR["ridicată"], "medie", CONF_COLOR["medie"], "scăzută", CONF_COLOR["scăzută"], CONF_COLOR["de confirmat"]];
+      map2.addSource("alerts", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
+      map2.addSource("points", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
+      map2.addSource("sel", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
+      map2.addLayer({ id: "a-fill", type: "fill", source: "alerts", minzoom: 9, paint: { "fill-color": color, "fill-opacity": 0.18 } });
+      map2.addLayer({ id: "a-line", type: "line", source: "alerts", minzoom: 9, paint: { "line-color": color, "line-width": 2.4 } });
+      map2.addLayer({ id: "a-pt", type: "circle", source: "points", maxzoom: 12.5, paint: { "circle-color": color, "circle-radius": 6, "circle-stroke-color": "#14201a", "circle-stroke-width": 1.4 } });
+      map2.addLayer({ id: "sel-line", type: "line", source: "sel", paint: { "line-color": "#14201a", "line-width": 3 } });
+      ["a-pt", "a-fill"].forEach(function (id) {
+        map2.on("mouseenter", id, function () { map2.getCanvas().style.cursor = "pointer"; });
+        map2.on("mouseleave", id, function () { map2.getCanvas().style.cursor = ""; });
+        map2.on("click", id, function (e) { var a = DATA.alerts.find(function (x) { return x.id === e.features[0].properties.id; }); if (a) select(a, false); });
+      });
+      updateMapData();
+      updateSelection();
+    });
+    map.on("move", function () { if (!syncing && map2) { syncing = true; sync(map, map2); syncing = false; } });
+    map2.on("move", function () { if (!syncing) { syncing = true; sync(map2, map); syncing = false; } });
   }
 
   function updateSelection() {
-    if (!map || !map.getSource || !map.getSource("sel")) return;
     var a = state.sel;
-    map.getSource("sel").setData({ type: "FeatureCollection", features: a ? [
+    var fc = { type: "FeatureCollection", features: a ? [
       { type: "Feature", geometry: a.geometry, properties: {} },
       { type: "Feature", geometry: { type: "Point", coordinates: [a.lon, a.lat] }, properties: {} }
-    ] : [] });
+    ] : [] };
+    [map, map2].forEach(function (m) { if (m && m.getSource && m.getSource("sel")) m.getSource("sel").setData(fc); });
   }
 
   /* ---------- stratul Hansen: decodăm imaginea și o colorăm după anii aleși ---------- */

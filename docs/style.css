@@ -28,7 +28,12 @@ a { color: var(--accent); text-underline-offset: 2px; }
 .panel { background: var(--surface); border-right: 1px solid var(--line); overflow-y: auto; display: flex; flex-direction: column;
   padding-left: max(18px, env(safe-area-inset-left, 0px)); padding-right: 18px; padding-block: 18px 24px; gap: 4px; }
 .mapwrap { position: relative; min-width: 0; }
-#map { position: absolute; inset: 0; }
+#map, #map2 { position: absolute; inset: 0; }
+.mapwrap.split #map { right: 50%; }
+.mapwrap.split #map2 { left: 50%; border-left: 2px solid #ffffff; }
+.splitbtn { position: absolute; left: 12px; top: 12px; z-index: 3; border: 0; border-radius: 9px; padding: 8px 12px; font-weight: 700; font-size: 0.92rem; cursor: pointer;
+  background: rgba(15, 20, 17, .78); color: #ffffff; box-shadow: 0 2px 8px rgba(0,0,0,.25); }
+.splitbtn[aria-pressed="true"] { background: #ffffff; color: #14201a; }
 
 .brand { display: flex; flex-direction: column; gap: 4px; padding-bottom: 10px; }
 .brand h1 { font: 700 1.9rem/1.1 var(--f-display); margin: 0; letter-spacing: -0.01em; }
@@ -110,7 +115,7 @@ a { color: var(--accent); text-underline-offset: 2px; }
 .prose ol { padding-left: 1.2em; display: flex; flex-direction: column; gap: 4px; }
 .prose strong { color: var(--ink); }
 
-.legend { position: absolute; left: 12px; top: 12px; display: flex; flex-wrap: wrap; gap: 6px 14px; background: rgba(15, 20, 17, .72); color: #ffffff; padding: 7px 11px; border-radius: 9px; font-size: 0.85rem; font-weight: 600; pointer-events: none; }
+.legend { position: absolute; left: 12px; top: 58px; display: flex; flex-wrap: wrap; gap: 6px 14px; background: rgba(15, 20, 17, .72); color: #ffffff; padding: 7px 11px; border-radius: 9px; font-size: 0.85rem; font-weight: 600; pointer-events: none; }
 .legend span { display: inline-flex; align-items: center; gap: 6px; }
 .legend .dot { box-shadow: 0 0 0 2px #ffffff; }
 
@@ -123,5 +128,7 @@ a { color: var(--accent); text-underline-offset: 2px; }
   .mapwrap { grid-row: 1; height: 58vh; }
   .panel { grid-row: 2; border-right: 0; border-top: 1px solid var(--line); overflow: visible; padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-left: max(16px, env(safe-area-inset-left, 0px)); }
   .legend { font-size: 0.8rem; }
+  .mapwrap.split #map { right: 0; bottom: 50%; }
+  .mapwrap.split #map2 { left: 0; top: 50%; border-left: 0; border-top: 2px solid #ffffff; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; scroll-behavior: auto !important; } }

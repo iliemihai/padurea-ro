@@ -27,8 +27,8 @@
       <h2 id="h-per" class="lbl">Perioada</h2>
       <div class="seg" id="periods" role="group" aria-label="Perioada">
         <button type="button" data-days="1">Ultima zi</button>
-        <button type="button" data-days="7" aria-pressed="true">7 zile</button>
-        <button type="button" data-days="30">30 de zile</button>
+        <button type="button" data-days="7">7 zile</button>
+        <button type="button" data-days="30" aria-pressed="true">30 de zile</button>
         <label class="custom"><input type="number" id="ndays" min="1" max="365" value="14" inputmode="numeric" aria-label="Număr de zile"><span>zile</span></label>
       </div>
       <p class="range" id="range"></p>
@@ -38,6 +38,7 @@
 
     <section class="block" aria-labelledby="h-conf">
       <h2 id="h-conf" class="lbl">Cât de sigur e semnalul</h2>
+      <p class="hint">„Scăzută” înseamnă că analistul AI crede că e o alarmă falsă. „De confirmat”: văzută într-o singură imagine.</p>
       <div class="chips" id="conf"></div>
     </section>
 
@@ -51,9 +52,11 @@
     <section class="block" aria-labelledby="h-lay">
       <h2 id="h-lay" class="lbl">Straturi</h2>
       <div class="seg small" id="base" role="group" aria-label="Fundal">
-        <button type="button" data-base="sat" aria-pressed="true">Satelit</button>
+        <button type="button" data-base="sat" aria-pressed="true">Satelit 10 m</button>
+        <button type="button" data-base="hd">Satelit detaliat</button>
         <button type="button" data-base="osm">Hartă</button>
       </div>
+      <label class="tg"><input type="checkbox" id="lyr-split"><span>Harta normală alături, sincronizată</span></label>
       <label class="tg"><input type="checkbox" id="lyr-loss" checked><span>Pădure pierdută, Hansen</span></label>
       <div class="seg small" id="years" role="group" aria-label="Anii pierderilor"></div>
       <div class="ramp"><i id="ramp"></i><span>2001</span><span>2025</span></div>
@@ -80,6 +83,8 @@
   </aside>
   <main class="mapwrap">
     <div id="map" role="region" aria-label="Harta schimbărilor din pădure"></div>
+    <div id="map2" role="region" aria-label="Harta normală, sincronizată" hidden></div>
+    <button type="button" class="splitbtn" id="splitbtn" aria-pressed="false">Harta normală alături</button>
     <div class="legend" id="legend">
       <span><i class="dot hi"></i>încredere ridicată</span>
       <span><i class="dot mid"></i>medie</span>
