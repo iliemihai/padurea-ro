@@ -25,7 +25,8 @@ def run(model_spec, labels):
         if not a:
             continue
         try:
-            r = judge(LAB / b["file"] if b else None, LAB / a["file"], b["date"] if b else "?", a["date"], which, model)
+            r = judge(LAB / b["file"] if b else None, LAB / a["file"], b["date"] if b else "?", a["date"], which, model,
+                      box=tuple(v["box"]) if v.get("box") else None)
         except Exception as exc:
             r = {"categorie": "eroare", "incredere": 0, "motiv": repr(exc)[:120], "secunde": 0, "model": model_spec}
         rows.append({"id": k, "noi": v["eticheta"], **r})

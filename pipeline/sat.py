@@ -86,7 +86,7 @@ def read_grid(href, grid, resampling, target_res=C.RES, nodata=None, dtype="floa
             time.sleep(3 * (attempt + 1))
 
 
-def read_scene(it, grid, pool=None):
+def read_scene(it, grid, pool=None, full=False):
     """Citește SCL, roșu, infraroșu și SWIR pentru o imagine. Întoarce (clar, ndvi, nbr)."""
     from rasterio.enums import Resampling
     from scipy import ndimage
@@ -110,14 +110,17 @@ def read_scene(it, grid, pool=None):
     off = s2_offset(it)
     b04, b08, b12 = arr["b04"], arr["b08"], arr["b12"]
     b02 = arr["b02"]
-    haze = (b02 - off) / 1e4 > C.HAZE_BLUE
-    clear = np.isin(scl, C.SCL_OK) & ~bad & ~haze & (b02 > off) & (b04 > off) & (b08 > off) & (b12 > off)
+    blue = (b02 - off) / 1e4
     red, nir, swir = (b04 - off) / 1e4, (b08 - off) / 1e4, (b12 - off) / 1e4
+    haze = (blue > C.HAZE_BLUE) & (blue >= C.HAZE_BLUE_RED * red)
+    clear = np.isin(scl, C.SCL_OK) & ~bad & ~haze & (b02 > off) & (b04 > off) & (b08 > off) & (b12 > off)
     with np.errstate(all="ignore"):
         ndvi = np.clip((nir - red) / np.maximum(nir + red, 1e-6), -1, 1)
         nbr = np.clip((nir - swir) / np.maximum(nir + swir, 1e-6), -1, 1)
     ndvi[~clear] = np.nan
     nbr[~clear] = np.nan
+    if full:
+        return clear, ndvi.astype("float32"), nbr.astype("float32"), blue.astype("float32"), red.astype("float32")
     return clear, ndvi.astype("float32"), nbr.astype("float32")
 
 

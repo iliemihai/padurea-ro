@@ -7,3 +7,5 @@ data/RO.zip
 __pycache__/
 *.pyc
 .venv/
+.env
+*.key

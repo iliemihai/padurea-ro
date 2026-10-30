@@ -13,6 +13,7 @@ from PIL import Image
 
 from . import config as C
 from .detect import detect_tile
+from .rules import split
 from .judge import backend, judge
 from .sat import client, item_date, log, search
 from .thumbs import thumbs_for
@@ -103,6 +104,8 @@ def main():
             p["key"] = f"{tile}-{i}"
         for i, p in enumerate(rj):
             p["key"] = f"{tile}-r{i}"
+        ps, rr = split(ps)
+        rj += rr
         log(f"  {info.get('status')}: {len(ps)} zone păstrate, {len(rj)} respinse; "
             f"imagini folosite: {info.get('window_scenes')}")
         infos.append(info)
@@ -115,8 +118,9 @@ def main():
     items_by_tile = {t: v["window"] + v["recent"] for t, v in by_tile.items()}
     conf = [p for p in patches if p.get("confirmed")]
     singles = [p for p in patches if not p.get("confirmed")][:C.THUMB_SINGLES]
-    log(f"Imagini înainte/după: {len(conf)} zone confirmate, {len(singles)} neconfirmate, {min(6, len(rejected))} respinse")
-    thumbs_for(conf + singles + rejected[:6], items_by_tile, out_img)
+    rconf = [p for p in rejected if p.get("confirmed")][:40]   # și câteva respinse, ca să verificăm regulile
+    log(f"Imagini înainte/după: {len(conf)} zone confirmate, {len(singles)} neconfirmate, {len(rconf)} respinse (control)")
+    thumbs_for(conf[:C.THUMB_MAX_CONFIRMED] + singles + rconf, items_by_tile, out_img)
 
     which = backend() if a.judge else None
     if which and conf:

@@ -19,13 +19,24 @@ from . import config as C
 from .sat import log
 
 
+def localities_fallback():
+    """Rezervă fără internet: localitățile de peste 1.000 de locuitori din pachetul reverse_geocoder (tot GeoNames)."""
+    try:
+        import csv, os
+        import reverse_geocoder
+        path = os.path.join(os.path.dirname(reverse_geocoder.__file__), "rg_cities1000.csv")
+        return [(r["name"], float(r["lat"]), float(r["lon"]), 1000) for r in csv.DictReader(open(path, encoding="utf-8")) if r["cc"] == "RO"]
+    except Exception:
+        return None
+
+
 def localities():
     """Localitățile din România (GeoNames): nume, lat, lon, populație."""
     f = C.DATA / "geonames_RO.txt"
     if not f.exists():
         z = C.DATA / "RO.zip"
-        if subprocess.run(["curl", "-sfL", "--retry", "3", "-o", str(z), "https://download.geonames.org/export/dump/RO.zip"]).returncode != 0:
-            return None
+        if subprocess.run(["curl", "-sfL", "--retry", "3", "--max-time", "120", "-o", str(z), "https://download.geonames.org/export/dump/RO.zip"]).returncode != 0:
+            return localities_fallback()
         with zipfile.ZipFile(z) as zf:
             f.write_bytes(zf.read("RO.txt"))
     rows = []

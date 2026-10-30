@@ -27,16 +27,24 @@ SCL_OK = (4, 5)
 SCL_BAD = (3, 8, 9, 10)   # umbre de nori, nori, cirrus: le lărgim cu câțiva pixeli
 BAD_DILATE_PX = 3         # 3 × 40 m = 120 m în jurul norilor
 
-# Ce înseamnă „pădure care a dispărut" într-o imagine
+# Ce înseamnă „pădure care a dispărut" într-o imagine. Pragurile sunt LARGI: detectorul trebuie să prindă tot ce
+# ar putea fi o tăiere. Ce se publică decid apoi regulile (rules.py), analistul AI și criticul.
 NDVI_REF_MIN = 0.60       # înainte: pădure verde
 NBR_REF_MIN = 0.30        # și deasă (indicele cu SWIR)
-NDVI_DROP = 0.30          # verdele a scăzut cu cel puțin atât MAI MULT decât în pădurea din jur
-NDVI_NOW_MAX = 0.45       # acum: nu mai arată a pădure
-NBR_DROP = 0.30           # și indicele cu SWIR a scăzut cu atât mai mult decât în jur (sol gol, lemn tăiat, ars)
-NBR_NOW_MAX = 0.20        # acum: sol gol sau ars, nu frunze de toamnă
-HAZE_BLUE = 0.09          # albastru peste atât în pădure = ceață sau nor subțire: nu credem pixelul
+NDVI_DROP = 0.25          # verdele a scăzut cu cel puțin atât mai mult decât în pădurea din jur
+NDVI_NOW_MAX = 0.50       # acum: nu mai arată a pădure
+NBR_DROP = 0.25           # și indicele cu SWIR a scăzut cu atât mai mult decât în jur
+NBR_NOW_MAX = 0.35
+HAZE_BLUE = 0.09          # albastru mare ȘI aproape cât roșul = nor sau ceață (solul gol e mai roșu decât albastru)
+HAZE_BLUE_RED = 0.85
 CONFIRM_DATES = 2         # o zonă e confirmată când se vede schimbată în cel puțin atâtea zile diferite
 THUMB_SINGLES = 20        # imagini și pentru cele mai mari zone încă neconfirmate
+THUMB_MAX_CONFIRMED = 150 # cel mult atâtea zone confirmate cu imagini, pe placă
+
+# Regulile de publicare (rules.py), aplicate pe măsurătorile salvate pentru fiecare zonă
+RULE_NBR_NOW_MAX = 0.25   # după: indicele SWIR al zonei arată sol gol, lemn tăiat sau ars
+RULE_ADJ_NBR_MIN = 0.30   # scăderea SWIR față de pădurea din jur
+RULE_EDGE_MAX = 0.85      # zona nu e doar o fâșie pe marginea pădurii
 
 # Teste contra alarmelor false
 SCENE_MAX_CHANGED = 0.05  # dacă într-o imagine s-a „schimbat" peste 5% din pădure, e ceață sau toamnă: o sărim
@@ -51,7 +59,7 @@ THUMB_PAD_M = 350         # margine în jurul zonei
 THUMB_MAX_PX = 320
 
 # Judecătorul AI
-JUDGE_MAX_PER_GROUP = int(os.environ.get("JUDGE_MAX_PER_GROUP", "25"))
+JUDGE_MAX_PER_GROUP = int(os.environ.get("JUDGE_MAX_PER_GROUP", "150"))
 OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://localhost:11434")
 LOCAL_MODEL = os.environ.get("LOCAL_MODEL", "qwen3.5:4b")
 CLAUDE_MODEL = os.environ.get("CLAUDE_MODEL", "claude-haiku-5-5")

@@ -17,6 +17,8 @@ for f in docs/data/alerts.json docs/data/runs.json; do [ -f "$f" ] && mv "$f" "o
 [ -e data/hansen/Hansen_GFC-2025-v1.13_treecover2000_50N_020E.tif ] || ln -s "$(cd .. && pwd)/data/GFC-2025-v1.13_treecover2000.tif" data/hansen/Hansen_GFC-2025-v1.13_treecover2000_50N_020E.tif
 $PY -m pip install -q pyproj >/dev/null 2>&1
 
+# cheia Claude: din mediu sau din ~/Projects/padurea-ro/.env (fișier privat, nu intră în git)
+if [ -z "$ANTHROPIC_API_KEY" ] && [ -f ../.env ]; then . ../.env; export ANTHROPIC_API_KEY; fi
 AI=0
 if [ -n "$ANTHROPIC_API_KEY" ]; then
   echo "0/3 Verific analistul AI (Claude) pe 2 imagini…"

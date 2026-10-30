@@ -24,7 +24,7 @@ def item(day, cloud=10):
     return SimpleNamespace(id=f"S2_{d}", datetime=dt.datetime(d.year, d.month, d.day, 9), properties={"eo:cloud_cover": cloud}, assets={})
 
 
-def fake_scene(it, grid, pool=None):
+def fake_scene(it, grid, pool=None, full=False):
     day = (it.datetime.date() - D0).days
     ndvi = np.full((N, N), 0.80, np.float32)
     nbr = np.full((N, N), 0.55, np.float32)
@@ -43,6 +43,10 @@ def fake_scene(it, grid, pool=None):
     if day >= 27:                     # o tăiere văzută doar în ultima imagine: încă neconfirmată
         ndvi[30:45, 30:45] = 0.20
         nbr[30:45, 30:45] = 0.00
+    if full:
+        blue = np.full((N, N), 0.03, np.float32)
+        red = np.where(ndvi < 0.5, 0.09, 0.03).astype(np.float32)
+        return clear, ndvi, nbr, blue, red
     return clear, ndvi, nbr
 
 
@@ -53,7 +57,10 @@ def main():
     detect.forest_mask = lambda cat, grid, bb, ly: np.ones((N, N), bool)
     items = {"window": [item(d) for d in (5, 12, 20, 27)], "recent": [item(-30), item(-20)], "lastyear": [item(-365)]}
     info, patches, rejected = detect.detect_tile(None, "34TXX", items, D0, D0 + dt.timedelta(days=29), None, lambda *a: True)
-    print("info:", {k: info[k] for k in ("status", "patches", "rejected", "window_scenes")})
+    print("info:", {k: info.get(k) for k in ("status", "patches", "rejected", "window_scenes")})
+    from pipeline.rules import split
+    patches, rr = split(patches)
+    rejected += rr
     for p in patches:
         print("PĂSTRAT ", p["ha"], "ha", p["first_seen"], "înainte", p["before_date"], "după", p["after_date"], "n_dates", p["n_dates"], "vecini", p["neigh_drop"], p["geometry"]["type"])
     for p in rejected:

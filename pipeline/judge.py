@@ -31,6 +31,11 @@ Decide what really happened in the middle of the image. Pick exactly one categor
 - "neclar": you cannot tell.
 Give "incredere" between 0 and 1 and "motiv": one short sentence in Romanian about what you see."""
 
+BOX_NOTE = """
+The RED RECTANGLE marks the area the detector flagged. Judge only what happened INSIDE the red rectangle, comparing BEFORE with AFTER.
+If the area inside the rectangle already looked bare, open, like a quarry or like fields in BEFORE, it is NOT a new cut:
+pick the category that explains the difference (toamna, agricol, nori or neclar)."""
+
 SCHEMA = {
     "type": "object",
     "properties": {
@@ -49,13 +54,19 @@ def _font(size):
         return ImageFont.load_default()
 
 
-def pair_png(before_path, after_path, d0, d1, min_h=320):
-    """Cele două imagini una lângă alta, cu etichete. Întoarce PNG ca bytes."""
+def pair_png(before_path, after_path, d0, d1, min_h=320, box=None):
+    """Cele două imagini una lângă alta, cu etichete și, dacă știm, zona încadrată cu roșu. Întoarce PNG ca bytes."""
     b = Image.open(after_path).convert("RGB")
     a = Image.open(before_path).convert("RGB") if before_path else Image.new("RGB", b.size, (90, 90, 90))
     h = max(a.height, b.height, min_h)
     a = a.resize((round(a.width * h / a.height), h), Image.LANCZOS)
     b = b.resize((round(b.width * h / b.height), h), Image.LANCZOS)
+    if box:
+        for im in (a, b):
+            x0, y0, x1, y1 = box
+            pad = 4
+            r = [max(0, x0 * im.width - pad), max(0, y0 * im.height - pad), min(im.width - 1, x1 * im.width + pad), min(im.height - 1, y1 * im.height + pad)]
+            ImageDraw.Draw(im).rectangle(r, outline=(255, 0, 0), width=3)
     img = Image.new("RGB", (a.width + 16 + b.width, h + 34), "white")
     img.paste(a, (0, 34))
     img.paste(b, (a.width + 16, 34))
@@ -110,9 +121,9 @@ def _raw(rec):
         pass
 
 
-def ask_local(png, d0, d1, model=None):
+def ask_local(png, d0, d1, model=None, note=""):
     model = model or C.LOCAL_MODEL
-    msg = {"role": "user", "content": PROMPT.format(d0=d0, d1=d1) + "\nAnswer only with a JSON object with the keys categorie, incredere, motiv.",
+    msg = {"role": "user", "content": PROMPT.format(d0=d0, d1=d1) + note + "\nAnswer only with a JSON object with the keys categorie, incredere, motiv.",
            "images": [base64.b64encode(png).decode()]}
     base = {"model": model, "stream": False, "messages": [msg], "options": {"temperature": 0, "num_predict": 400}, "keep_alive": "30m"}
     url, h, last = C.OLLAMA_URL + "/api/chat", {"Content-Type": "application/json"}, ""
@@ -133,11 +144,11 @@ def ask_local(png, d0, d1, model=None):
     raise RuntimeError(last)
 
 
-def ask_claude(png, d0, d1, model=None):
+def ask_claude(png, d0, d1, model=None, note=""):
     model = model or C.CLAUDE_MODEL
     content = [
         {"type": "image", "source": {"type": "base64", "media_type": "image/png", "data": base64.b64encode(png).decode()}},
-        {"type": "text", "text": PROMPT.format(d0=d0, d1=d1) + "\nAnswer only with a JSON object with the keys categorie, incredere, motiv."},
+        {"type": "text", "text": PROMPT.format(d0=d0, d1=d1) + note + "\nAnswer only with a JSON object with the keys categorie, incredere, motiv."},
     ]
     headers = {"Content-Type": "application/json", "x-api-key": os.environ["ANTHROPIC_API_KEY"], "anthropic-version": "2023-06-01"}
     fast = {"thinking": {"type": "disabled"}, "output_config": {"effort": "low"}}
@@ -176,11 +187,11 @@ def backend():
     return None
 
 
-def judge(before_path, after_path, d0, d1, which=None, model=None):
-    png = pair_png(before_path, after_path, d0, d1)
+def judge(before_path, after_path, d0, d1, which=None, model=None, box=None):
+    png = pair_png(before_path, after_path, d0, d1, box=box)
     t0 = time.time()
     which = which or backend()
-    r, used = (ask_claude if which == "claude" else ask_local)(png, d0, d1, model)
+    r, used = (ask_claude if which == "claude" else ask_local)(png, d0, d1, model, BOX_NOTE if box else "")
     r["model"] = used
     r["secunde"] = round(time.time() - t0, 1)
     return r

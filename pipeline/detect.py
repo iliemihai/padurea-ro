@@ -144,22 +144,23 @@ def detect_tile(cat, tile, items, d0, d1, lossyear_path, ro_check):
             return info, [], []
         ref_nd = np.fmin(r_nd, y_nd) if (r_nd is not None and y_nd is not None) else (r_nd if r_nd is not None else y_nd)
         ref_nb = np.fmin(r_nb, y_nb) if (r_nb is not None and y_nb is not None) else (r_nb if r_nb is not None else y_nb)
-        # fără marginea pădurii (40 m): acolo se amestecă cu câmpuri, drumuri, pajiști
-        core = ndimage.binary_erosion(forest, iterations=1)
+        # marginea pădurii (40 m) doar o notăm: acolo se amestecă des cu câmpuri, drumuri, pajiști
+        edge = forest & ~ndimage.binary_erosion(forest, iterations=1)
         with np.errstate(invalid="ignore"):
-            ref_ok = core & (ref_nd > C.NDVI_REF_MIN) & (ref_nb > C.NBR_REF_MIN)
+            ref_ok = forest & (ref_nd > C.NDVI_REF_MIN) & (ref_nb > C.NBR_REF_MIN)
 
         # urmărim fiecare pixel de la o imagine la alta
         first_day = np.full((H, W), -1, np.int16)     # ziua (față de d0) în care s-a văzut prima dată schimbat
         n_change = np.zeros((H, W), np.uint8)
         n_clear_after = np.zeros((H, W), np.uint8)
         neigh_first = np.zeros((H, W), np.float32)    # cât a scăzut pădurea din jur în acea zi
+        feat = {k: np.full((H, W), np.nan, np.float32) for k in ("nd", "nb", "adj_nd", "adj_nb", "blue", "red")}
         scenes = []                                   # (data, clar, schimbat) pentru calculul datelor pe zonă
         used, skipped = [], []
         for it in sorted(items["window"], key=item_date):
             day = item_date(it)
             try:
-                clear, ndvi, nbr = read_scene(it, grid, pool)
+                clear, ndvi, nbr, blue, red = read_scene(it, grid, pool, full=True)
             except Exception as exc:
                 log("    imagine sărită:", it.id, repr(exc)[:100])
                 continue
@@ -187,6 +188,9 @@ def detect_tile(cat, tile, items, d0, d1, lossyear_path, ro_check):
             new = chg & (first_day < 0)
             first_day[new] = k
             neigh_first[new] = nd_map[new]
+            for key, arr in (("nd", ndvi), ("nb", nbr), ("adj_nd", drop - loc_nd), ("adj_nb", drop_nb - loc_nb),
+                             ("blue", blue), ("red", red)):
+                feat[key][new] = arr[new]
             seen_after = ok & (first_day >= 0)
             n_clear_after[seen_after] += 1
             n_change[chg & (first_day >= 0)] += 1
@@ -248,6 +252,8 @@ def detect_tile(cat, tile, items, d0, d1, lossyear_path, ro_check):
             "nbr_ref": round(float(np.nanmean(ref_nb[s][m])), 2),
             "neigh_drop": round(neigh, 2),
             "persist": round(float(np.mean(persist[s][m])), 2),
+            "f": {k: round(float(np.nanmean(v[s][m])), 3) for k, v in feat.items()},
+            "edge_frac": round(float(edge[s][m].mean()), 2),
             "geometry": polygon(m, s, transform, to_ll),
         }
         p["bbox"] = bbox_of(p["geometry"])
