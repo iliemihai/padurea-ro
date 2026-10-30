@@ -110,6 +110,15 @@ def detect_tile(cat, tile, items, d0, d1, lossyear_path, ro_check):
     if n_forest < 2000:
         info["status"] = "prea puțină pădure"
         return info, [], []
+    # citim din imagini doar dreptunghiul în care e pădure (mult mai puțini megabytes)
+    from affine import Affine
+    rr, cc = np.where(forest.any(axis=1))[0], np.where(forest.any(axis=0))[0]
+    r0, r1 = max(0, rr[0] - C.NEIGH_PX), min(H, rr[-1] + 1 + C.NEIGH_PX)
+    c0, c1 = max(0, cc[0] - C.NEIGH_PX), min(W, cc[-1] + 1 + C.NEIGH_PX)
+    transform = transform * Affine.translation(c0, r0)
+    W, H = c1 - c0, r1 - r0
+    grid = (crs, transform, W, H)
+    forest, county = forest[r0:r1, c0:c1], county[r0:r1, c0:c1]
 
     pool = ThreadPoolExecutor(max_workers=6)
     try:

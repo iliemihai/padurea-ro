@@ -18,7 +18,7 @@ PX_HA = RES * RES / 1e4
 WINDOW_DAYS = 30          # căutăm schimbări apărute în ultimele N zile (recalculat zilnic)
 RECENT_DAYS = 75          # referința „recentă": cele N zile dinaintea ferestrei
 LASTYEAR_PAD = 20         # referința „anul trecut": aceeași perioadă de acum un an, ± N zile
-MAX_REF_SCENES = 6        # câte imagini folosim pentru fiecare referință
+MAX_REF_SCENES = 4        # câte imagini folosim pentru fiecare referință
 MAX_SCENE_CLOUD = 85      # sărim imaginile cu mai mult de atâția % nori (după metadate)
 MIN_SCENE_CLEAR = 0.05    # și pe cele în care se vede curat sub 5% din pădurea plăcii
 
