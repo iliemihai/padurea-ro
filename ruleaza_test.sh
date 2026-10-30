@@ -12,6 +12,7 @@ echo "Pregătesc mediul (o dată)…"
 $PY -m pip install -q pyproj || exit 1
 mkdir -p data/hansen out
 [ -e data/hansen/Hansen_GFC-2025-v1.13_lossyear_50N_020E.tif ] || ln -s "$(cd .. && pwd)/data/GFC-2025-v1.13_lossyear.tif" data/hansen/Hansen_GFC-2025-v1.13_lossyear_50N_020E.tif
+[ -e data/hansen/Hansen_GFC-2025-v1.13_treecover2000_50N_020E.tif ] || ln -s "$(cd .. && pwd)/data/GFC-2025-v1.13_treecover2000.tif" data/hansen/Hansen_GFC-2025-v1.13_treecover2000_50N_020E.tif
 rm -f out/group_*.json out/log_*.txt
 
 echo "1/4 Pornesc modelul AI în fundal ($MODEL; îl descarc dacă lipsește)"

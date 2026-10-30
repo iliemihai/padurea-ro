@@ -45,10 +45,23 @@ def forest_mask(cat, grid, lonlat_bbox, lossyear_path):
     from rasterio.enums import Resampling
     from .sat import search
     wc = np.zeros((grid[3], grid[2]), np.uint8)
-    for it in search(cat, "esa-worldcover", lonlat_bbox, "2021-01-01", "2021-12-31"):
-        arr = read_grid(it.assets["map"].href, grid, Resampling.mode, C.RES, 0, "uint8")
-        wc = np.where(wc == 0, arr, wc)
-    trees = wc == 10
+    found = 0
+    try:
+        for it in search(cat, "esa-worldcover", lonlat_bbox, "2021-01-01", "2021-12-31"):
+            asset = it.assets.get("map") or next(a for a in it.assets.values() if a.href.split("?")[0].endswith(".tif"))
+            arr = read_grid(asset.href, grid, Resampling.mode, C.RES, 0, "uint8")
+            wc = np.where(wc == 0, arr, wc)
+            found += 1
+    except Exception as exc:
+        log("    WorldCover n-a mers:", repr(exc)[:120])
+    if found and (wc > 0).mean() > 0.2:
+        trees = wc == 10
+    else:  # rezervă: coronamentul Hansen din 2000 (cel puțin 30%)
+        tc_path = lossyear_path and next(iter(sorted(lossyear_path.parent.glob("*treecover2000*.tif"))), None)
+        if tc_path is None:
+            raise RuntimeError("nu am nici WorldCover, nici Hansen treecover pentru masca de pădure")
+        log("    masca de pădure: Hansen treecover2000 (WorldCover lipsă)")
+        trees = read_grid(str(tc_path), grid, Resampling.average, C.RES, None, "float32") >= 30
     if lossyear_path is not None:
         ly = read_grid(str(lossyear_path), grid, Resampling.max, C.RES, None, "uint8")
         trees &= ~((ly >= 21) & (ly <= 25))
