@@ -1,0 +1,30 @@
+{
+  "despre": "Verificări din alte surse pentru zonele de pe hartă. Completate de oameni sau de agenți, cu sursa. Nu le scrie detectorul.",
+  "actualizat": "2026-10-31",
+  "zone": {
+    "20261012_44786_22842": [
+      {"sursa": "NASA FIRMS", "potrivire": "sigură", "url": "https://currentwildfires.com/en/fire/wildfire-near-sovarna-ro-2026/",
+       "text": "Senzorii de căldură NASA FIRMS au văzut un incendiu de aproximativ 130–150 ha la 44,787 N, 22,842 E, în jurul datelor de 6–9 octombrie 2026. Punctul e la mai puțin de 200 m de zonă."}
+    ],
+    "20261012_44784_22845": [
+      {"sursa": "NASA FIRMS", "potrivire": "sigură", "url": "https://currentwildfires.com/en/fire/wildfire-near-sovarna-ro-2026/",
+       "text": "Senzorii de căldură NASA FIRMS au văzut un incendiu de aproximativ 130–150 ha la 44,787 N, 22,842 E, în jurul datelor de 6–9 octombrie 2026. Punctul e la circa 400 m de zonă."}
+    ],
+    "20261014_44783_22833": [
+      {"sursa": "NASA FIRMS", "potrivire": "sigură", "url": "https://currentwildfires.com/en/fire/wildfire-near-sovarna-ro-2026/",
+       "text": "Senzorii de căldură NASA FIRMS au văzut un incendiu de aproximativ 130–150 ha la 44,787 N, 22,842 E, în jurul datelor de 6–9 octombrie 2026. Punctul e la circa 800 m de zonă."}
+    ],
+    "20261012_44835_22795": [
+      {"sursa": "Actual Mehedinți, 7 octombrie 2026", "potrivire": "sigură", "url": "https://www.actualmehedinti.ro/focus/incendii-de-amploare-in-mehedinti-paduri-si-vegetatie-cuprinse-de-flacari-pe-approape-1-000-de-hectare",
+       "text": "Presa locală scrie de un incendiu de aproximativ 100 ha la Șovarna–Studina, pe 6–7 octombrie 2026. Zona noastră e la Studina și s-a schimbat între 4 și 12 octombrie."}
+    ],
+    "20261012_44859_22761": [
+      {"sursa": "Actual Mehedinți, 7 octombrie 2026", "potrivire": "probabilă", "url": "https://www.actualmehedinti.ro/focus/incendii-de-amploare-in-mehedinti-paduri-si-vegetatie-cuprinse-de-flacari-pe-approape-1-000-de-hectare",
+       "text": "Presa locală scrie de un incendiu de aproximativ 100 ha la Șovarna–Studina, pe 6–7 octombrie 2026. Zona noastră e lângă Șovarna și s-a schimbat între 4 și 12 octombrie."}
+    ],
+    "20261004_44517_22772": [
+      {"sursa": "Actual Mehedinți, 29 septembrie 2026", "potrivire": "probabilă", "url": "https://www.actualmehedinti.ro/eveniment/pompierii-lupta-sa-stinga-doua-incendii-in-ostrovu-corbului-si-simian-flacarile-se-apropie-de-case",
+       "text": "Presa locală scrie de aproximativ 3 ha de vegetație uscată arsă la Ostrovu Corbului, comuna Hinova, pe 29 septembrie 2026. Data și mărimea se potrivesc cu zona noastră (3,2 ha, schimbată între 17 septembrie și 4 octombrie), dar articolul nu dă locul exact."}
+    ]
+  }
+}

@@ -29,7 +29,8 @@ Decide what really happened in the middle of the image. Pick exactly one categor
 - "nori": clouds, haze, smoke or cloud shadow cover the BEFORE or the AFTER image, so it only looks changed.
 - "agricol": farmland, pasture or a meadow (ploughed, mowed or harvested fields), not a forest.
 - "neclar": you cannot tell.
-Give "incredere" between 0 and 1 and "motiv": one short sentence in Romanian about what you see."""
+Give "incredere" between 0 and 1 and "motiv": one short sentence in Romanian about what you see.
+In "motiv", call the images «înainte» and «după» (never BEFORE/AFTER) and say «zona marcată» instead of mentioning a rectangle."""
 
 BOX_NOTE = """
 The RED RECTANGLE marks the area the detector flagged. Judge only what happened INSIDE the red rectangle, comparing BEFORE with AFTER.

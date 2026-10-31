@@ -7,10 +7,9 @@
   var CONF_COLOR = { "ridicată": "#ff4d4f", "medie": "#ffb020", "scăzută": "#9fb1ba", "de confirmat": "#a99cf0" };
   var LUNI = ["ian.", "feb.", "mar.", "apr.", "mai", "iun.", "iul.", "aug.", "sept.", "oct.", "nov.", "dec."];
   var LUNI_L = ["ianuarie", "februarie", "martie", "aprilie", "mai", "iunie", "iulie", "august", "septembrie", "octombrie", "noiembrie", "decembrie"];
-  var AI_TXT = { taiere: "AI: pădure dispărută", incendiu: "AI: zonă arsă", toamna: "AI: frunze de toamnă", nori: "AI: nori sau ceață", agricol: "AI: teren agricol", neclar: "AI: neclar" };
 
   var state = { days: 30, conf: { "ridicată": true, "medie": false, "scăzută": false, "de confirmat": false }, shown: 40, sel: null, years: [21, 25] };
-  var DATA = { alerts: [], data_until: null, generated: null }, RUNS = [], map, hansen = null;
+  var DATA = { alerts: [], data_until: null, generated: null }, RUNS = [], VERIF = {}, map, hansen = null;
 
   /* ---------- unelte ---------- */
   function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
@@ -30,9 +29,11 @@
     getJSON("data/alerts.json").catch(function () { return null; }),
     getJSON("data/runs.json").catch(function () { return []; }),
     getJSON("data/static/hansen.json").catch(function () { return null; }),
-    getJSON("data/static/counties.geojson").catch(function () { return null; })
+    getJSON("data/static/counties.geojson").catch(function () { return null; }),
+    getJSON("data/verificari.json").catch(function () { return null; })
   ]).then(function (res) {
     if (res[0]) DATA = res[0];
+    VERIF = (res[4] && res[4].zone) || {};
     RUNS = res[1] || [];
     initMap(res[2], res[3]);
     initControls();
@@ -46,18 +47,24 @@
   function inPeriod(a) { var s = periodStart(); return s && a.first_seen >= s && a.first_seen <= DATA.data_until; }
   function visible() { return DATA.alerts.filter(function (a) { return inPeriod(a) && state.conf[a.incredere]; }); }
 
+  function daysLabel(n) { return n === 1 ? "ultima zi" : "ultimele " + n + " " + de(n) + "zile"; }
+
+  /* perioada: butoanele și glisorul arată mereu același număr de zile */
+  function setPeriod(n, silent) {
+    state.days = Math.max(1, Math.min(3650, n | 0));
+    Array.prototype.forEach.call(document.querySelectorAll("#periods button"), function (b) { b.setAttribute("aria-pressed", String(+b.dataset.days === state.days)); });
+    var nd = document.getElementById("ndays");
+    nd.value = Math.min(+nd.max, state.days);
+    document.getElementById("ndays-v").textContent = daysLabel(state.days);
+    state.shown = 40;
+    if (!silent) renderAll();
+  }
+
   function initControls() {
-    var per = document.getElementById("periods"), nd = document.getElementById("ndays"), custom = nd.parentNode;
-    function setDays(n, fromInput) {
-      state.days = Math.max(1, Math.min(3650, n | 0));
-      Array.prototype.forEach.call(per.querySelectorAll("button"), function (b) { b.setAttribute("aria-pressed", String(+b.dataset.days === state.days && !fromInput)); });
-      custom.classList.toggle("on", !!fromInput);
-      state.shown = 40;
-      renderAll();
-    }
-    per.addEventListener("click", function (e) { var b = e.target.closest("button"); if (b) setDays(+b.dataset.days, false); });
-    nd.addEventListener("input", function () { if (+nd.value > 0) setDays(+nd.value, true); });
-    nd.addEventListener("focus", function () { if (+nd.value > 0) setDays(+nd.value, true); });
+    var per = document.getElementById("periods"), nd = document.getElementById("ndays");
+    per.addEventListener("click", function (e) { var b = e.target.closest("button"); if (b) setPeriod(+b.dataset.days); });
+    nd.addEventListener("input", function () { setPeriod(+nd.value); });
+    setPeriod(state.days, true);
 
     var cb = document.getElementById("conf");
     CONF.forEach(function (c) {
@@ -172,7 +179,7 @@
       b.appendChild(el("i", "dot " + confCls(a.incredere)));
       b.appendChild(el("span", "t", fmt(a.ha, 1) + " ha · " + (a.localitate ? a.localitate + ", " : "") + (a.county || "")));
       b.appendChild(el("span", "d", ziScurt(a.first_seen)));
-      b.appendChild(el("span", "s", (a.ai ? AI_TXT[a.ai.categorie] || "" : "fără părerea AI") + (a.n_dates >= 2 ? " · văzută în " + a.n_dates + " imagini" : " · o singură imagine")));
+      b.appendChild(el("span", "s", headline(a).t + (VERIF[a.id] ? " · verificat și din alte surse" : "") + (a.n_dates >= 2 ? " · văzută în " + a.n_dates + " imagini" : " · o singură imagine")));
       b.addEventListener("click", function () { select(a, true); });
       li.appendChild(b); ol.appendChild(li);
     });
@@ -187,12 +194,7 @@
   function selectById(id, fly) {
     var a = DATA.alerts.find(function (x) { return x.id === id; });
     if (!a) return;
-    if (!inPeriod(a)) {
-      state.days = Math.max(1, Math.round((pd(DATA.data_until) - pd(a.first_seen)) / 864e5) + 1);
-      document.getElementById("ndays").value = state.days;
-      document.getElementById("ndays").parentNode.classList.add("on");
-      Array.prototype.forEach.call(document.querySelectorAll("#periods button"), function (b) { b.setAttribute("aria-pressed", "false"); });
-    }
+    if (!inPeriod(a)) setPeriod(Math.max(1, Math.round((pd(DATA.data_until) - pd(a.first_seen)) / 864e5) + 1), true);
     if (!state.conf[a.incredere]) { state.conf[a.incredere] = true; var c = document.querySelector('#conf .chip[data-conf="' + a.incredere + '"]'); if (c) c.setAttribute("aria-pressed", "true"); }
     renderAll();
     select(a, fly);
@@ -210,11 +212,13 @@
     d.appendChild(back);
     var bd = el("div", "badges");
     var c1 = el("span", "badge"); c1.appendChild(el("i", "dot " + confCls(a.incredere))); c1.appendChild(document.createTextNode(a.incredere === "de confirmat" ? "de confirmat" : "încredere " + a.incredere)); bd.appendChild(c1);
-    if (a.ai) bd.appendChild(el("span", "badge", (AI_TXT[a.ai.categorie] || "AI") + " (" + fmt(a.ai.incredere * 100) + "%)"));
+    if (VERIF[a.id]) bd.appendChild(el("span", "badge ok", "verificat și din alte surse"));
     if (a.vant) bd.appendChild(el("span", "badge", "vânt puternic"));
     d.appendChild(bd);
+    d.appendChild(kindBlock(a));
     d.appendChild(el("h3", null, fmt(a.ha, 1) + " ha" + (a.localitate ? " lângă " + a.localitate : "") + (a.county ? ", județul " + a.county : "")));
-    d.appendChild(compare(a));
+    d.appendChild(compare(a, false));
+    if (VERIF[a.id]) d.appendChild(verifBlock(VERIF[a.id]));
     d.appendChild(el("p", null, a.text || ""));
     var ev = el("ul", "ev"); (a.dovezi || []).forEach(function (x) { ev.appendChild(el("li", null, x)); });
     d.appendChild(el("p", "lbl", "De ce acest nivel de încredere"));
@@ -229,6 +233,7 @@
     if (a.ai) row("Model AI", a.ai.model || "");
     row("Coordonate", fmt(a.lat, 5) + ", " + fmt(a.lon, 5));
     d.appendChild(kv);
+    d.appendChild(copyButton(a));
     var act = el("div", "actions");
     function link(t, h) { var x = el("a", null, t); x.href = h; x.target = "_blank"; x.rel = "noopener"; act.appendChild(x); }
     link("Google Maps (satelit)", "https://www.google.com/maps/@?api=1&map_action=map&center=" + a.lat + "," + a.lon + "&zoom=16&basemap=satellite");
@@ -236,6 +241,7 @@
     link("Raportează o greșeală", REPO + "/issues/new?title=" + encodeURIComponent("Alerta " + a.id) + "&body=" + encodeURIComponent("Ce e greșit la alerta " + a.id + "?\n\n" + location.href));
     d.appendChild(act);
     d.appendChild(el("p", "mono", a.id));
+    if (fly) d.scrollIntoView({ behavior: REDUCED ? "auto" : "smooth", block: "start" });
     if (fly && map) {
       var b = a.bbox;
       map.fitBounds([[b[0], b[1]], [b[2], b[3]]], { padding: 120, maxZoom: 14.5, duration: 900 });
@@ -251,37 +257,203 @@
     updateSelection();
   }
 
-  function compare(a) {
-    var wrap = el("div");
-    var b = a.img_before, f = a.img_after;
-    if (!f) { wrap.appendChild(el("p", "hint", "Nu avem încă o imagine curată a zonei.")); return wrap; }
-    var box = el("div", "compare");
-    var i1 = el("img"), i2 = el("img", "after");
-    i2.src = "img/" + f.file; i2.alt = "După, " + zi(f.date);
-    if (b) { i1.src = "img/" + b.file; i1.alt = "Înainte, " + zi(b.date); box.appendChild(i1); }
-    box.appendChild(i2);
-    if (!b) i2.style.clipPath = "none";
-    i2.addEventListener("load", function () { box.style.aspectRatio = i2.naturalWidth + " / " + i2.naturalHeight; });
-    if (a.chip_bbox && a.bbox) {
-      var cb = a.chip_bbox, ab = a.bbox, w = cb[2] - cb[0], h = cb[3] - cb[1];
-      var r = el("div", "box");
-      r.style.left = (100 * (ab[0] - cb[0]) / w) + "%"; r.style.width = (100 * (ab[2] - ab[0]) / w) + "%";
-      r.style.top = (100 * (cb[3] - ab[3]) / h) + "%"; r.style.height = (100 * (ab[3] - ab[1]) / h) + "%";
-      box.appendChild(r);
-    }
-    if (b) {
-      var bar = el("div", "bar"); box.appendChild(bar);
-      box.appendChild(el("span", "cap l", "înainte · " + ziScurt(b.date)));
-      box.appendChild(el("span", "cap r", "după · " + ziScurt(f.date)));
-      var rg = el("input"); rg.type = "range"; rg.min = 0; rg.max = 100; rg.value = 50; rg.setAttribute("aria-label", "Compară înainte și după");
-      rg.addEventListener("input", function () { i2.style.clipPath = "inset(0 0 0 " + rg.value + "%)"; bar.style.left = rg.value + "%"; });
-      box.appendChild(rg);
-    } else {
-      box.appendChild(el("span", "cap r", "după · " + ziScurt(f.date)));
-    }
-    wrap.appendChild(box);
-    wrap.appendChild(el("p", "hint", b ? "Trage peste imagine ca să compari. Conturul punctat e zona găsită." : "Nu avem o imagine curată de dinainte."));
+  /* ---------- ce pare, în cuvinte simple ---------- */
+  var KIND = {
+    incendiu: ["Pare o zonă arsă", "fire"],
+    taiere: ["Pare pădure tăiată sau sol gol nou", "cut"],
+    toamna: ["Pare doar culoarea de toamnă", "leaf"],
+    nori: ["Pare nori sau ceață", "cloud"],
+    agricol: ["Pare teren agricol", "field"],
+    neclar: ["Schimbare neclară", "q"]
+  };
+  var ICON = {
+    fire: '<path d="M12 3c1 3 4.5 4.8 4.5 9.5a4.5 4.5 0 0 1-9 0c0-2.3 1.2-3.6 2.2-4.6 0 2 .9 3.1 2 3.1.3-2.6-.8-4.8.3-8z"/>',
+    cut: '<path d="M4.5 19.5 14 10"/><path d="M12.5 4.5 19.5 11.5 16.5 12.5 11.5 7.5z"/>',
+    leaf: '<path d="M5 19c0-8 6-14 14-14 0 8-6 14-14 14z"/><path d="M5 19l8-8"/>',
+    cloud: '<path d="M7 18h10a4 4 0 0 0 0-8 6 6 0 0 0-11.5 1.5A3.5 3.5 0 0 0 7 18z"/>',
+    field: '<path d="M3 18h18M5 14h14M7 10h10"/>',
+    q: '<circle cx="12" cy="12" r="9"/><path d="M12 16.5v.5M9.5 9.5a2.5 2.5 0 1 1 3.6 2.2c-.7.4-1.1.9-1.1 1.8"/>'
+  };
+  function headline(a) {
+    var v = a.vis && a.vis.verdict;
+    if (v === "deschisa") return { t: "Zona era deja deschisă înainte", k: "q", src: "verificarea pe poze" };
+    if (v === "nevazut") return { t: "În poze nu se vede o schimbare clară", k: "q", src: "verificarea pe poze" };
+    var c = a.ai && KIND[a.ai.categorie];
+    if (c) return { t: c[0], k: c[1], src: "părerea analistului AI" };
+    return { t: "Schimbare de verificat", k: "q", src: "" };
+  }
+  function kindBlock(a) {
+    var h = headline(a), box = el("div", "kind k-" + h.k);
+    var ic = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    ic.setAttribute("viewBox", "0 0 24 24"); ic.setAttribute("aria-hidden", "true"); ic.innerHTML = ICON[h.k];
+    box.appendChild(ic);
+    var t = el("div"); t.appendChild(el("b", null, h.t)); if (h.src) t.appendChild(el("span", null, h.src));
+    box.appendChild(t);
+    return box;
+  }
+
+  /* ---------- verificări din alte surse (data/verificari.json) ---------- */
+  function verifBlock(items) {
+    var box = el("div", "verif");
+    box.appendChild(el("p", "lbl", "Verificat și din alte surse"));
+    items.forEach(function (v) {
+      var it = el("div", "vitem");
+      var head = el("p"); head.appendChild(el("b", null, v.sursa));
+      head.appendChild(el("span", "vfit " + (v.potrivire === "sigură" ? "sure" : "maybe"), v.potrivire === "sigură" ? "se potrivește" : "se potrivește probabil"));
+      it.appendChild(head);
+      it.appendChild(el("p", null, v.text));
+      if (v.url) { var a = el("a", null, "Vezi sursa"); a.href = v.url; a.target = "_blank"; a.rel = "noopener"; it.appendChild(a); }
+      box.appendChild(it);
+    });
+    return box;
+  }
+
+  /* ---------- fișa pentru jurnaliști ---------- */
+  function sheet(a) {
+    var h = headline(a), abs = function (f) { return new URL("img/" + f, location.href).href; }, L = [];
+    L.push("Pădurea RO: schimbare în pădure, de verificat");
+    L.push("Loc: " + (a.localitate ? "lângă " + a.localitate + ", " : "") + (a.county ? "județul " + a.county : "") + " (" + a.lat + ", " + a.lon + ")");
+    L.push("Suprafață: aproximativ " + fmt(a.ha, 1) + " ha");
+    L.push("Când: intactă pe " + zi(a.before_date, true) + ", văzută schimbată pe " + zi(a.first_seen, true) + ", ultima imagine pe " + zi(a.after_date, true));
+    L.push("Ce pare: " + h.t + (h.src ? " (" + h.src + ")" : ""));
+    if (a.ai && a.ai.motiv) L.push("Analistul AI: " + a.ai.motiv);
+    L.push("Încredere: " + a.incredere + (a.dovezi && a.dovezi.length ? " (" + a.dovezi.join("; ") + ")" : ""));
+    if (a.img_before) L.push("Imagine înainte, " + zi(a.img_before.date, true) + ": " + abs(a.img_before.file));
+    if (a.img_after) L.push("Imagine după, " + zi(a.img_after.date, true) + ": " + abs(a.img_after.file));
+    L.push("Google Maps, satelit: https://www.google.com/maps/@?api=1&map_action=map&center=" + a.lat + "," + a.lon + "&zoom=16&basemap=satellite");
+    (VERIF[a.id] || []).forEach(function (v) { L.push("Verificat și în: " + v.sursa + " (" + v.potrivire + "): " + v.text + (v.url ? " " + v.url : "")); });
+    L.push("Fișa pe hartă: " + location.href.split("#")[0] + "#a=" + a.id);
+    L.push("Autorizații și transporturi de lemn: se pot căuta în aplicația Inspectorul Pădurii.");
+    L.push("Notă: imagini Copernicus Sentinel-2. Nu spunem că e ilegal. E o schimbare văzută din satelit care merită verificată.");
+    return L.join("\n");
+  }
+  function copyButton(a) {
+    var wrap = el("div", "copywrap"), cp = el("button", "copy", "Copiază fișa pentru jurnaliști"); cp.type = "button";
+    wrap.appendChild(cp);
+    cp.addEventListener("click", function () {
+      var txt = sheet(a);
+      function ok() { cp.textContent = "Copiată. Lipește-o într-un e-mail."; setTimeout(function () { cp.textContent = "Copiază fișa pentru jurnaliști"; }, 2500); }
+      function fallback() { var old = wrap.querySelector("textarea"); if (old) old.remove(); var ta = el("textarea", "copybox"); ta.value = txt; ta.readOnly = true; ta.rows = 8; wrap.appendChild(ta); ta.select(); }
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(ok, fallback); else fallback();
+    });
     return wrap;
+  }
+
+  /* ---------- înainte și după: clipește, glisează sau una lângă alta ---------- */
+  var REDUCED = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  function outline(a) {
+    if (!a.chip_bbox || !a.geometry) return null;
+    var NS = "http://www.w3.org/2000/svg", cb = a.chip_bbox, w = cb[2] - cb[0], h = cb[3] - cb[1], d = "";
+    var polys = a.geometry.type === "MultiPolygon" ? a.geometry.coordinates : [a.geometry.coordinates];
+    polys.forEach(function (poly) {
+      poly.forEach(function (ring) {
+        ring.forEach(function (c, i) { d += (i ? "L" : "M") + (1000 * (c[0] - cb[0]) / w).toFixed(1) + " " + (1000 * (cb[3] - c[1]) / h).toFixed(1); });
+        d += "Z";
+      });
+    });
+    var svg = document.createElementNS(NS, "svg");
+    svg.setAttribute("viewBox", "0 0 1000 1000"); svg.setAttribute("preserveAspectRatio", "none"); svg.setAttribute("class", "outline"); svg.setAttribute("aria-hidden", "true");
+    ["halo", "line"].forEach(function (c) { var p = document.createElementNS(NS, "path"); p.setAttribute("d", d); p.setAttribute("class", c); svg.appendChild(p); });
+    return svg;
+  }
+  function compare(a, big) {
+    var wrap = el("div", "cmp" + (big ? " big" : "")), b = a.img_before, f = a.img_after;
+    if (!f) { wrap.appendChild(el("p", "hint", "Nu avem încă o imagine curată a zonei.")); return wrap; }
+    var mode = b ? (REDUCED ? "swipe" : "blink") : "after", showLine = true;
+    var top = el("div", "cmp-top"), seg = el("div", "seg small"), stage = el("div", "cmp-stage"), hint = el("p", "hint");
+    seg.setAttribute("role", "group"); seg.setAttribute("aria-label", "Cum compari pozele");
+    if (b) [["blink", "Clipește"], ["swipe", "Glisează"], ["side", "Una lângă alta"]].forEach(function (m) {
+      var x = el("button", null, m[1]); x.type = "button"; x.dataset.mode = m[0]; seg.appendChild(x);
+    });
+    top.appendChild(seg);
+    var ln = el("button", "mini", "Contur"); ln.type = "button"; ln.setAttribute("aria-pressed", "true"); top.appendChild(ln);
+    if (!big) { var zm = el("button", "mini", "Mărește"); zm.type = "button"; zm.addEventListener("click", function () { openModal(a); }); top.appendChild(zm); }
+    wrap.appendChild(top); wrap.appendChild(stage); wrap.appendChild(hint);
+
+    function pic(info, cls, alt) { var i = el("img", cls); i.src = "img/" + info.file; i.alt = alt; return i; }
+    function frame(main) {
+      var box = el("div", "compare");
+      main.addEventListener("load", function () { box.style.aspectRatio = main.naturalWidth + " / " + main.naturalHeight; });
+      return box;
+    }
+    function addLine(box) { var o = showLine && outline(a); if (o) box.appendChild(o); }
+    function render() {
+      stage.replaceChildren();
+      Array.prototype.forEach.call(seg.children, function (x) { x.setAttribute("aria-pressed", String(x.dataset.mode === mode)); });
+      if (mode === "side") {
+        var g = el("div", "side");
+        [[b, "înainte"], [f, "după"]].forEach(function (p) {
+          var fig = el("figure"), i = pic(p[0], null, p[1] + ", " + zi(p[0].date)), box = frame(i);
+          box.appendChild(i); addLine(box); fig.appendChild(box);
+          fig.appendChild(el("figcaption", null, p[1] + " · " + zi(p[0].date, true))); g.appendChild(fig);
+        });
+        stage.appendChild(g);
+        hint.textContent = "Stânga: înainte. Dreapta: după. Conturul galben e zona găsită.";
+        return;
+      }
+      var i2 = pic(f, "after", "După, " + zi(f.date)), box = frame(i2);
+      if (mode === "after") {
+        i2.style.clipPath = "none"; box.appendChild(i2); addLine(box);
+        box.appendChild(el("span", "cap r", "după · " + ziScurt(f.date)));
+        hint.textContent = "Nu avem o imagine curată de dinainte.";
+        stage.appendChild(box);
+        return;
+      }
+      box.appendChild(pic(b, null, "Înainte, " + zi(b.date))); box.appendChild(i2); addLine(box);
+      if (mode === "swipe") {
+        var bar = el("div", "bar"); box.appendChild(bar);
+        box.appendChild(el("span", "cap l", "înainte · " + ziScurt(b.date)));
+        box.appendChild(el("span", "cap r", "după · " + ziScurt(f.date)));
+        var rg = el("input"); rg.type = "range"; rg.min = 0; rg.max = 100; rg.value = 50; rg.setAttribute("aria-label", "Compară înainte și după");
+        rg.addEventListener("input", function () { i2.style.clipPath = "inset(0 0 0 " + rg.value + "%)"; bar.style.left = rg.value + "%"; });
+        box.appendChild(rg);
+        hint.textContent = "Trage peste imagine: stânga e înainte, dreapta e după. Conturul galben e zona găsită.";
+      } else {
+        i2.style.clipPath = "none";
+        var cap = el("span", "cap blink"), on = true, paused = false;
+        box.appendChild(cap);
+        var tick = function () {
+          on = !on; i2.style.opacity = on ? "1" : "0";
+          cap.textContent = (on ? "DUPĂ · " + ziScurt(f.date) : "ÎNAINTE · " + ziScurt(b.date)) + (paused ? " · oprit" : "");
+          cap.classList.toggle("on", on);
+        };
+        tick();
+        var t = setInterval(function () { if (!document.body.contains(box)) { clearInterval(t); return; } if (!paused) tick(); }, 1000);
+        box.classList.add("clickable");
+        box.addEventListener("click", function () { paused = !paused; on = !on; tick(); });
+        hint.textContent = "Poza trece singură de la înainte la după, o dată pe secundă. Apasă pe ea ca s-o oprești. Conturul galben e zona găsită.";
+      }
+      stage.appendChild(box);
+    }
+    seg.addEventListener("click", function (e) { var x = e.target.closest("button"); if (x) { mode = x.dataset.mode; render(); } });
+    ln.addEventListener("click", function () { showLine = !showLine; ln.setAttribute("aria-pressed", String(showLine)); render(); });
+    render();
+    return wrap;
+  }
+
+  /* ---------- poza mare ---------- */
+  var lastFocus = null;
+  function openModal(a) {
+    var m = document.getElementById("modal");
+    if (!m) {
+      m = el("div", "modal"); m.id = "modal"; m.setAttribute("role", "dialog"); m.setAttribute("aria-modal", "true"); m.setAttribute("aria-label", "Poza mare, înainte și după");
+      document.body.appendChild(m);
+      m.addEventListener("click", function (e) { if (e.target === m) closeModal(); });
+      document.addEventListener("keydown", function (e) { if (e.key === "Escape" && !m.hidden) closeModal(); });
+    }
+    lastFocus = document.activeElement;
+    m.replaceChildren();
+    var card = el("div", "modal-card"), top = el("div", "modal-top"), h = headline(a);
+    top.appendChild(el("h3", null, h.t + " · " + fmt(a.ha, 1) + " ha" + (a.localitate ? " lângă " + a.localitate : "") + (a.county ? ", " + a.county : "")));
+    var x = el("button", "mini", "Închide"); x.type = "button"; x.addEventListener("click", closeModal); top.appendChild(x);
+    card.appendChild(top); card.appendChild(compare(a, true)); m.appendChild(card);
+    m.hidden = false; document.body.classList.add("noscroll"); x.focus();
+  }
+  function closeModal() {
+    var m = document.getElementById("modal");
+    if (m) { m.hidden = true; m.replaceChildren(); }
+    document.body.classList.remove("noscroll");
+    if (lastFocus && lastFocus.focus) lastFocus.focus();
   }
 
   /* ---------- harta ---------- */

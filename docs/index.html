@@ -29,9 +29,14 @@
         <button type="button" data-days="1">Ultima zi</button>
         <button type="button" data-days="7">7 zile</button>
         <button type="button" data-days="30" aria-pressed="true">30 de zile</button>
-        <label class="custom"><input type="number" id="ndays" min="1" max="365" value="14" inputmode="numeric" aria-label="Număr de zile"><span>zile</span></label>
+        <button type="button" data-days="90">90 de zile</button>
       </div>
+      <label class="slider" for="ndays">
+        <span>Sau alege câte zile în urmă: <b id="ndays-v">ultimele 30 de zile</b></span>
+        <input type="range" id="ndays" min="1" max="180" step="1" value="30">
+      </label>
       <p class="range" id="range"></p>
+      <p class="hint">Satelitul trece peste fiecare loc cam la 3 zile și norii ascund multe dintre ele, așa că „Ultima zi” e des goală.</p>
       <div class="stats" id="stats"></div>
       <div class="spark" id="spark" role="img"></div>
     </section>
@@ -75,7 +80,7 @@
           <li><strong>Criticul</strong> pune dovezile cap la cap și dă un nivel de încredere.</li>
           <li><strong>Redactorul</strong> scrie fișa, în cuvinte neutre.</li>
         </ol>
-        <p><strong>Ce nu știm:</strong> dacă o tăiere e autorizată. Autorizațiile nu sunt publice, așa că nu spunem niciodată „ilegal”. Arătăm doar ce s-a schimbat și când, cu imaginile, ca oricine să poată verifica.</p>
+        <p><strong>Ce nu verificăm:</strong> dacă o tăiere e autorizată. Unele informații despre exploatări și transporturi de lemn se pot căuta în aplicația Inspectorul Pădurii. Noi nu spunem niciodată „ilegal”: arătăm doar ce s-a schimbat și când, cu imaginile, ca oricine să poată verifica. Pe fiecare zonă e un buton care copiază fișa pentru jurnaliști.</p>
         <p><strong>Limite:</strong> norii ascund pădurea uneori zile întregi. Iarna, fără frunze, vedem mai ales pădurile de rășinoase. Nu vedem zone mai mici de 1 ha și nici tăierile de sub coronament. AI-ul greșește și el.</p>
         <p><strong>Date:</strong> imagini Copernicus Sentinel-2 (ESA), prin Microsoft Planetary Computer · ESA WorldCover 2021 · Hansen et al. Global Forest Change 2025 (Universitatea Maryland) · GeoNames · Open-Meteo · fundal: Sentinel-2 cloudless de EOX, © OpenStreetMap, CARTO.</p>
         <p><a href="https://github.com/iliemihai/padurea-ro" target="_blank" rel="noopener">Codul e public pe GitHub</a>. Dacă vezi o greșeală, deschide un issue.</p>
