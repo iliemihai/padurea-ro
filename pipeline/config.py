@@ -46,6 +46,11 @@ RULE_NBR_NOW_MAX = 0.25   # după: indicele SWIR al zonei arată sol gol, lemn t
 RULE_ADJ_NBR_MIN = 0.30   # scăderea SWIR față de pădurea din jur
 RULE_EDGE_MAX = 0.85      # zona nu e doar o fâșie pe marginea pădurii
 
+# NASA FIRMS (firms.py): focuri văzute în infraroșu de sateliți
+FIRMS_BUFFER_M = 750      # cât de departe de zonă poate fi un punct de foc (pixelul VIIRS are ~375 m)
+FIRMS_AFTER_DAYS = 3      # căutăm foc până la atâtea zile după ce zona s-a văzut schimbată
+FIRMS_KEEP_DAYS = 180     # câte zile de puncte de foc ținem pe hartă
+
 # Verificarea pe poze (vischeck.py): zona comparată cu un inel de 40–200 m în jurul ei, pe pozele înainte/după (0–255)
 VIS_OPEN_MAX = 22         # înainte: zona mai luminoasă decât împrejurimile cu peste atât = era deja deschisă
 VIS_EXCESS_MIN = 20       # cât trebuie să se schimbe culoarea zonei peste schimbarea din jur…

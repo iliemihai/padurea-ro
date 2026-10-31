@@ -29,6 +29,11 @@ def score(a):
         s += 1; why.append("peste 3 ha")
     if a.get("neigh_drop", 1) < 0.05:
         s += 1; why.append("pădurea din jur e neschimbată")
+    fi = a.get("firms") or {}
+    if fi.get("n"):
+        s += 2
+        cand = fi["prima"] if fi["prima"] == fi["ultima"] else f"{fi['prima']} – {fi['ultima']}"
+        why.append(f"sateliții NASA (FIRMS) au văzut foc la {fi['dist_m']} m de zonă, pe {cand}")
     gap = _days(a.get("before_date"), a.get("first_seen"))
     if gap is not None and gap > GAP_MAX:
         s -= 1; why.append(f"ultima imagine cu zona intactă e cu {gap} de zile înainte; poate fi și o schimbare de sezon")

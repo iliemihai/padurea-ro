@@ -9,7 +9,7 @@
   var LUNI_L = ["ianuarie", "februarie", "martie", "aprilie", "mai", "iunie", "iulie", "august", "septembrie", "octombrie", "noiembrie", "decembrie"];
 
   var state = { days: 30, conf: { "ridicată": true, "medie": false, "scăzută": false, "de confirmat": false }, shown: 40, sel: null, years: [21, 25] };
-  var DATA = { alerts: [], data_until: null, generated: null }, RUNS = [], VERIF = {}, map, hansen = null;
+  var DATA = { alerts: [], data_until: null, generated: null }, RUNS = [], VERIF = {}, FIRMS_FC = null, map, hansen = null;
 
   /* ---------- unelte ---------- */
   function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
@@ -30,8 +30,10 @@
     getJSON("data/runs.json").catch(function () { return []; }),
     getJSON("data/static/hansen.json").catch(function () { return null; }),
     getJSON("data/static/counties.geojson").catch(function () { return null; }),
-    getJSON("data/verificari.json").catch(function () { return null; })
+    getJSON("data/verificari.json").catch(function () { return null; }),
+    getJSON("data/firms.geojson").catch(function () { return null; })
   ]).then(function (res) {
+    FIRMS_FC = res[5] || { type: "FeatureCollection", features: [] };
     if (res[0]) DATA = res[0];
     VERIF = (res[4] && res[4].zone) || {};
     RUNS = res[1] || [];
@@ -40,6 +42,10 @@
     renderAll();
     var m = location.hash.match(/a=([\w-]+)/);
     if (m) selectById(m[1], true);
+    window.addEventListener("hashchange", function () {
+      var h = location.hash.match(/a=([\w-]+)/);
+      if (h && (!state.sel || state.sel.id !== h[1])) selectById(h[1], true);
+    });
   });
 
   /* ---------- perioada și filtrele ---------- */
@@ -179,7 +185,7 @@
       b.appendChild(el("i", "dot " + confCls(a.incredere)));
       b.appendChild(el("span", "t", fmt(a.ha, 1) + " ha · " + (a.localitate ? a.localitate + ", " : "") + (a.county || "")));
       b.appendChild(el("span", "d", ziScurt(a.first_seen)));
-      b.appendChild(el("span", "s", headline(a).t + (VERIF[a.id] ? " · verificat și din alte surse" : "") + (a.n_dates >= 2 ? " · văzută în " + a.n_dates + " imagini" : " · o singură imagine")));
+      b.appendChild(el("span", "s", headline(a).t + (isVerified(a) ? " · verificat și din alte surse" : "") + (a.n_dates >= 2 ? " · văzută în " + a.n_dates + " imagini" : " · o singură imagine")));
       b.addEventListener("click", function () { select(a, true); });
       li.appendChild(b); ol.appendChild(li);
     });
@@ -212,13 +218,13 @@
     d.appendChild(back);
     var bd = el("div", "badges");
     var c1 = el("span", "badge"); c1.appendChild(el("i", "dot " + confCls(a.incredere))); c1.appendChild(document.createTextNode(a.incredere === "de confirmat" ? "de confirmat" : "încredere " + a.incredere)); bd.appendChild(c1);
-    if (VERIF[a.id]) bd.appendChild(el("span", "badge ok", "verificat și din alte surse"));
+    if (isVerified(a)) bd.appendChild(el("span", "badge ok", "verificat și din alte surse"));
     if (a.vant) bd.appendChild(el("span", "badge", "vânt puternic"));
     d.appendChild(bd);
     d.appendChild(kindBlock(a));
     d.appendChild(el("h3", null, fmt(a.ha, 1) + " ha" + (a.localitate ? " lângă " + a.localitate : "") + (a.county ? ", județul " + a.county : "")));
     d.appendChild(compare(a, false));
-    if (VERIF[a.id]) d.appendChild(verifBlock(VERIF[a.id]));
+    var vi = verifItems(a); if (vi.length) d.appendChild(verifBlock(vi));
     d.appendChild(el("p", null, a.text || ""));
     var ev = el("ul", "ev"); (a.dovezi || []).forEach(function (x) { ev.appendChild(el("li", null, x)); });
     d.appendChild(el("p", "lbl", "De ce acest nivel de încredere"));
@@ -276,6 +282,7 @@
   };
   function headline(a) {
     var v = a.vis && a.vis.verdict;
+    if (a.firms && a.firms.n) return { t: "Incendiu văzut de sateliții NASA", k: "fire", src: "NASA FIRMS" + (v === "deschisa" ? " · zona era deja deschisă înainte, nu pădure" : "") };
     if (v === "deschisa") return { t: "Zona era deja deschisă înainte", k: "q", src: "verificarea pe poze" };
     if (v === "nevazut") return { t: "În poze nu se vede o schimbare clară", k: "q", src: "verificarea pe poze" };
     var c = a.ai && KIND[a.ai.categorie];
@@ -292,17 +299,29 @@
     return box;
   }
 
-  /* ---------- verificări din alte surse (data/verificari.json) ---------- */
+  /* ---------- verificări din alte surse: NASA FIRMS (automat) și data/verificari.json (oameni) ---------- */
+  function rangeTxt(x, y) { return x === y ? "pe " + zi(x, true) : "între " + zi(x, true) + " și " + zi(y, true); }
+  function verifItems(a) {
+    var out = [], fi = a.firms;
+    if (fi && fi.n) out.push({ sursa: "NASA FIRMS, senzori în infraroșu", potrivire: "sigură", url: "https://firms.modaps.eosdis.nasa.gov/map/",
+      text: "Sateliții NASA au văzut " + fi.n + (fi.n === 1 ? " punct" : " " + de(fi.n) + "puncte") + " de foc la cel mult " + fmt(fi.dist_m) + " m de zonă, " + rangeTxt(fi.prima, fi.ultima) + (fi.surse ? " (" + fi.surse.join(", ") + ")" : "") + "." });
+    else if (fi) out.push({ sursa: "NASA FIRMS, senzori în infraroșu", potrivire: "nimic",
+      text: "Sateliții NASA n-au văzut foc la sub 750 m de zonă " + rangeTxt(fi.de_la, fi.pana_la) + ". Focurile mici sau ascunse de nori pot scăpa." });
+    return out.concat(VERIF[a.id] || []);
+  }
+  function isVerified(a) { return verifItems(a).some(function (v) { return v.potrivire !== "nimic"; }); }
   function verifBlock(items) {
     var box = el("div", "verif");
     box.appendChild(el("p", "lbl", "Verificat și din alte surse"));
     items.forEach(function (v) {
       var it = el("div", "vitem");
       var head = el("p"); head.appendChild(el("b", null, v.sursa));
-      head.appendChild(el("span", "vfit " + (v.potrivire === "sigură" ? "sure" : "maybe"), v.potrivire === "sigură" ? "se potrivește" : "se potrivește probabil"));
+      head.appendChild(el("span", "vfit " + (v.potrivire === "sigură" ? "sure" : v.potrivire === "nimic" ? "none" : "maybe"),
+        v.potrivire === "sigură" ? "se potrivește" : v.potrivire === "nimic" ? "n-a văzut foc" : "se potrivește probabil"));
       it.appendChild(head);
       it.appendChild(el("p", null, v.text));
       if (v.url) { var a = el("a", null, "Vezi sursa"); a.href = v.url; a.target = "_blank"; a.rel = "noopener"; it.appendChild(a); }
+      if (v.potrivire === "nimic") it.classList.add("quiet");
       box.appendChild(it);
     });
     return box;
@@ -321,7 +340,7 @@
     if (a.img_before) L.push("Imagine înainte, " + zi(a.img_before.date, true) + ": " + abs(a.img_before.file));
     if (a.img_after) L.push("Imagine după, " + zi(a.img_after.date, true) + ": " + abs(a.img_after.file));
     L.push("Google Maps, satelit: https://www.google.com/maps/@?api=1&map_action=map&center=" + a.lat + "," + a.lon + "&zoom=16&basemap=satellite");
-    (VERIF[a.id] || []).forEach(function (v) { L.push("Verificat și în: " + v.sursa + " (" + v.potrivire + "): " + v.text + (v.url ? " " + v.url : "")); });
+    verifItems(a).forEach(function (v) { L.push("Verificare, " + v.sursa + ": " + v.text + (v.url ? " " + v.url : "")); });
     L.push("Fișa pe hartă: " + location.href.split("#")[0] + "#a=" + a.id);
     L.push("Autorizații și transporturi de lemn: se pot căuta în aplicația Inspectorul Pădurii.");
     L.push("Notă: imagini Copernicus Sentinel-2. Nu spunem că e ilegal. E o schimbare văzută din satelit care merită verificată.");
@@ -501,6 +520,10 @@
         map.addLayer({ id: "counties", type: "line", source: "counties", paint: { "line-color": "#ffffff", "line-opacity": 0.45, "line-width": 0.8 } });
       }
       map.addLayer({ id: "labels", type: "raster", source: "labels", paint: { "raster-opacity": 0.9 } });
+      map.addSource("firms", { type: "geojson", data: FIRMS_FC || { type: "FeatureCollection", features: [] } });
+      map.addLayer({ id: "firms", type: "circle", source: "firms", paint: {
+        "circle-color": "#ff7a1a", "circle-opacity": 0.92, "circle-stroke-color": "#2b0f00", "circle-stroke-width": 0.8,
+        "circle-radius": ["interpolate", ["linear"], ["zoom"], 5, 2.2, 9, 3.6, 13, 6.5] } });
       map.addSource("alerts", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
       map.addSource("points", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
       map.addSource("sel", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
@@ -525,6 +548,13 @@
         });
         map.on("click", id, function (e) { var a = DATA.alerts.find(function (x) { return x.id === e.features[0].properties.id; }); if (a) select(a, false); });
       });
+      map.on("mouseenter", "firms", function () { map.getCanvas().style.cursor = "help"; });
+      map.on("mouseleave", "firms", function () { map.getCanvas().style.cursor = ""; pop.remove(); });
+      map.on("mousemove", "firms", function (e) {
+        var p = e.features[0].properties;
+        pop.setLngLat(e.lngLat).setText("Foc văzut de sateliții NASA · " + zi(p.d) + (p.s ? " · " + p.s : "")).addTo(map);
+      });
+      document.getElementById("lyr-firms").addEventListener("change", function (e) { setVis("firms", e.target.checked); });
       updateMapData();
       updateSelection();
     });
@@ -558,7 +588,8 @@
     }).sort(function (x, y) { return y.properties.ha - x.properties.ha; }) };
   }
   function updateMapData() {
-    var v = visible();
+    var v = visible(), s = periodStart();
+    if (map && map.getLayer && map.getLayer("firms") && s) map.setFilter("firms", ["all", [">=", ["get", "d"], s], ["<=", ["get", "d"], DATA.data_until]]);
     [map, map2].forEach(function (m) {
       if (!m || !m.getSource || !m.getSource("alerts")) return;
       m.getSource("alerts").setData(alertsFC(v));

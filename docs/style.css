@@ -120,6 +120,9 @@ a { color: var(--accent); text-underline-offset: 2px; }
 .verif .vitem p:first-child { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; color: var(--ink); }
 .vfit { font-size: 0.8rem; font-weight: 700; border-radius: 999px; padding: 1px 8px; }
 .vfit.sure { background: color-mix(in srgb, var(--accent) 20%, var(--surface-2)); color: var(--ink); }
+.vfit.none { background: var(--surface-2); color: var(--muted); }
+.verif .vitem.quiet p { color: var(--muted); }
+.dot.fire { background: #ff7a1a; }
 .vfit.maybe { background: color-mix(in srgb, var(--mid) 25%, var(--surface-2)); color: var(--ink); }
 .copywrap { display: flex; flex-direction: column; gap: 6px; }
 .copy { align-self: flex-start; border: 0; background: var(--accent); color: var(--accent-ink); border-radius: 8px; padding: 8px 14px; font-weight: 700; cursor: pointer; }

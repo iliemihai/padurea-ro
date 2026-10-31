@@ -104,6 +104,8 @@ jobs:
           path: out
           merge-multiple: true
       - name: Agenții și publicarea
+        env:
+          FIRMS_MAP_KEY: ${{ secrets.FIRMS_MAP_KEY }}
         run: python -m pipeline.run_finish
       - uses: actions/upload-artifact@v4
         with:

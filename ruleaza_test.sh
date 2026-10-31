@@ -18,7 +18,10 @@ for f in docs/data/alerts.json docs/data/runs.json; do [ -f "$f" ] && mv "$f" "o
 $PY -m pip install -q pyproj >/dev/null 2>&1
 
 # cheia Claude: din mediu sau din ~/Projects/padurea-ro/.env (fișier privat, nu intră în git)
-if [ -z "$ANTHROPIC_API_KEY" ] && [ -f ../.env ]; then . ../.env; export ANTHROPIC_API_KEY; fi
+#   ANTHROPIC_API_KEY=...   analistul AI
+#   FIRMS_MAP_KEY=...       focurile văzute de NASA (gratuită: https://firms.modaps.eosdis.nasa.gov/api/map_key)
+if [ -f ../.env ]; then set -a; . ../.env; set +a; fi
+if [ -n "$FIRMS_MAP_KEY" ]; then echo "   NASA FIRMS: cheie găsită, verific focurile"; else echo "   NASA FIRMS: fără cheie, sar peste focuri"; fi
 AI=0
 if [ -n "$ANTHROPIC_API_KEY" ]; then
   echo "0/3 Verific analistul AI (Claude) pe 2 imagini…"

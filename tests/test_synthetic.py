@@ -170,7 +170,51 @@ def test_vischeck():
     print("verificarea pe poze: OK")
 
 
+def test_firms():
+    """NASA FIRMS fără rețea: citim CSV-ul, potrivim punctele cu o zonă reală (Siseștii de Sus) și scriem stratul."""
+    import os
+    import tempfile
+    from pathlib import Path
+    from pipeline import firms
+    from pipeline.critic import score
+    csv_text = ("latitude,longitude,bright_ti4,scan,track,acq_date,acq_time,satellite,instrument,confidence,version,bright_ti5,frp,daynight\n"
+                "44.7872,22.8418,330.1,0.4,0.4,2026-10-07,1105,N,VIIRS,n,2.0NRT,290.2,12.5,D\n"   # pe zonă, în perioada ei
+                "44.8300,22.9000,331.0,0.4,0.4,2026-10-07,1105,N,VIIRS,n,2.0NRT,291.0,9.0,D\n"    # la ~6 km: nu se potrivește
+                "44.7860,22.8420,329.0,0.4,0.4,2026-09-01,1050,N,VIIRS,n,2.0NRT,289.0,7.0,D\n")   # pe zonă, dar înainte să fie intactă
+    pts = firms.parse(csv_text, "VIIRS_NOAA20_NRT")
+    assert len(pts) == 3 and pts[0]["src"] == "VIIRS NOAA20" and pts[0]["time"] == "1105"
+    assert firms.parse("Invalid MAP_KEY.", "MODIS_NRT") == []
+    zone = {"id": "20261012_44786_22842", "bbox": [22.84101, 44.78502, 22.84355, 44.78648],
+            "before_date": "2026-10-04", "first_seen": "2026-10-12"}
+    m = firms.match(zone, pts)
+    assert m["n"] == 1 and m["prima"] == "2026-10-07" and m["dist_m"] < 200, m
+    far = {**zone, "bbox": [23.5, 45.5, 23.51, 45.51]}
+    assert firms.match(far, pts)["n"] == 0
+    # apply(), cu descărcarea înlocuită: fără cheie nu face nimic, cu cheie scrie rezultatul și stratul hărții
+    old_fetch, old_key = firms.fetch, os.environ.pop("FIRMS_MAP_KEY", None)
+    try:
+        firms.fetch = lambda key, start, end, bbox=None, sources=None: pts
+        z1 = dict(zone)
+        assert firms.apply([z1]) == 0 and "firms" not in z1
+        os.environ["FIRMS_MAP_KEY"] = "test"
+        out = Path(tempfile.mkdtemp()) / "firms.geojson"
+        assert firms.apply([z1], out) == 1 and z1["firms"]["n"] == 1
+        fc = json.loads(out.read_text())
+        assert len(fc["features"]) == 3 and fc["features"][0]["properties"]["d"] == "2026-10-07"
+    finally:
+        firms.fetch = old_fetch
+        os.environ.pop("FIRMS_MAP_KEY", None)
+        if old_key is not None:
+            os.environ["FIRMS_MAP_KEY"] = old_key
+    base = {"confirmed": True, "n_dates": 3, "ha": 1.4, "neigh_drop": 0.1, "first_seen": "2026-10-12",
+            "before_date": "2026-10-04", "img_before": {"date": "2026-10-04"}, "ai": {"categorie": "neclar", "incredere": 0.3}}
+    s0, s1 = score(base), score({**base, "firms": z1["firms"]})
+    assert s1[1] == s0[1] + 2 and any("NASA" in x for x in s1[2]), s1
+    print("NASA FIRMS: OK")
+
+
 if __name__ == "__main__":
     test_critic()
     test_vischeck()
+    test_firms()
     main()

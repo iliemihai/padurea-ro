@@ -31,12 +31,16 @@ def text(a):
     ai = a.get("ai")
     if ai and ai.get("motiv"):
         s.append(f"Analistul AI: „{ai['motiv'].strip().rstrip('.')}.”")
+    fi = a.get("firms") or {}
+    if fi.get("n"):
+        cand = zi(fi["prima"]) if fi["prima"] == fi["ultima"] else f"între {zi(fi['prima'])} și {zi(fi['ultima'])}"
+        s.append(f"Sateliții NASA (FIRMS) au văzut foc la {fi['dist_m']} m de zonă, {('pe ' + cand) if fi['prima'] == fi['ultima'] else cand}.")
     if a.get("vant"):
         s.append(f"În acel interval a fost vânt puternic în zonă (rafale de până la {a['rafala_kmh']} km/h), deci poate fi și o doborâtură.")
     hj = a.get("hansen_jur")
     if hj and hj.get("ani"):
         s.append("În jur s-a mai pierdut pădure în " + ", ".join(str(y) for y in hj["ani"]) + " (Hansen).")
-    if ai and ai.get("categorie") == "incendiu":
+    if (ai and ai.get("categorie") == "incendiu") or fi.get("n"):
         s.append("Nu știm ce a provocat schimbarea. E o schimbare care merită verificată.")
     else:
         s.append("Nu am verificat dacă există o autorizație de exploatare (unele se pot căuta în aplicația Inspectorul Pădurii). E o schimbare care merită verificată.")

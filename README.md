@@ -24,11 +24,14 @@ imagini Sentinel-2 noi (la 2–5 zile)
    - Claude Haiku 5.5 dacă există cheia ANTHROPIC_API_KEY, altfel un model local (Qwen) prin Ollama
         │
         ▼
-3. Contextul                           pipeline/context.py
+3. Contextul                           pipeline/context.py, pipeline/firms.py
    - localitatea cea mai apropiată, vântul din acele zile, pierderile Hansen din jur
+   - focurile văzute în infraroșu de sateliții NASA (FIRMS) lângă zonă, dacă există cheia FIRMS_MAP_KEY
+     (gratuită, pe e-mail: https://firms.modaps.eosdis.nasa.gov/api/map_key)
         │
         ▼
-4. Criticul                            pipeline/critic.py
+4. Verificarea pe poze și criticul     pipeline/vischeck.py, pipeline/critic.py
+   - zona trebuie să fi arătat ca pădurea din jur înainte și să se schimbe vizibil după
    - pune dovezile cap la cap: încredere ridicată, medie sau scăzută
         │
         ▼
@@ -62,3 +65,11 @@ python -m pipeline.eval_judge qwen3.5:4b                          # testează ju
 ## Limite
 
 Norii ascund pădurea uneori zile întregi. Iarna, fără frunze, vedem mai ales pădurile de rășinoase. Nu vedem zone mai mici de 1 ha și nici tăierile de sub coronament. Și AI-ul greșește. Dacă vezi o alertă greșită, deschide un issue.
+
+## Cheile (secrete)
+
+- `ANTHROPIC_API_KEY`: analistul AI (Claude Haiku 5.5).
+- `FIRMS_MAP_KEY`: focurile văzute de NASA. Gratuită: https://firms.modaps.eosdis.nasa.gov/api/map_key
+
+Pe calculator stau în `../.env` (în afara repo-ului). Pe GitHub: Settings → Secrets and variables → Actions.
+Site-ul nu are nevoie de nicio cheie.

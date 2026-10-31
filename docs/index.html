@@ -62,6 +62,7 @@
         <button type="button" data-base="osm">Hartă</button>
       </div>
       <label class="tg"><input type="checkbox" id="lyr-split"><span>Harta normală alături, sincronizată</span></label>
+      <label class="tg"><input type="checkbox" id="lyr-firms" checked><span>Foc văzut de sateliții NASA (FIRMS), în perioada aleasă</span></label>
       <label class="tg"><input type="checkbox" id="lyr-loss" checked><span>Pădure pierdută, Hansen</span></label>
       <div class="seg small" id="years" role="group" aria-label="Anii pierderilor"></div>
       <div class="ramp"><i id="ramp"></i><span>2001</span><span>2025</span></div>
@@ -76,13 +77,13 @@
           <li><strong>Detectorul</strong> (cod, fără AI) compară fiecare imagine nouă cu pădurea de dinainte și cu aceeași perioadă de anul trecut. Păstrează doar ce rămâne schimbat în imaginile următoare și ignoră schimbările care cuprind tot dealul (toamna, ceața).</li>
           <li><strong>Analistul AI</strong> se uită la perechea de imagini înainte/după și spune ce crede că vede: pădure dispărută, nori, frunze de toamnă sau câmp.</li>
           <li><strong>Verificarea pe poze</strong> (cod, fără AI): în poza de dinainte zona trebuie să arate ca pădurea din jur, nu ca un luminiș, și până la poza de după trebuie să se schimbe vizibil mai mult decât împrejurimile.</li>
-          <li><strong>Contextul</strong>: cea mai apropiată localitate, vântul din acele zile, pierderile din anii trecuți.</li>
+          <li><strong>Contextul</strong>: cea mai apropiată localitate, vântul din acele zile, pierderile din anii trecuți și focurile văzute de sateliții NASA (FIRMS) lângă zonă.</li>
           <li><strong>Criticul</strong> pune dovezile cap la cap și dă un nivel de încredere.</li>
           <li><strong>Redactorul</strong> scrie fișa, în cuvinte neutre.</li>
         </ol>
         <p><strong>Ce nu verificăm:</strong> dacă o tăiere e autorizată. Unele informații despre exploatări și transporturi de lemn se pot căuta în aplicația Inspectorul Pădurii. Noi nu spunem niciodată „ilegal”: arătăm doar ce s-a schimbat și când, cu imaginile, ca oricine să poată verifica. Pe fiecare zonă e un buton care copiază fișa pentru jurnaliști.</p>
         <p><strong>Limite:</strong> norii ascund pădurea uneori zile întregi. Iarna, fără frunze, vedem mai ales pădurile de rășinoase. Nu vedem zone mai mici de 1 ha și nici tăierile de sub coronament. AI-ul greșește și el.</p>
-        <p><strong>Date:</strong> imagini Copernicus Sentinel-2 (ESA), prin Microsoft Planetary Computer · ESA WorldCover 2021 · Hansen et al. Global Forest Change 2025 (Universitatea Maryland) · GeoNames · Open-Meteo · fundal: Sentinel-2 cloudless de EOX, © OpenStreetMap, CARTO.</p>
+        <p><strong>Date:</strong> imagini Copernicus Sentinel-2 (ESA), prin Microsoft Planetary Computer · ESA WorldCover 2021 · Hansen et al. Global Forest Change 2025 (Universitatea Maryland) · NASA FIRMS (VIIRS, MODIS) · GeoNames · Open-Meteo · fundal: Sentinel-2 cloudless de EOX, © OpenStreetMap, CARTO.</p>
         <p><a href="https://github.com/iliemihai/padurea-ro" target="_blank" rel="noopener">Codul e public pe GitHub</a>. Dacă vezi o greșeală, deschide un issue.</p>
       </div>
     </details>
@@ -96,6 +97,7 @@
       <span><i class="dot mid"></i>medie</span>
       <span><i class="dot lo"></i>scăzută</span>
       <span><i class="dot un"></i>de confirmat</span>
+      <span><i class="dot fire"></i>foc văzut de NASA</span>
     </div>
   </main>
 </div>
