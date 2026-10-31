@@ -95,16 +95,40 @@
     document.getElementById("lyr-loss").addEventListener("change", function (e) { setVis("hansen", e.target.checked); });
     document.getElementById("lyr-counties").addEventListener("change", function (e) { setVis("counties", e.target.checked); });
     document.getElementById("base").addEventListener("click", function (e) {
-      var b = e.target.closest("button"); if (!b) return;
-      Array.prototype.forEach.call(this.children, function (c) { c.setAttribute("aria-pressed", String(c === b)); });
-      var base = b.dataset.base;
-      setVis("sat", base === "sat"); setVis("hd", base === "hd"); setVis("osm", base === "osm"); setVis("labels", base !== "osm");
+      var b = e.target.closest("button"); if (b && !b.disabled) setBase(b.dataset.base);
     });
     document.getElementById("splitbtn").addEventListener("click", function () { toggleSplit(this.getAttribute("aria-pressed") !== "true"); });
     document.getElementById("lyr-split").addEventListener("change", function (e) { toggleSplit(e.target.checked); });
   }
 
   function setVis(id, on) { if (map && map.getLayer(id)) map.setLayoutProperty(id, "visibility", on ? "visible" : "none"); }
+
+  /* fundalul hărții: satelit, satelit detaliat, harta obișnuită sau doar pădurile (fără imagini din afară) */
+  var BASE = "sat";
+  function setBase(base) {
+    BASE = base;
+    Array.prototype.forEach.call(document.querySelectorAll("#base button"), function (c) { c.setAttribute("aria-pressed", String(c.dataset.base === base)); });
+    setVis("sat", base === "sat"); setVis("hd", base === "hd"); setVis("osm", base === "osm"); setVis("labels", base !== "osm");
+  }
+  /* unele servere de hărți pot lipsi (blocate sau căzute): încercăm câte o bucată și ascundem ce nu merge */
+  function probe(url) {
+    return new Promise(function (res) {
+      var i = new Image(), t = setTimeout(function () { res(false); }, 8000);
+      i.onload = function () { clearTimeout(t); res(true); };
+      i.onerror = function () { clearTimeout(t); res(false); };
+      i.src = url;
+    });
+  }
+  function unavailable(kind) {
+    var b = document.querySelector('#base button[data-base="' + kind + '"]');
+    if (b) b.disabled = true;
+    if (kind === "sat") { document.getElementById("base-note").hidden = false; if (BASE === "sat") setBase("forest"); }
+    if (kind === "osm") {
+      document.getElementById("tg-split").hidden = true; document.getElementById("splitbtn").hidden = true;
+      if (BASE === "osm") setBase("forest");
+    }
+    if (kind === "hd" && BASE === "hd") setBase("forest");
+  }
 
   /* ---------- randare ---------- */
   function renderAll() {
@@ -208,7 +232,7 @@
 
   function select(a, fly) {
     state.sel = a;
-    history.replaceState(null, "", "#a=" + a.id);
+    try { history.replaceState(null, "", "#a=" + a.id); } catch (e) { /* unele ferestre nu permit */ }
     var d = document.getElementById("detail");
     document.getElementById("listbox").hidden = true;
     d.hidden = false;
@@ -224,6 +248,7 @@
     d.appendChild(kindBlock(a));
     d.appendChild(el("h3", null, fmt(a.ha, 1) + " ha" + (a.localitate ? " lângă " + a.localitate : "") + (a.county ? ", județul " + a.county : "")));
     d.appendChild(compare(a, false));
+    if (a.img_after) d.appendChild(chipControl(a));
     var vi = verifItems(a); if (vi.length) d.appendChild(verifBlock(vi));
     d.appendChild(el("p", null, a.text || ""));
     var ev = el("ul", "ev"); (a.dovezi || []).forEach(function (x) { ev.appendChild(el("li", null, x)); });
@@ -255,9 +280,41 @@
     updateSelection();
   }
 
+  var CHIP = "a";
+  function showChip(a) {
+    if (!map || !map.getLayer || !map.getStyle()) return;
+    var info = a && (CHIP === "b" ? a.img_before : CHIP === "a" ? a.img_after : null);
+    if (!info || !a.chip_bbox) { if (map.getLayer("chip")) map.setLayoutProperty("chip", "visibility", "none"); return; }
+    var cb = a.chip_bbox, coords = [[cb[0], cb[3]], [cb[2], cb[3]], [cb[2], cb[1]], [cb[0], cb[1]]], url = "img/" + info.file;
+    if (map.getSource("chip")) map.getSource("chip").updateImage({ url: url, coordinates: coords });
+    else {
+      map.addSource("chip", { type: "image", url: url, coordinates: coords });
+      map.addLayer({ id: "chip", type: "raster", source: "chip", paint: { "raster-fade-duration": 0 } }, map.getLayer("firms") ? "firms" : "a-fill");
+    }
+    map.setLayoutProperty("chip", "visibility", "visible");
+  }
+  function chipControl(a) {
+    var row = el("div", "maprow"), seg = el("div", "seg small");
+    row.appendChild(el("span", null, "Pe hartă, sub zonă:"));
+    seg.setAttribute("role", "group"); seg.setAttribute("aria-label", "Ce poză arată harta sub zonă");
+    [["b", "poza de înainte"], ["a", "poza de după"], ["x", "nicio poză"]].forEach(function (m) {
+      if ((m[0] === "b" && !a.img_before) || (m[0] === "a" && !a.img_after)) return;
+      var x = el("button", null, m[1]); x.type = "button"; x.dataset.k = m[0]; x.setAttribute("aria-pressed", String(m[0] === CHIP)); seg.appendChild(x);
+    });
+    seg.addEventListener("click", function (e) {
+      var x = e.target.closest("button"); if (!x) return;
+      CHIP = x.dataset.k;
+      Array.prototype.forEach.call(seg.children, function (c) { c.setAttribute("aria-pressed", String(c === x)); });
+      showChip(a);
+    });
+    row.appendChild(seg);
+    return row;
+  }
+
   function unselect() {
     state.sel = null;
-    history.replaceState(null, "", location.pathname);
+    try { history.replaceState(null, "", location.pathname); } catch (e) { /* unele ferestre nu permit */ }
+    showChip(null);
     document.getElementById("detail").hidden = true;
     document.getElementById("listbox").hidden = false;
     updateSelection();
@@ -283,6 +340,10 @@
   function headline(a) {
     var v = a.vis && a.vis.verdict;
     if (a.firms && a.firms.n) return { t: "Incendiu văzut de sateliții NASA", k: "fire", src: "NASA FIRMS" + (v === "deschisa" ? " · zona era deja deschisă înainte, nu pădure" : "") };
+    var fire = (VERIF[a.id] || []).filter(function (x) { return x.tip === "incendiu"; });
+    var sure = fire.filter(function (x) { return x.potrivire === "sigură"; });
+    if (sure.length) return { t: "Incendiu confirmat", k: "fire", src: sure.map(function (x) { return x.sursa; }).join(" · ") };
+    if (fire.length) return { t: "Probabil incendiu", k: "fire", src: fire[0].sursa + ", potrivire probabilă" };
     if (v === "deschisa") return { t: "Zona era deja deschisă înainte", k: "q", src: "verificarea pe poze" };
     if (v === "nevazut") return { t: "În poze nu se vede o schimbare clară", k: "q", src: "verificarea pe poze" };
     var c = a.ai && KIND[a.ai.categorie];
@@ -555,6 +616,9 @@
         pop.setLngLat(e.lngLat).setText("Foc văzut de sateliții NASA · " + zi(p.d) + (p.s ? " · " + p.s : "")).addTo(map);
       });
       document.getElementById("lyr-firms").addEventListener("change", function (e) { setVis("firms", e.target.checked); });
+      if (!FIRMS_FC || !FIRMS_FC.features || !FIRMS_FC.features.length) { document.getElementById("tg-firms").hidden = true; document.getElementById("lg-firms").hidden = true; }
+      probe("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/7/45/72").then(function (ok) { if (!ok) unavailable("hd"); });
+      probe("https://tile.openstreetmap.org/7/72/45.png").then(function (ok) { if (!ok) unavailable("osm"); });
       updateMapData();
       updateSelection();
     });
@@ -564,7 +628,7 @@
     /* cea mai nouă hartă Sentinel-2 cloudless care răspunde */
     var years = ["2024", "2023", "2022", "2021"], i = 0;
     function tryNext() {
-      if (i >= years.length) return;
+      if (i >= years.length) { unavailable("sat"); return; }
       var y = years[i++], img = new Image();
       img.onload = function () {
         if (y === "2023") return;
@@ -644,6 +708,7 @@
       { type: "Feature", geometry: { type: "Point", coordinates: [a.lon, a.lat] }, properties: {} }
     ] : [] };
     [map, map2].forEach(function (m) { if (m && m.getSource && m.getSource("sel")) m.getSource("sel").setData(fc); });
+    if (map && map.getSource && map.getSource("sel")) showChip(a);
   }
 
   /* ---------- stratul Hansen: decodăm imaginea și o colorăm după anii aleși ---------- */
@@ -655,9 +720,30 @@
       var x = c.getContext("2d", { willReadFrequently: true });
       x.drawImage(img, 0, 0);
       HSRC = x.getImageData(0, 0, HW, HH).data;
+      paintForest();
       paintHansen();
     };
     img.src = "data/static/hansen.webp";
+  }
+  function paintForest() {
+    if (!HSRC || !hansen) return;
+    var lo = [29, 53, 36], hi = [79, 154, 95];
+    var cv = document.createElement("canvas"); cv.width = HW; cv.height = HH;
+    var ctx = cv.getContext("2d"), im = ctx.createImageData(HW, HH), D = im.data;
+    for (var i = 0; i < HSRC.length; i += 4) {
+      var g = HSRC[i + 1];
+      if (g > 0) {
+        var t = g / 255;
+        D[i] = lo[0] + (hi[0] - lo[0]) * t; D[i + 1] = lo[1] + (hi[1] - lo[1]) * t; D[i + 2] = lo[2] + (hi[2] - lo[2]) * t; D[i + 3] = 120 + 135 * t;
+      }
+    }
+    ctx.putImageData(im, 0, 0);
+    cv.toBlob(function (blob) {
+      if (!blob) return;
+      var hj = hansen.meta, coords = [[hj.west, hj.north], [hj.east, hj.north], [hj.east, hj.south], [hj.west, hj.south]];
+      map.addSource("forest", { type: "image", url: URL.createObjectURL(blob), coordinates: coords });
+      map.addLayer({ id: "forest", type: "raster", source: "forest", paint: { "raster-opacity": ["interpolate", ["linear"], ["zoom"], 8, 0.95, 12, 0.55, 14, 0.3], "raster-resampling": "linear", "raster-fade-duration": 0 } }, "sat");
+    }, "image/png");
   }
   function paintHansen() {
     if (!HSRC || !map.getSource("hansen")) return;

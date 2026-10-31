@@ -60,9 +60,11 @@
         <button type="button" data-base="sat" aria-pressed="true">Satelit 10 m</button>
         <button type="button" data-base="hd">Satelit detaliat</button>
         <button type="button" data-base="osm">Hartă</button>
+        <button type="button" data-base="forest">Pădure</button>
       </div>
-      <label class="tg"><input type="checkbox" id="lyr-split"><span>Harta normală alături, sincronizată</span></label>
-      <label class="tg"><input type="checkbox" id="lyr-firms" checked><span>Foc văzut de sateliții NASA (FIRMS), în perioada aleasă</span></label>
+      <p class="note" id="base-note" hidden>Fundalul din satelit nu s-a putut încărca. Arătăm pădurile din datele Hansen, iar la fiecare zonă, poza ei din satelit.</p>
+      <label class="tg" id="tg-split"><input type="checkbox" id="lyr-split"><span>Harta normală alături, sincronizată</span></label>
+      <label class="tg" id="tg-firms"><input type="checkbox" id="lyr-firms" checked><span>Foc văzut de sateliții NASA (FIRMS), în perioada aleasă</span></label>
       <label class="tg"><input type="checkbox" id="lyr-loss" checked><span>Pădure pierdută, Hansen</span></label>
       <div class="seg small" id="years" role="group" aria-label="Anii pierderilor"></div>
       <div class="ramp"><i id="ramp"></i><span>2001</span><span>2025</span></div>
@@ -74,7 +76,7 @@
       <div class="prose">
         <p><strong>În fiecare zi</strong>, un program descarcă imaginile Sentinel-2 noi pentru România și caută locurile din pădure unde verdele a dispărut brusc.</p>
         <ol>
-          <li><strong>Detectorul</strong> (cod, fără AI) compară fiecare imagine nouă cu pădurea de dinainte și cu aceeași perioadă de anul trecut. Păstrează doar ce rămâne schimbat în imaginile următoare și ignoră schimbările care cuprind tot dealul (toamna, ceața).</li>
+          <li><strong>Detectorul</strong> (cod, fără AI) compară fiecare imagine nouă cu pădurea de acum 1–3 luni și cu aceeași lună de anul trecut, nu cu ziua de ieri. Păstrează doar ce rămâne schimbat în imaginile următoare și ignoră schimbările care cuprind tot dealul (toamna, ceața).</li>
           <li><strong>Analistul AI</strong> se uită la perechea de imagini înainte/după și spune ce crede că vede: pădure dispărută, nori, frunze de toamnă sau câmp.</li>
           <li><strong>Verificarea pe poze</strong> (cod, fără AI): în poza de dinainte zona trebuie să arate ca pădurea din jur, nu ca un luminiș, și până la poza de după trebuie să se schimbe vizibil mai mult decât împrejurimile.</li>
           <li><strong>Contextul</strong>: cea mai apropiată localitate, vântul din acele zile, pierderile din anii trecuți și focurile văzute de sateliții NASA (FIRMS) lângă zonă.</li>
@@ -97,7 +99,7 @@
       <span><i class="dot mid"></i>medie</span>
       <span><i class="dot lo"></i>scăzută</span>
       <span><i class="dot un"></i>de confirmat</span>
-      <span><i class="dot fire"></i>foc văzut de NASA</span>
+      <span id="lg-firms"><i class="dot fire"></i>foc văzut de NASA</span>
     </div>
   </main>
 </div>
