@@ -1,0 +1,31 @@
+[
+ {
+  "mode": "redesign",
+  "depth": "full",
+  "scope": "app",
+  "shape": "app screen",
+  "theme": "rim",
+  "axes": "dark/grotesk-sans/warm",
+  "hero": "none (app screen)",
+  "nav": "kept: work pane beside the map, layers on the map",
+  "footer": "none (app screen)",
+  "imagery": "product: real Sentinel-2 chips of each zone",
+  "photos": [],
+  "entry": "pane: data stamp, period, confidence, figures, ruled zone rows",
+  "fingerprint": "dark|pane-left|ruled-rows|mono-figures|map-full-bleed|blink-pair",
+  "sections": [
+   "brand and data stamp",
+   "period",
+   "confidence",
+   "results: figures, daily bars, zone rows",
+   "zone sheet with the before and after pair",
+   "about"
+  ],
+  "signature": "the Sentinel-2 pair of each zone, blinking before and after, its two dates on a mono strip",
+  "waived": [
+   "39b"
+  ],
+  "prompt": "public map of forest changes in Romania from Sentinel-2 satellite images, where people and journalists see which forest patches changed recently, with before and after satellite photos",
+  "date": "2026-10-31"
+ }
+]

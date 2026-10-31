@@ -62,6 +62,12 @@ python -m pipeline.eval_judge qwen3.5:4b                          # testează ju
 - [GeoNames](https://www.geonames.org/) (localități), [Open-Meteo](https://open-meteo.com/) (vânt)
 - Fundalul hărții: [Sentinel-2 cloudless](https://s2maps.eu) de EOX IT Services GmbH (CC BY-NC-SA 4.0), © OpenStreetMap, © CARTO
 
+## Aspectul site-ului
+
+Designul vine din [Hallmark](https://github.com/Nutlope/hallmark), tema Rim: hârtie aproape neagră, Switzer pentru text, Geist Mono pentru tot ce se măsoară (date, hectare, coordonate), o singură culoare de semnal (portocaliu). Culorile stau în `docs/tokens.css` și în blocul `:root` din `docs/style.css`; harta le citește de acolo.
+
+Literele sunt incluse în `docs/fonts.css`, ca site-ul să nu depindă de alt server: Switzer (Indian Type Foundry, licența ITF Free Font License, de pe [Fontshare](https://www.fontshare.com/fonts/switzer)) și Geist Mono (Vercel, SIL Open Font License 1.1).
+
 ## Limite
 
 Norii ascund pădurea uneori zile întregi. Iarna, fără frunze, vedem mai ales pădurile de rășinoase. Nu vedem zone mai mici de 1 ha și nici tăierile de sub coronament. Și AI-ul greșește. Dacă vezi o alertă greșită, deschide un issue.
