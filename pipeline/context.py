@@ -1,6 +1,6 @@
 """Agentul 2, contextul: unelte care adaugă fapte verificabile despre fiecare zonă.
 
-  - cea mai apropiată localitate (GeoNames)
+  - cea mai apropiată localitate (GeoNames) și comuna, orașul sau municipiul în care cade zona (limitele UAT)
   - vântul cel mai puternic din intervalul în care a apărut schimbarea (Open-Meteo)
   - dacă s-a mai pierdut pădure în jur în anii trecuți (Hansen 2001–2025)
 """
@@ -16,6 +16,7 @@ import zipfile
 import numpy as np
 
 from . import config as C
+from . import uat
 from .sat import log
 
 
@@ -121,6 +122,7 @@ def add_context(alerts, lossyear_path):
         a["localitate"] = name
         a["localitate_km"] = km
         a["hansen_jur"] = past.near(a["lat"], a["lon"])
+    log(f"Comuna sau orașul: {uat.apply(alerts)} din {len(alerts)} zone")
     w = winds(alerts)
     for a in alerts:
         a["rafala_kmh"] = w.get(a["id"])

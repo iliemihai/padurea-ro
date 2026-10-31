@@ -27,6 +27,27 @@
   function upFirst(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
   function coord(v, pos, neg) { return fmt(Math.abs(v), 5) + "° " + (v >= 0 ? pos : neg); }
   function hhmm(t) { var s = ("000" + String(t)).slice(-4); return s.slice(0, 2) + ":" + s.slice(2); }
+  /* numele din GeoNames vin cu sedilă (ş, ţ); în română corect e virgula de dedesubt */
+  function ro(s) { return s ? String(s).replace(/ş/g, "ș").replace(/Ş/g, "Ș").replace(/ţ/g, "ț").replace(/Ţ/g, "Ț") : s; }
+  var GEN = { comuna: "comunei", "orașul": "orașului", municipiul: "municipiului", sectorul: "sectorului" };
+  /* locul unei zone: comuna, orașul sau municipiul din limitele oficiale (UAT), cu județul */
+  function placeName(a) {
+    var u = a.uat;
+    if (u) return upFirst(u.tip) + " " + u.nume + (u.judet && u.tip !== "sectorul" ? ", " + u.judet : "");
+    var p = (a.localitate ? ro(a.localitate) + ", " : "") + (a.county || "");
+    return p || coord(a.lat, "N", "S") + ", " + coord(a.lon, "E", "V");
+  }
+  function placeInline(a) {
+    var u = a.uat;
+    return u ? u.tip + " " + u.nume + (u.judet && u.tip !== "sectorul" ? ", județul " + u.judet : "") : placeName(a);
+  }
+  function whereText(a) {
+    var u = a.uat, sat = ro(a.localitate), near = (a.localitate_km || 99) <= 8;
+    if (!u) return (sat ? (near ? " lângă " + sat : " la " + fmt(a.localitate_km) + " km de " + sat) : "") + (a.county ? ", județul " + a.county : "");
+    var s = u.aproape ? " la marginea " + (GEN[u.tip] || u.tip) + " " + u.nume : " în " + u.tip + " " + u.nume;
+    if (sat && near && sat !== u.nume) s += ", lângă " + sat;
+    return s + (u.judet && u.tip !== "sectorul" ? ", județul " + u.judet : "");
+  }
 
   /* culorile vin din foaia de stil, ca harta și pagina să folosească aceleași nuanțe */
   var TOK = {};
@@ -84,6 +105,14 @@
   function visible() { return DATA.alerts.filter(function (a) { return inPeriod(a) && state.conf[a.incredere]; }); }
 
   function daysLabel(n) { return n === 1 ? "ultima zi" : "ultimele " + n + " " + de(n) + "zile"; }
+  /* de când avem date: cea mai veche fereastră analizată (istoricul crește cu fiecare rulare) */
+  function coverageStart() {
+    var s = null;
+    (RUNS || []).forEach(function (r) { if (r && r.window && (!s || r.window[0] < s)) s = r.window[0]; });
+    if (!s && DATA.window) s = DATA.window[0];
+    return s;
+  }
+  function coverageDays() { var s = coverageStart(); return s && DATA.data_until ? Math.round((pd(DATA.data_until) - pd(s)) / 864e5) + 1 : 0; }
 
   /* perioada: butoanele și glisorul arată mereu același număr de zile */
   function setPeriod(n, silent) {
@@ -101,6 +130,8 @@
     var per = document.getElementById("periods"), nd = document.getElementById("ndays");
     per.addEventListener("click", function (e) { var b = e.target.closest("button"); if (b) setPeriod(+b.dataset.days); });
     nd.addEventListener("input", function () { setPeriod(+nd.value); });
+    var cov = coverageDays();
+    if (cov) nd.max = String(Math.max(7, cov));
     setPeriod(state.days, true);
 
     var cb = document.getElementById("conf");
@@ -192,8 +223,12 @@
       u.appendChild(stamp("Actualizat", day + ", " + hour, "ora României"));
     }
     var s = periodStart();
+    var c0 = coverageStart(), cov = coverageDays();
+    if (c0 && s < c0) s = c0;
     var sameYear = s && s.slice(0, 4) === DATA.data_until.slice(0, 4);
     r.textContent = state.days === 1 ? "Schimbări văzute prima dată pe " + zi(DATA.data_until) : "Schimbări văzute prima dată între " + (sameYear ? ziScurt(s) : zi(s)) + " și " + zi(DATA.data_until);
+    var cv = document.getElementById("coverage");
+    if (cv) cv.textContent = c0 ? (state.days > cov ? "Avem date doar din " + zi(c0, true) + ", așa că vezi tot ce avem. " : "") + "Istoricul începe pe " + zi(c0, true) + " și crește în fiecare zi." : "";
   }
 
   function renderStats() {
@@ -244,6 +279,17 @@
     var v = visible().sort(function (a, b) { return (b.first_seen > a.first_seen) - (b.first_seen < a.first_seen) || b.ha - a.ha; });
     if (!DATA.data_until) return;
     if (!v.length) {
+      var s0 = periodStart(), older = DATA.alerts.filter(function (a) { return state.conf[a.incredere] && a.first_seen < s0; })
+        .sort(function (a, b) { return (b.first_seen > a.first_seen) - (b.first_seen < a.first_seen); })[0];
+      if (older) {
+        var need = Math.round((pd(DATA.data_until) - pd(older.first_seen)) / 864e5) + 1;
+        var em = el("div", "empty");
+        em.appendChild(el("p", null, "Nicio zonă cu nivelurile alese în " + daysLabel(state.days) + ". Cea mai recentă e din " + zi(older.first_seen, true) + ", în " + placeInline(older) + "."));
+        var go = el("button", "more", "Arată din " + ziScurt(older.first_seen)); go.type = "button";
+        go.addEventListener("click", function () { setPeriod(need); });
+        em.appendChild(go); box.appendChild(em);
+        return;
+      }
       var hidden = DATA.alerts.filter(inPeriod).length;
       box.appendChild(el("p", "empty", hidden ? "Nicio schimbare cu acest nivel de încredere în perioada aleasă. Bifează și „scăzută” ca să le vezi pe toate." :
         "Nicio schimbare nouă în perioada aleasă. Poate fi și din cauza norilor: pădurea acoperită de nori nu se vede. Încearcă o perioadă mai lungă."));
@@ -254,8 +300,7 @@
       b.type = "button";
       b.appendChild(el("span", "visually-hidden", (a.incredere === "de confirmat" ? "De confirmat" : "Încredere " + a.incredere) + ". "));
       b.appendChild(key(a.incredere));
-      var place = (a.localitate ? a.localitate + ", " : "") + (a.county || "");
-      b.appendChild(el("span", "t", place || coord(a.lat, "N", "S") + ", " + coord(a.lon, "E", "V")));
+      b.appendChild(el("span", "t", placeName(a)));
       b.appendChild(el("span", "d", ziScurt(a.first_seen)));
       b.appendChild(el("span", "p", headline(a).t));
       b.appendChild(el("span", "a", fmt(a.ha, 1) + " ha"));
@@ -294,7 +339,7 @@
     back.addEventListener("click", unselect);
     d.appendChild(back);
     d.appendChild(kindBlock(a));
-    d.appendChild(el("p", "where", fmt(a.ha, 1) + " ha" + (a.localitate ? " lângă " + a.localitate : "") + (a.county ? ", județul " + a.county : "")));
+    d.appendChild(el("p", "where", fmt(a.ha, 1) + " ha" + whereText(a)));
     var bd = el("div", "badges");
     var c1 = el("span", "badge"); c1.appendChild(key(a.incredere)); c1.appendChild(document.createTextNode(a.incredere === "de confirmat" ? "de confirmat" : "încredere " + a.incredere)); bd.appendChild(c1);
     if (isVerified(a)) bd.appendChild(el("span", "badge ok", "verificat și din alte surse"));
@@ -311,6 +356,7 @@
     link("Raportează o greșeală", REPO + "/issues/new?title=" + encodeURIComponent("Alerta " + a.id) + "&body=" + encodeURIComponent("Ce e greșit la alerta " + a.id + "?\n\n" + location.href));
     d.appendChild(act);
     var vi = verifItems(a); if (vi.length) d.appendChild(verifBlock(vi));
+    d.appendChild(ownerBlock(a));
     var ev = el("ul", "ev"); (a.dovezi || []).forEach(function (x) { ev.appendChild(el("li", null, x)); });
     d.appendChild(el("p", "lbl", "De ce acest nivel de încredere"));
     d.appendChild(ev);
@@ -441,11 +487,30 @@
     return box;
   }
 
+  /* ---------- cine deține terenul: nu publicăm nume; arătăm drumul legal, pas cu pas ---------- */
+  function ownerBlock(a) {
+    var box = el("div", "owner");
+    box.appendChild(el("p", "lbl", "Cine deține terenul"));
+    box.appendChild(el("p", null, "Nu publicăm proprietari: cartea funciară se cere parcelă cu parcelă, iar proprietarul nu e neapărat cel care a tăiat. Oricine poate afla, așa:"));
+    var ol = el("ol");
+    [["Caută parcela după coordonate pe geoportalul ANCPI și notează numărul cadastral.", "https://geoportal.ancpi.ro", "Geoportal ANCPI"],
+     ["Cere un extras de carte funciară pentru informare pe ePay ANCPI; îl poate cere oricine.", "https://epay.ancpi.ro", "ePay ANCPI"],
+     ["Caută autorizațiile de exploatare și transporturile de lemn din zonă în Inspectorul Pădurii.", "https://inspectorulpadurii.ro", "Inspectorul Pădurii"],
+     ["Întreabă ocolul silvic sau Garda Forestieră din " + (a.uat ? "județul " + a.uat.judet : "județ") + ".", null, null]].forEach(function (s) {
+      var li = el("li", null, s[0] + " ");
+      if (s[1]) { var x = el("a", null, s[2]); x.href = s[1]; x.target = "_blank"; x.rel = "noopener"; li.appendChild(x); }
+      ol.appendChild(li);
+    });
+    box.appendChild(ol);
+    return box;
+  }
+
   /* ---------- fișa pentru jurnaliști ---------- */
   function sheet(a) {
     var h = headline(a), abs = function (f) { return new URL("img/" + f, location.href).href; }, L = [];
     L.push("Pădurea RO: schimbare în pădure, de verificat");
-    L.push("Loc: " + (a.localitate ? "lângă " + a.localitate + ", " : "") + (a.county ? "județul " + a.county : "") + " (" + a.lat + ", " + a.lon + ")");
+    L.push("Loc:" + whereText(a) + " (" + a.lat + ", " + a.lon + ")");
+    if (a.uat) L.push("Cod SIRUTA: " + a.uat.siruta);
     L.push("Suprafață: aproximativ " + fmt(a.ha, 1) + " ha");
     L.push("Când: intactă pe " + zi(a.before_date, true) + ", văzută schimbată pe " + zi(a.first_seen, true) + ", ultima imagine pe " + zi(a.after_date, true));
     L.push("Ce pare: " + h.t + (h.src ? " (" + h.src + ")" : ""));
@@ -457,6 +522,7 @@
     verifItems(a).forEach(function (v) { L.push("Verificare, " + v.sursa + ": " + v.text + (v.url ? " " + v.url : "")); });
     L.push("Fișa pe hartă: " + location.href.split("#")[0] + "#a=" + a.id);
     L.push("Autorizații și transporturi de lemn: se pot căuta în aplicația Inspectorul Pădurii.");
+    L.push("Proprietarul terenului: numărul cadastral din geoportal.ancpi.ro, apoi un extras de carte funciară pentru informare pe epay.ancpi.ro.");
     L.push("Notă: imagini Copernicus Sentinel-2. Nu spunem că e ilegal. E o schimbare văzută din satelit care merită verificată.");
     return L.join("\n");
   }
@@ -598,7 +664,7 @@
     lastFocus = document.activeElement;
     m.replaceChildren();
     var card = el("div", "modal-card"), top = el("div", "modal-top"), h = headline(a);
-    top.appendChild(el("h3", null, h.t + ", " + fmt(a.ha, 1) + " ha" + (a.localitate ? " lângă " + a.localitate : "") + (a.county ? ", " + a.county : "")));
+    top.appendChild(el("h3", null, h.t + ", " + fmt(a.ha, 1) + " ha" + whereText(a)));
     var x = el("button", "mini", "Închide"); x.type = "button"; x.addEventListener("click", closeModal); top.appendChild(x);
     card.appendChild(top); card.appendChild(compare(a, true)); m.appendChild(card);
     m.hidden = false; document.body.classList.add("noscroll"); x.focus();
@@ -617,6 +683,13 @@
     function img(draw) { var c = document.createElement("canvas"); c.width = c.height = S; var x = c.getContext("2d"); draw(x); return x.getImageData(0, 0, S, S); }
     CONF.forEach(function (c) {
       var fill = confColor(c[0]);
+      if (c[1] === "un") {
+        m.addImage("k-un", img(function (x) {
+          x.strokeStyle = edge; x.lineWidth = 7; x.strokeRect(9, 9, S - 18, S - 18);
+          x.setLineDash([5, 4]); x.strokeStyle = fill; x.lineWidth = 3; x.strokeRect(9, 9, S - 18, S - 18);
+        }), { pixelRatio: 2 });
+        return;
+      }
       m.addImage("k-" + c[1], img(function (x) { x.fillStyle = edge; x.fillRect(4, 4, S - 8, S - 8); x.fillStyle = fill; x.fillRect(8, 8, S - 16, S - 16); }), { pixelRatio: 2 });
     });
     m.addImage("k-sel", img(function (x) {
@@ -739,12 +812,12 @@
 
   function alertsFC(v) {
     return { type: "FeatureCollection", features: v.map(function (a) {
-      return { type: "Feature", geometry: a.geometry, properties: { id: a.id, c: a.incredere, ha: a.ha, d: a.first_seen, county: a.county, loc: a.localitate } };
+      return { type: "Feature", geometry: a.geometry, properties: { id: a.id, c: a.incredere, ha: a.ha, d: a.first_seen, county: a.county, loc: placeName(a) } };
     }) };
   }
   function pointsFC(v) {
     return { type: "FeatureCollection", features: v.map(function (a) {
-      return { type: "Feature", geometry: { type: "Point", coordinates: [a.lon, a.lat] }, properties: { id: a.id, c: a.incredere, ha: a.ha, d: a.first_seen, county: a.county, loc: a.localitate } };
+      return { type: "Feature", geometry: { type: "Point", coordinates: [a.lon, a.lat] }, properties: { id: a.id, c: a.incredere, ha: a.ha, d: a.first_seen, county: a.county, loc: placeName(a) } };
     }).sort(function (x, y) { return y.properties.ha - x.properties.ha; }) };
   }
   function updateMapData() {

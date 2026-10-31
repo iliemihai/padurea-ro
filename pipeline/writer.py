@@ -1,6 +1,10 @@
 """Agentul 4, redactorul: textul public al fiecărei alerte. Spune ce se vede și când, fără acuzații."""
 import datetime as dt
 
+from .uat import ro
+
+GEN = {"comuna": "comunei", "orașul": "orașului", "municipiul": "municipiului", "sectorul": "sectorului"}
+
 LUNI = ["ianuarie", "februarie", "martie", "aprilie", "mai", "iunie", "iulie", "august",
         "septembrie", "octombrie", "noiembrie", "decembrie"]
 
@@ -14,16 +18,29 @@ def ha(x):
     return f"{x:.1f}".replace(".", ",") + " ha"
 
 
-def text(a):
+def unde(a):
+    """Unde e zona, în cuvinte: comuna (din limitele UAT), satul apropiat dacă e altul, județul."""
+    u = a.get("uat") or {}
+    sat = ro(a.get("localitate"))
+    aproape = (a.get("localitate_km") or 99) <= 8
+    if u:
+        s = f" din {u['tip']} {u['nume']}" if not u.get("aproape") else f" de la marginea {GEN.get(u['tip'], u['tip'])} {u['nume']}"
+        if sat and aproape and sat != u["nume"]:
+            s += f", lângă {sat}"
+        judet = u.get("judet") or a.get("county")
+        return s + (f", județul {judet}" if judet and u["tip"] != "sectorul" else "")
     loc = ""
-    if a.get("localitate"):
-        loc = f" lângă {a['localitate']}" if (a.get("localitate_km") or 99) <= 8 else f" la {a['localitate_km']:.0f} km de {a['localitate']}".replace(".", ",")
-    jud = f", județul {a['county']}" if a.get("county") else ""
+    if sat:
+        loc = f" lângă {sat}" if aproape else f" la {a['localitate_km']:.0f} km de {sat}".replace(".", ",")
+    return loc + (f", județul {a['county']}" if a.get("county") else "")
+
+
+def text(a):
     if a.get("before_date"):
         cand = f"Între {zi(a['before_date'])} și {zi(a['first_seen'])}"
     else:
         cand = f"Până pe {zi(a['first_seen'])}"
-    s = [f"{cand}, pe aproximativ {ha(a['ha'])} de pădure{loc}{jud}, imaginile Sentinel-2 arată că vegetația a dispărut sau s-a schimbat puternic."]
+    s = [f"{cand}, pe aproximativ {ha(a['ha'])} de pădure{unde(a)}, imaginile Sentinel-2 arată că vegetația a dispărut sau s-a schimbat puternic."]
     if a.get("n_dates", 0) >= 2:
         s.append(f"Schimbarea se vede în {a['n_dates']} imagini diferite.")
     else:

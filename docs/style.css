@@ -10,6 +10,7 @@
 /* Hallmark · reworded "2025" to "doar 2025" · the four loss-year buttons now name a start year */
 /* Hallmark · reworded "acum 1–3 luni" to "acum una până la trei luni" · 19 names the dash */
 /* Hallmark · dismissed render · this sandbox cannot reach unpkg.com from a disk render; the served copy loads MapLibre from a local copy and its shots carry every face */
+/* Hallmark · the user named the confidence colours: red for ridicată, amber for medie, sand for scăzută, a dashed grey outline for de confirmat; orange stays the control and state signal */
 /* Hallmark · finish-review: subagent · 8 findings · 8 resolved · gap: the zone list starts near the fold at 1280x800, one row in view; the map carries the zones above it */
 /* Hallmark · reworded "← Înapoi la listă" to "Înapoi la listă" · 63 names the arrow glued to a button */
 @import url("./fonts.css");
@@ -19,10 +20,10 @@
 :root {
   --pane: 26.5rem;
   --color-map: var(--color-paper-3);
-  --color-data-hi: var(--color-accent);
-  --color-data-mid: oklch(62% 0.13 50);
-  --color-data-lo: var(--color-muted);
-  --color-data-un: var(--color-accent-2);
+  --color-data-hi: oklch(62% 0.22 27);
+  --color-data-mid: oklch(78% 0.15 70);
+  --color-data-lo: oklch(82% 0.05 85);
+  --color-data-un: oklch(64% 0.012 80);
   --color-fire: var(--color-ink-2);
   --color-forest-lo: oklch(23% 0.03 150);
   --color-forest-hi: oklch(43% 0.065 150);
@@ -110,7 +111,7 @@ button:disabled { opacity: 0.55; cursor: not-allowed; }
 .key.hi { background: var(--color-data-hi); }
 .key.mid { background: var(--color-data-mid); }
 .key.lo { background: var(--color-data-lo); }
-.key.un { background: var(--color-data-un); }
+.key.un { background: none; border: 1.5px dashed var(--color-data-un); }
 .key.fire { position: relative; background: none; }
 .key.fire::before, .key.fire::after { content: ""; position: absolute; left: calc(50% - 1px); top: -2px; width: 2px; height: 14px; background: var(--color-fire); transform: rotate(45deg); }
 .key.fire::after { transform: rotate(-45deg); }
@@ -160,6 +161,7 @@ button:disabled { opacity: 0.55; cursor: not-allowed; }
 .list .skel span { display: block; width: 70%; height: 12px; background: var(--color-paper-2); }
 .list .skel span + span { width: 42%; }
 .empty { margin: 0; padding: var(--space-sm) var(--space-md); background: var(--color-paper-2); font-size: var(--text-sm); color: var(--color-ink-2); }
+div.empty { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-sm); }
 
 /* ---------- buttons ---------- */
 .mini, .back, .more {
@@ -246,6 +248,11 @@ button:disabled { opacity: 0.55; cursor: not-allowed; }
 .vitem a { align-self: flex-start; color: var(--color-ink); text-decoration-color: var(--color-muted-2); }
 .vitem a:hover { text-decoration-color: var(--color-ink); }
 .vfit { font-size: var(--text-xs); color: var(--color-muted); }
+.owner { display: flex; flex-direction: column; gap: var(--space-xs); font-size: var(--text-sm); color: var(--color-ink-2); }
+.owner ol { display: flex; flex-direction: column; gap: var(--space-xs); margin: 0; padding-left: var(--space-lg); }
+.owner li::marker { color: var(--color-muted); font-family: var(--font-outlier); }
+.owner a { color: var(--color-ink); text-decoration-color: var(--color-muted-2); white-space: nowrap; }
+.owner a:hover { text-decoration-color: var(--color-ink); }
 .vfit.sure { color: var(--color-ink); }
 .vfit.maybe { color: var(--color-ink-2); }
 .vitem.quiet, .vitem.quiet p:first-child { color: var(--color-muted); }

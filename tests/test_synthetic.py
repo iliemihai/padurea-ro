@@ -213,8 +213,23 @@ def test_firms():
     print("NASA FIRMS: OK")
 
 
+def test_uat():
+    """Comuna se găsește după coordonate, iar textul fișei o spune."""
+    from pipeline import uat, writer
+    u = uat.UAT()
+    assert u.find(22.772, 44.517)["nume"] == "Hinova"
+    assert u.find(22.599, 44.523)["nume"] == "Burila Mare"
+    a = {"lat": 44.523, "lon": 22.599, "localitate": "Vrancea", "localitate_km": 1.2, "county": "Mehedinți", "ha": 1.8,
+         "first_seen": "2026-10-02", "before_date": "2026-09-09", "n_dates": 7}
+    assert uat.apply([a]) == 1
+    assert "din comuna Burila Mare, lângă Vrancea, județul Mehedinți" in writer.text(a), writer.text(a)
+    assert uat.ro("Şişeşti") == "Șișești"
+    print("Comuna: OK")
+
+
 if __name__ == "__main__":
     test_critic()
     test_vischeck()
     test_firms()
+    test_uat()
     main()

@@ -60,6 +60,7 @@ python -m pipeline.eval_judge qwen3.5:4b                          # testează ju
 - [ESA WorldCover 2021](https://esa-worldcover.org/) (10 m), pentru masca de pădure
 - Hansen et al., [Global Forest Change 2000–2025](https://glad.earthengine.app/view/global-forest-change), Universitatea Maryland
 - [GeoNames](https://www.geonames.org/) (localități), [Open-Meteo](https://open-meteo.com/) (vânt)
+- Limitele comunelor, orașelor și municipiilor (UAT): [geo-spatial.org](https://www.geo-spatial.org/), simplificate în [akaleeroy/romania-uat](https://github.com/akaleeroy/romania-uat), adunate în `data/uat_ro.geojson`
 - Fundalul hărții: [Sentinel-2 cloudless](https://s2maps.eu) de EOX IT Services GmbH (CC BY-NC-SA 4.0), © OpenStreetMap, © CARTO
 
 ## Aspectul site-ului
