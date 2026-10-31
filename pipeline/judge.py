@@ -188,9 +188,10 @@ def backend():
 
 
 SEASON_NOTE = """
-Careful: BEFORE and AFTER are {days} days apart and AFTER is in autumn. Whole stands that turned brown, red-brown,
-orange or yellow with soft edges are autumn colours ("toamna"), even if they look dark. Pick "taiere" only for a new
-bare patch with sharp edges, and "incendiu" only for a black or charcoal burn scar."""
+Careful: BEFORE and AFTER are {days} days apart and AFTER is in autumn, so the forest around may have changed colour too.
+Autumn colours (yellow, orange, red-brown) cover whole stands and keep the canopy texture. A burn scar is a flat
+dark-brown, purple-grey or black area, often spreading from pasture with an irregular front. A cut is new bare soil
+with sharp edges. Compare the flagged area with the forest right next to it."""
 
 
 def season_note(d0, d1):

@@ -128,6 +128,49 @@ def test_critic():
     print("criticul: OK")
 
 
+def test_vischeck():
+    """Verificarea pe poze: tăiere nouă = vizibil; luminiș care era deja acolo = deschisa; nimic schimbat = nevazut."""
+    import tempfile
+    from pathlib import Path
+    from PIL import Image
+    from pipeline import vischeck
+    from pipeline.critic import score
+    tmp = Path(tempfile.mkdtemp())
+    n = 100                                            # 100 px pe ~1 km: ~10 m pe pixel
+    bbox = [22.0, 46.0, 22.013, 46.009]
+    zone_px = (40, 40, 60, 60)
+    x0, y0, x1, y1 = bbox
+    lon = lambda c: x0 + c / n * (x1 - x0)
+    lat = lambda r: y1 - r / n * (y1 - y0)
+    c0, r0, c1, r1 = zone_px
+    geom = {"type": "Polygon", "coordinates": [[[lon(c0), lat(r0)], [lon(c1), lat(r0)], [lon(c1), lat(r1)], [lon(c0), lat(r1)], [lon(c0), lat(r0)]]]}
+    forest, autumn, soil = (40, 90, 40), (90, 80, 40), (190, 170, 140)
+
+    def pic(name, ring, zone):
+        im = Image.new("RGB", (n, n), ring)
+        im.paste(Image.new("RGB", (c1 - c0, r1 - r0), zone), (c0, r0))
+        im.save(tmp / name)
+        return {"file": name, "date": "2026-10-01"}
+
+    def alert(b, a):
+        return {"chip_bbox": bbox, "geometry": geom, "img_before": b, "img_after": a}
+    cases = {
+        "vizibil": alert(pic("cut_b.png", forest, forest), pic("cut_a.png", autumn, soil)),
+        "deschisa": alert(pic("old_b.png", forest, soil), pic("old_a.png", autumn, soil)),
+        "nevazut": alert(pic("same_b.png", forest, forest), pic("same_a.png", forest, forest)),
+    }
+    for want, a in cases.items():
+        v = vischeck.measure(a, tmp)
+        assert vischeck.verdict(v) == want, (want, v)
+    base = {"confirmed": True, "n_dates": 3, "ha": 4.0, "neigh_drop": 0.01, "first_seen": "2026-10-04",
+            "before_date": "2026-09-17", "img_before": {"date": "2026-09-17"}, "ai": {"categorie": "taiere", "incredere": 0.8}}
+    assert score({**base, "vis": {"verdict": "vizibil"}})[0] == "ridicată"
+    assert score({**base, "vis": {"verdict": "deschisa"}})[0] == "scăzută"
+    assert score({**base, "vis": {"verdict": "nevazut"}})[0] == "scăzută"
+    print("verificarea pe poze: OK")
+
+
 if __name__ == "__main__":
     test_critic()
+    test_vischeck()
     main()

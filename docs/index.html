@@ -38,7 +38,7 @@
 
     <section class="block" aria-labelledby="h-conf">
       <h2 id="h-conf" class="lbl">Cât de sigur e semnalul</h2>
-      <p class="hint">„Scăzută”: dovezi slabe, de obicei pentru că analistul AI crede că e o alarmă falsă. „De confirmat”: nu avem încă destule imagini (doar o zi sau nicio imagine clară de dinainte).</p>
+      <p class="hint">„Scăzută”: dovezi slabe. Analistul AI crede că e o alarmă falsă sau, în poze, nu se vede pădure care dispare. „De confirmat”: nu avem încă destule imagini (doar o zi sau nicio imagine clară de dinainte).</p>
       <div class="chips" id="conf"></div>
     </section>
 
@@ -70,6 +70,7 @@
         <ol>
           <li><strong>Detectorul</strong> (cod, fără AI) compară fiecare imagine nouă cu pădurea de dinainte și cu aceeași perioadă de anul trecut. Păstrează doar ce rămâne schimbat în imaginile următoare și ignoră schimbările care cuprind tot dealul (toamna, ceața).</li>
           <li><strong>Analistul AI</strong> se uită la perechea de imagini înainte/după și spune ce crede că vede: pădure dispărută, nori, frunze de toamnă sau câmp.</li>
+          <li><strong>Verificarea pe poze</strong> (cod, fără AI): în poza de dinainte zona trebuie să arate ca pădurea din jur, nu ca un luminiș, și până la poza de după trebuie să se schimbe vizibil mai mult decât împrejurimile.</li>
           <li><strong>Contextul</strong>: cea mai apropiată localitate, vântul din acele zile, pierderile din anii trecuți.</li>
           <li><strong>Criticul</strong> pune dovezile cap la cap și dă un nivel de încredere.</li>
           <li><strong>Redactorul</strong> scrie fișa, în cuvinte neutre.</li>

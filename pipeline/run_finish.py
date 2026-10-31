@@ -7,7 +7,7 @@ import json
 import shutil
 
 from . import config as C
-from . import critic, writer
+from . import critic, vischeck, writer
 from .context import add_context
 from .sat import log
 
@@ -119,6 +119,7 @@ def main():
     todo = [a for a in alerts if a["first_seen"] >= d0]  # contextul se recalculează doar pentru fereastra curentă
     lossyear = next(iter(sorted((C.DATA / "hansen").glob("*lossyear*.tif"))), None) if (C.DATA / "hansen").exists() else None
     add_context(todo, lossyear)
+    log(f"Verificarea pe poze: {vischeck.apply(alerts, C.DOCS / 'img')} zone cu ambele poze")
     critic.apply(alerts)
     writer.apply(alerts)
 

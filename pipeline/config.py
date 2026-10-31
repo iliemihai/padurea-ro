@@ -46,6 +46,11 @@ RULE_NBR_NOW_MAX = 0.25   # după: indicele SWIR al zonei arată sol gol, lemn t
 RULE_ADJ_NBR_MIN = 0.30   # scăderea SWIR față de pădurea din jur
 RULE_EDGE_MAX = 0.85      # zona nu e doar o fâșie pe marginea pădurii
 
+# Verificarea pe poze (vischeck.py): zona comparată cu un inel de 40–200 m în jurul ei, pe pozele înainte/după (0–255)
+VIS_OPEN_MAX = 22         # înainte: zona mai luminoasă decât împrejurimile cu peste atât = era deja deschisă
+VIS_EXCESS_MIN = 20       # cât trebuie să se schimbe culoarea zonei peste schimbarea din jur…
+VIS_DGREEN_MIN = 1.5      # …sau cât trebuie să piardă din verde (puncte procentuale) peste împrejurimi
+
 # Teste contra alarmelor false
 SCENE_MAX_CHANGED = 0.05  # dacă într-o imagine s-a „schimbat" peste 5% din pădure, e ceață sau toamnă: o sărim
 NEIGH_PX = 25             # „pădurea din jur": 25 × 40 m = 1 km

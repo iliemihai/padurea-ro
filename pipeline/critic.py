@@ -4,6 +4,11 @@ import datetime as dt
 AI_FALS = {"nori": "AI-ul vede nori", "toamna": "AI-ul vede doar frunze de toamnă", "agricol": "AI-ul vede teren agricol"}
 AI_DA = {"taiere": "AI-ul vede pădure dispărută", "incendiu": "AI-ul vede o zonă arsă"}
 GAP_MAX = 40   # zile între „ultima dată intactă" și „prima dată schimbată" peste care nu mai știm bine când
+VIS_TXT = {
+    "deschisa": "în poza de dinainte zona era deja mai luminoasă decât pădurea din jur: luminiș, pajiște sau drum, nu pădure tăiată acum",
+    "nevazut": "în poze, zona nu se schimbă vizibil mai mult decât pădurea din jur",
+    "vizibil": "în poze, zona se schimbă vizibil față de pădurea din jur",
+}
 
 
 def _days(a, b):
@@ -39,6 +44,12 @@ def score(a):
     else:
         why.append("fără părerea AI")
     level = "ridicată" if s >= 5 else ("medie" if s >= 3 else "scăzută")
+    # ce se vede în poze are ultimul cuvânt: dacă pozele nu arată o pădure care dispare, nu dăm încredere
+    vis = (a.get("vis") or {}).get("verdict")
+    if vis in VIS_TXT:
+        why.append(VIS_TXT[vis])
+        if vis != "vizibil":
+            level = "scăzută"
     return level, s, why
 
 
