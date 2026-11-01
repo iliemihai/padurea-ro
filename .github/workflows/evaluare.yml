@@ -1,0 +1,103 @@
+name: Test pe trecut
+
+# Rulează detectorul pe un an trecut, fereastră cu fereastră, într-un site separat (nu atinge site-ul public),
+# apoi compară zonele găsite cu pierderile de pădure Hansen din acel an: precizie pe niveluri și recall pe mărimi.
+on:
+  workflow_dispatch:
+    inputs:
+      year:
+        description: "Anul testat (trebuie să existe în Hansen)"
+        default: "2025"
+      ends:
+        description: "Sfârșitul fiecărei ferestre de 90 de zile (JSON)"
+        default: '["2025-03-31", "2025-06-30", "2025-09-30", "2025-12-31"]'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: evaluare
+  cancel-in-progress: false
+
+env:
+  JUDGE_MAX_PER_GROUP: "60"
+  PYTHONUNBUFFERED: "1"
+
+jobs:
+  detect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    strategy:
+      fail-fast: false
+      matrix:
+        end: ${{ fromJSON(inputs.ends) }}
+        group: [0, 1, 2, 3, 4, 5, 6, 7]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - uses: actions/cache@v4
+        with:
+          path: data/hansen
+          key: hansen-gfc-2025
+      - name: Detectorul și AI-ul, pe fereastra care se termină pe ${{ matrix.end }}
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: python -m pipeline.run_tiles --group ${{ matrix.group }} --groups 8 --days 90 --end "${{ matrix.end }}" --judge
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ev-${{ matrix.end }}-g${{ matrix.group }}
+          path: out/
+          retention-days: 7
+
+  scor:
+    needs: detect
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - uses: actions/cache@v4
+        with:
+          path: data/hansen
+          key: hansen-gfc-2025
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: ev-*
+          path: ev/raw
+      - name: Agenții, fereastră cu fereastră, ca în rulările zilnice
+        run: |
+          mkdir -p ev/docs/data && cp -r docs/data/static ev/docs/data/
+          for end in $(echo '${{ inputs.ends }}' | python -c "import json,sys; print(' '.join(json.load(sys.stdin)))"); do
+            mkdir -p "ev/out_$end"
+            for d in ev/raw/ev-$end-g*; do [ -d "$d" ] && cp -r "$d/." "ev/out_$end/"; done
+            ls "ev/out_$end" | head
+            PADUREA_OUT="$PWD/ev/out_$end" PADUREA_DOCS="$PWD/ev/docs" python -m pipeline.run_finish
+          done
+      - name: Scorurile
+        run: python -m pipeline.evaluate --year "${{ inputs.year }}" --docs ev/docs --out "ev/evaluare_${{ inputs.year }}.json"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: evaluare-${{ inputs.year }}
+          path: |
+            ev/evaluare_*.json
+            ev/docs/data/alerts.json
+            ev/docs/data/arhiva/
+          retention-days: 30
+      - name: Salvez scorurile în repo
+        run: |
+          cp "ev/evaluare_${{ inputs.year }}.json" "data/evaluare_${{ inputs.year }}.json"
+          git config user.name "padurea-ro bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add "data/evaluare_${{ inputs.year }}.json"
+          git commit -m "Testul pe ${{ inputs.year }}: scorurile față de Hansen" || echo "nimic nou"
+          git pull --rebase origin main && git push origin HEAD:main

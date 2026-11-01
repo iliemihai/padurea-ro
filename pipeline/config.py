@@ -4,8 +4,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 DATA = ROOT / "data"
-OUT = ROOT / "out"            # rezultatele unei rulări (nu intră în site)
-DOCS = ROOT / "docs"          # site-ul public (GitHub Pages)
+# PADUREA_OUT / PADUREA_DOCS: alte foldere, ca testul pe trecut (evaluate.py) să nu atingă site-ul
+OUT = Path(os.environ.get("PADUREA_OUT") or ROOT / "out")      # rezultatele unei rulări (nu intră în site)
+DOCS = Path(os.environ.get("PADUREA_DOCS") or ROOT / "docs")   # site-ul public (GitHub Pages)
 
 PC_URL = "https://planetarycomputer.microsoft.com/api/stac/v1"
 RO_BBOX = [20.2, 43.6, 29.75, 48.3]

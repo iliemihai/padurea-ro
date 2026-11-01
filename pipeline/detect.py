@@ -40,8 +40,9 @@ def county_raster(grid):
     return dst, meta["names"]
 
 
-def forest_mask(cat, grid, lonlat_bbox, lossyear_path):
-    """Pădure = copaci în ESA WorldCover 2021 (10 m) și fără pierdere Hansen în 2021–2025."""
+def forest_mask(cat, grid, lonlat_bbox, lossyear_path, year=None):
+    """Pădure = copaci în ESA WorldCover 2021 (10 m) și fără pierdere Hansen în cei 5 ani dinaintea anului ferestrei
+    (pentru 2026: 2021–2025). Anul contează la testul pe trecut: pierderile din anul testat nu se ascund."""
     from rasterio.enums import Resampling
     from .sat import search
     wc = np.zeros((grid[3], grid[2]), np.uint8)
@@ -64,7 +65,8 @@ def forest_mask(cat, grid, lonlat_bbox, lossyear_path):
         trees = read_grid(str(tc_path), grid, Resampling.average, C.RES, None, "float32") >= 30
     if lossyear_path is not None:
         ly = read_grid(str(lossyear_path), grid, Resampling.max, C.RES, None, "uint8")
-        trees &= ~((ly >= 21) & (ly <= 25))
+        y = (year or 2026) - 2000
+        trees &= ~((ly >= y - 5) & (ly <= y - 1))
     return trees
 
 
@@ -124,7 +126,7 @@ def detect_tile(cat, tile, items, d0, d1, lossyear_path, ro_check):
         return info, [], []
 
     county, names = county_raster(grid)
-    forest = forest_mask(cat, grid, [lon0, lat0, lon1, lat1], lossyear_path) & (county > 0)
+    forest = forest_mask(cat, grid, [lon0, lat0, lon1, lat1], lossyear_path, year=int(str(d1)[:4])) & (county > 0)
     n_forest = int(forest.sum())
     info["forest_ha"] = round(n_forest * C.PX_HA)
     if n_forest < 2000:
