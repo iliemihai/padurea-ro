@@ -35,6 +35,26 @@ def unde(a):
     return loc + (f", județul {a['county']}" if a.get("county") else "")
 
 
+ARIE = {"parc național": "Parcul Național", "parc natural": "Parcul Natural", "rezervație științifică": "rezervația științifică",
+        "rezervație naturală": "rezervația naturală", "monument al naturii": "monumentul naturii",
+        "rezervația biosferei": "Rezervația Biosferei", "arie protejată națională": "aria protejată"}
+
+
+def arie(p):
+    """Numele unei arii protejate, cu felul ei: „situl Natura 2000 ROSCI0129 Nordul Gorjului de Vest”, „Parcul Natural Porțile de Fier”."""
+    t, n, c = p.get("tip", ""), p.get("nume", ""), p.get("cod", "")
+    if t.startswith("sit Natura 2000"):
+        s = f"situl Natura 2000 {c} {n}".strip()
+    else:
+        art = ARIE.get(t, "aria protejată")
+        s = n if n.lower().startswith(art.split()[0].lower()[:5]) else f"{art} {n}".strip()
+    return s + (" (doar în parte)" if p.get("parte", 1) < 0.9 else "")
+
+
+def enum(xs):
+    return xs[0] if len(xs) == 1 else ", ".join(xs[:-1]) + " și " + xs[-1]
+
+
 def text(a):
     if a.get("before_date"):
         cand = f"Între {zi(a['before_date'])} și {zi(a['first_seen'])}"
@@ -52,6 +72,9 @@ def text(a):
         s.append(f"Sateliții NASA (FIRMS) au văzut foc la {fi['dist_m']} m de zonă, {('pe ' + cand) if fi['prima'] == fi['ultima'] else cand}.")
     if a.get("vant"):
         s.append(f"În acel interval a fost vânt puternic în zonă (rafale de până la {a['rafala_kmh']} km/h), deci poate fi și o doborâtură.")
+    ar = a.get("arii") or []
+    if ar:
+        s.append("Zona se află în " + enum([arie(p) for p in ar[:3]]) + (f", plus încă {len(ar) - 3} arii protejate" if len(ar) > 3 else "") + ".")
     hj = a.get("hansen_jur")
     if hj and hj.get("ani"):
         s.append("În jur s-a mai pierdut pădure în " + ", ".join(str(y) for y in hj["ani"]) + " (Hansen).")

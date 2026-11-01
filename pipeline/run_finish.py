@@ -7,7 +7,7 @@ import json
 import shutil
 
 from . import config as C
-from . import critic, firms, uat, vischeck, writer
+from . import arii, critic, firms, uat, vischeck, writer
 from .context import add_context
 from .sat import log
 
@@ -120,6 +120,7 @@ def main():
     lossyear = next(iter(sorted((C.DATA / "hansen").glob("*lossyear*.tif"))), None) if (C.DATA / "hansen").exists() else None
     add_context(todo, lossyear)
     uat.apply(alerts)  # numele comunelor, în ortografia de azi, și pentru zonele mai vechi din istoric
+    log(f"Arii protejate: {arii.apply(alerts)} din {len(alerts)} zone")
     firms.apply(todo, C.DOCS / "data" / "firms.geojson")
     log(f"Verificarea pe poze: {vischeck.apply(alerts, C.DOCS / 'img')} zone cu ambele poze")
     critic.apply(alerts)
