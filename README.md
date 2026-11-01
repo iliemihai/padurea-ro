@@ -19,8 +19,8 @@ imagini Sentinel-2 noi (la 2–5 zile)
    - pentru fiecare imagine nouă: unde a scăzut infraroșul de undă scurtă (NBR, SWIR) și verdele (NDVI)
      mai mult decât în pădurea din jur
    - iarna (1 noiembrie – 15 martie) nu caută: o tăiere din iarnă apare primăvara, cu intervalul ei;
-     toamna, pragurile sunt mai stricte și zonele rămân cel mult „scăzută”
-   - păstrează doar ce rămâne schimbat în imaginile următoare (confirmată = în cel puțin 3 imagini)
+     din iulie până în octombrie pragurile sunt mai stricte, iar ce găsim toamna rămâne cel mult „scăzută”
+   - păstrează doar ce rămâne schimbat în imaginile următoare (confirmată = în cel puțin 4 imagini)
    - respinge ce se vedea deja schimbat înainte și schimbările care cuprind tot dealul (ceață)
         │  candidați
         ▼

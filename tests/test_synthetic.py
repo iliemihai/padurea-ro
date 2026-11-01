@@ -117,7 +117,7 @@ def main():
 def test_critic():
     """Criticul: fără poză de dinainte nu dăm încredere; o poză veche sau un AI nehotărât scad scorul."""
     from pipeline.critic import score
-    base = {"confirmed": True, "n_dates": 3, "ha": 4.0, "neigh_drop": 0.01, "first_seen": "2026-07-04",
+    base = {"confirmed": True, "n_dates": 4, "ha": 4.0, "neigh_drop": 0.01, "first_seen": "2026-07-04",
             "before_date": "2026-06-17", "img_before": {"date": "2026-06-17"},
             "ai": {"categorie": "taiere", "incredere": 0.8}}
     assert score(base)[0] == "ridicată"
@@ -162,7 +162,7 @@ def test_vischeck():
     for want, a in cases.items():
         v = vischeck.measure(a, tmp)
         assert vischeck.verdict(v) == want, (want, v)
-    base = {"confirmed": True, "n_dates": 3, "ha": 4.0, "neigh_drop": 0.01, "first_seen": "2026-07-04",
+    base = {"confirmed": True, "n_dates": 4, "ha": 4.0, "neigh_drop": 0.01, "first_seen": "2026-07-04",
             "before_date": "2026-06-17", "img_before": {"date": "2026-06-17"}, "ai": {"categorie": "taiere", "incredere": 0.8}}
     assert score({**base, "vis": {"verdict": "vizibil"}})[0] == "ridicată"
     assert score({**base, "vis": {"verdict": "deschisa"}})[0] == "scăzută"
@@ -206,7 +206,7 @@ def test_firms():
         os.environ.pop("FIRMS_MAP_KEY", None)
         if old_key is not None:
             os.environ["FIRMS_MAP_KEY"] = old_key
-    base = {"confirmed": True, "n_dates": 3, "ha": 1.4, "neigh_drop": 0.1, "first_seen": "2026-10-12",
+    base = {"confirmed": True, "n_dates": 4, "ha": 1.4, "neigh_drop": 0.1, "first_seen": "2026-10-12",
             "before_date": "2026-10-04", "img_before": {"date": "2026-10-04"}, "ai": {"categorie": "neclar", "incredere": 0.3}}
     s0, s1 = score(base), score({**base, "firms": z1["firms"]})
     assert s1[1] == s0[1] + 2 and any("NASA" in x for x in s1[2]), s1
@@ -271,7 +271,7 @@ def test_arhiva_split():
 
 
 def test_confirm_across_runs():
-    """O zonă văzută într-o singură imagine devine confirmată când o vedem schimbată în încă două imagini mai noi,
+    """O zonă văzută într-o singură imagine devine confirmată când o vedem schimbată în încă trei imagini mai noi,
     chiar dacă fiecare rulare (fereastra alunecă) vede doar una."""
     from pipeline import run_finish as R
     old = _sq(25.0, 46.0, id="P", n_dates=1, confirmed=False, after_date="2026-10-01", first_seen="2026-10-01")
@@ -282,9 +282,12 @@ def test_confirm_across_runs():
     later = _sq(25.0, 46.0, n_dates=1, confirmed=False, first_seen="2026-10-01", after_date="2026-10-09")
     R.merge_history([later], [old])
     assert not old["confirmed"] and old["n_dates"] == 2, old
-    last = _sq(25.0, 46.0, n_dates=1, confirmed=False, first_seen="2026-10-01", after_date="2026-10-14")
+    third = _sq(25.0, 46.0, n_dates=1, confirmed=False, first_seen="2026-10-01", after_date="2026-10-14")
+    R.merge_history([third], [old])
+    assert not old["confirmed"] and old["n_dates"] == 3, old
+    last = _sq(25.0, 46.0, n_dates=1, confirmed=False, first_seen="2026-10-01", after_date="2026-10-19")
     R.merge_history([last], [old])
-    assert old["confirmed"] and old["n_dates"] == 3 and old["after_date"] == "2026-10-14", old
+    assert old["confirmed"] and old["n_dates"] == 4 and old["after_date"] == "2026-10-19", old
     print("Confirmarea între rulări: OK")
 
 

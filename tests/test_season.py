@@ -84,7 +84,7 @@ def run(d0, d1, cut_day):
 def test_winter_is_quiet():
     """Iarna nu căutăm: nicio zonă, nicio imagine folosită."""
     info, patches, rejected = run(dt.date(2025, 1, 1), dt.date(2025, 3, 1), CUT_DAY)
-    assert info["status"] == "ok", info
+    assert info["status"].startswith("iarnă"), info
     assert not patches and not rejected and not info["window_scenes"], info
     print("Iarna: nu căutăm")
 
@@ -129,14 +129,17 @@ def test_summer_cut_dated():
 
 
 def test_partial_cut_found():
-    """O rărire puternică vara (rămân arbori, crește iarbă): verdele scade cu ~0,2, NBR cu ~0,3. Trebuie găsită."""
+    """O rărire puternică la sfârșit de primăvară (rămân arbori, crește iarbă): verdele scade cu ~0,2, NBR cu ~0,3.
+    Primăvara trebuie găsită; din iulie, cu pragurile stricte, nu (apare primăvara următoare)."""
     LATE["partial"] = True
     try:
-        info, patches, rejected = run(dt.date(2025, 7, 2), dt.date(2025, 9, 30), dt.date(2025, 7, 20))
+        info, patches, rejected = run(dt.date(2025, 4, 2), dt.date(2025, 6, 30), dt.date(2025, 5, 25))
+        info2, patches2, _ = run(dt.date(2025, 7, 2), dt.date(2025, 9, 30), dt.date(2025, 7, 20))
     finally:
         LATE["partial"] = False
     assert len(patches) == 1 and patches[0]["confirmed"], (info, [(p["ha"], p.get("motiv")) for p in patches + rejected])
-    print("Rărirea din vară: găsită", patches[0]["first_seen"], patches[0]["ha"], "ha")
+    assert not patches2, [(p["ha"], p["first_seen"]) for p in patches2]
+    print("Rărirea de primăvară: găsită", patches[0]["first_seen"], patches[0]["ha"], "ha; cea din iulie așteaptă primăvara")
 
 
 def test_late_spring_is_quiet():

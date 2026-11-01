@@ -12,11 +12,11 @@ def _num(x):
 
 def check(p):
     """Întoarce (trece, motiv). Motivul e scris pentru oameni."""
-    from .detect import autumn
+    from .detect import strict
     f = p.get("f") or {}
-    fall = autumn(p["first_seen"])
-    nb_max = C.RULE_NBR_NOW_MAX_AUTUMN if fall else C.RULE_NBR_NOW_MAX
-    adj_min = C.RULE_ADJ_NBR_MIN_AUTUMN if fall else C.RULE_ADJ_NBR_MIN
+    hard = strict(p["first_seen"])
+    nb_max = C.RULE_NBR_NOW_MAX_STRICT if hard else C.RULE_NBR_NOW_MAX
+    adj_min = C.RULE_ADJ_NBR_MIN_STRICT if hard else C.RULE_ADJ_NBR_MIN
     if p.get("neigh_drop", 0) > C.NEIGH_MAX:
         return False, "pădurea din jur a pierdut și ea verde (toamnă sau ceață)"
     if _num(f.get("blue")) and f["blue"] > C.RULE_BLUE_MAX:

@@ -54,26 +54,29 @@ NDVI_DROP = 0.10          # verdele a scăzut cu cel puțin atât mai mult decâ
 NDVI_NOW_MAX = 0.75       # acum: nu mai arată a pădure deasă
 NBR_DROP = 0.15           # și indicele cu SWIR a scăzut cu atât mai mult decât în jur
 NBR_NOW_MAX = 0.45
-# Toamna (frunze care se îngălbenesc la date diferite de la un an la altul) păstrăm pragurile vechi, stricte:
-# o tăiere rasă tot trece de ele, iar una parțială apare primăvara. Și tot ce găsim toamna rămâne cel mult „scăzută”
-# până o vedem schimbată și după (testul pe 2025: 38% potriviri în octombrie, față de 70–88% din mai până în iulie).
+# Din iulie până la sfârșitul lui octombrie păstrăm pragurile vechi, stricte. Vara, pragurile largi au adus multe
+# alarme false (testul pe 2025: 30–37% potriviri în iulie–august, față de 50–75% cu pragurile stricte; pădure
+# stresată de secetă și arșiță, altfel decât vara trecută). Toamna, frunzele se îngălbenesc la date diferite de la
+# un an la altul. O tăiere rasă trece și de pragurile stricte, iar una parțială apare primăvara următoare.
+STRICT = ("07-01", "10-31")
+NDVI_DROP_STRICT = 0.25
+NDVI_NOW_MAX_STRICT = 0.50
+NBR_DROP_STRICT = 0.25
+NBR_NOW_MAX_STRICT = 0.35
+# Tot ce găsim toamna rămâne cel mult „scăzută” până o vedem schimbată și după (octombrie 2025: 38% potriviri).
 AUTUMN = ("09-15", "10-31")
-NDVI_DROP_AUTUMN = 0.25
-NDVI_NOW_MAX_AUTUMN = 0.50
-NBR_DROP_AUTUMN = 0.25
-NBR_NOW_MAX_AUTUMN = 0.35
 HAZE_BLUE = 0.09          # albastru mare ȘI aproape cât roșul = nor sau ceață (solul gol e mai roșu decât albastru)
 HAZE_BLUE_RED = 0.85
-CONFIRM_DATES = 3         # o zonă e confirmată când se vede schimbată în cel puțin atâtea zile diferite
-                          # (testul pe 2025: cu 2 zile, 17% potriviri cu Hansen; cu 3, 70%; cu 4, 75%)
+CONFIRM_DATES = 4         # o zonă e confirmată când se vede schimbată în cel puțin atâtea zile diferite
+                          # (testul pe 2025: cu 2 zile, 17% potriviri cu Hansen; cu 3, 14–35%; cu 4 sau mai multe, 34–73%)
 THUMB_SINGLES = 20        # imagini și pentru cele mai mari zone încă neconfirmate
 THUMB_MAX_CONFIRMED = 400 # cel mult atâtea zone confirmate cu imagini, pe grupă (fără poze, zona nu apare pe site)
 
 # Regulile de publicare (rules.py), aplicate pe măsurătorile salvate pentru fiecare zonă (pe medii, pe toată zona)
 RULE_NBR_NOW_MAX = 0.42   # după: indicele SWIR al zonei arată sol, lemn tăiat, ars sau vegetație rară, nu pădure
 RULE_ADJ_NBR_MIN = 0.18   # scăderea SWIR față de pădurea din jur
-RULE_NBR_NOW_MAX_AUTUMN = 0.25   # toamna, ca înainte
-RULE_ADJ_NBR_MIN_AUTUMN = 0.30
+RULE_NBR_NOW_MAX_STRICT = 0.25   # din iulie până în octombrie, ca înainte
+RULE_ADJ_NBR_MIN_STRICT = 0.30
 RULE_EDGE_MAX = 0.85      # zona nu e doar o fâșie pe marginea pădurii
 RULE_BLUE_MAX = 0.12      # albastru atât de mare = nor sau ceață scăpate de masca de nori
 

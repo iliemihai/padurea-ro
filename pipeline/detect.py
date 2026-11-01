@@ -206,13 +206,18 @@ def winter(day):
 
 
 def autumn(day):
-    """Toamna (C.AUTUMN): pragurile stricte."""
+    """Toamna (C.AUTUMN): ce găsim atunci rămâne cel mult „scăzută”."""
     return _in(day, C.AUTUMN)
 
 
+def strict(day):
+    """Vara târzie și toamna (C.STRICT): pragurile stricte."""
+    return _in(day, C.STRICT)
+
+
 def thresholds(day):
-    if autumn(day):
-        return C.NDVI_DROP_AUTUMN, C.NBR_DROP_AUTUMN, C.NDVI_NOW_MAX_AUTUMN, C.NBR_NOW_MAX_AUTUMN
+    if strict(day):
+        return C.NDVI_DROP_STRICT, C.NBR_DROP_STRICT, C.NDVI_NOW_MAX_STRICT, C.NBR_NOW_MAX_STRICT
     return C.NDVI_DROP, C.NBR_DROP, C.NDVI_NOW_MAX, C.NBR_NOW_MAX
 
 
@@ -248,6 +253,8 @@ def detect_tile(cat, tile, items, d0, d1, lossyear_path, ro_check):
 
     if not items["window"]:
         return {"tile": tile, "status": "fără imagini noi în fereastră"}, [], []
+    if all(winter(item_date(it)) for it in items["window"]):
+        return {"tile": tile, "status": "iarnă: nu căutăm", "window_scenes": [], "skipped": []}, [], []
     first = items["window"][0]
     grid = tile_grid(first)
     crs, transform, W, H = grid
