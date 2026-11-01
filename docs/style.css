@@ -126,7 +126,10 @@ button:disabled { opacity: 0.55; cursor: not-allowed; }
 .key.lo { background: var(--color-data-lo); }
 .key.un { background: none; border: 1.5px dashed var(--color-data-un); }
 .key.fire { position: relative; background: none; }
-.key.arie { background: color-mix(in oklch, var(--color-protected) 22%, transparent); border: 1.5px dashed var(--color-protected); }
+.key.arie { background: color-mix(in oklch, var(--color-protected) 22%, transparent); border: 1px solid var(--color-protected); }
+/* chenarul albastru: aceeași culoare a încrederii, dar zona e într-o arie protejată (ca pe hartă) */
+.key.p { box-shadow: 0 0 0 1.5px var(--color-paper-3), 0 0 0 3.5px var(--color-protected); }
+.key.frame { background: var(--color-paper-3); box-shadow: inset 0 0 0 2px var(--color-protected); }
 .key.fire::before, .key.fire::after { content: ""; position: absolute; left: calc(50% - 1px); top: -2px; width: 2px; height: 14px; background: var(--color-fire); transform: rotate(45deg); }
 .key.fire::after { transform: rotate(-45deg); }
 
@@ -306,6 +309,10 @@ body.noscroll { overflow-y: clip; }
 .splitbtn:hover { border-color: var(--color-muted); }
 .splitbtn:active { background: var(--color-paper-3); }
 .splitbtn[aria-pressed="true"] { border-color: var(--color-accent); }
+.ariibtn { display: inline-flex; align-items: center; gap: var(--space-xs); }
+.ariibtn .n { font-weight: 400; color: var(--color-ink-2); }
+.ariibtn .n b { font-family: var(--font-outlier); font-weight: 500; font-variant-numeric: tabular-nums; color: var(--color-ink); }
+.ariibtn[aria-pressed="true"] { border-color: var(--color-protected); background: color-mix(in oklab, var(--color-protected) 22%, var(--color-paper)); }
 .note { padding: var(--space-xs) var(--space-sm); background: var(--color-paper-2); font-size: var(--text-sm); color: var(--color-ink-2); }
 
 .tg { display: flex; align-items: center; gap: var(--space-sm); min-height: 40px; font-size: var(--text-sm); color: var(--color-ink-2); cursor: pointer; }
