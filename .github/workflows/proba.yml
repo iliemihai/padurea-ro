@@ -1,0 +1,67 @@
+name: Verifică un loc
+
+# Rulează detectorul (cu AI-ul) doar pe plăcile care acoperă un punct, pe o fereastră din trecut, într-un site separat,
+# și pune pe ramura „proba-<rulare>-<caz>” zonele din jurul punctului, cu pozele lor. Nu atinge site-ul public.
+on:
+  workflow_dispatch:
+    inputs:
+      cases:
+        description: 'Locurile (JSON): [{"label": "...", "lat": 45.59, "lon": 22.40, "km": 6, "end": "2026-06-30", "days": 90}]'
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  proba:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        case: ${{ fromJSON(inputs.cases) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - uses: actions/cache@v4
+        with:
+          path: data/hansen
+          key: hansen-gfc-2025
+      - name: Detectorul în jurul punctului
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          PADUREA_AI_REUSE: "0"
+          PADUREA_OUT: ${{ github.workspace }}/pr/out
+          PYTHONUNBUFFERED: "1"
+        run: |
+          python -m pipeline.run_tiles --group 0 --groups 1 --days "${{ matrix.case.days }}" --end "${{ matrix.case.end }}" \
+            --near "${{ matrix.case.lat }},${{ matrix.case.lon }}" --judge
+      - name: Agenții, în site-ul separat
+        env:
+          PADUREA_OUT: ${{ github.workspace }}/pr/out
+          PADUREA_DOCS: ${{ github.workspace }}/pr/docs
+          PADUREA_PENDING: ${{ github.workspace }}/pr/neconfirmate.json
+          PADUREA_NO_WIND: "1"
+          PYTHONUNBUFFERED: "1"
+        run: |
+          mkdir -p pr/docs/data && cp -r docs/data/static pr/docs/data/
+          python -m pipeline.run_finish
+          python -m pipeline.proba --lat "${{ matrix.case.lat }}" --lon "${{ matrix.case.lon }}" --km "${{ matrix.case.km }}" \
+            --label "${{ matrix.case.label }}" --out proba
+      - name: Pe ramura proba
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          [ -d proba ] || exit 0
+          cd proba
+          git init -q -b proba
+          git config user.name "padurea-ro bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add .
+          git commit -qm "Verificare: ${{ matrix.case.label }}"
+          git push -qf "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git" "HEAD:proba-${{ github.run_id }}-${{ strategy.job-index }}"

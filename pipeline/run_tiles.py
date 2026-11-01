@@ -117,6 +117,7 @@ def main():
     ap.add_argument("--days", type=int, default=C.WINDOW_DAYS)
     ap.add_argument("--end", default="")
     ap.add_argument("--tiles", default="", help="doar aceste plăci, separate prin virgulă (pentru teste)")
+    ap.add_argument("--near", default="", help="doar plăcile care acoperă acest punct: „lat,lon” (pentru verificări)")
     ap.add_argument("--judge", action="store_true")
     a = ap.parse_args()
 
@@ -128,6 +129,11 @@ def main():
     tiles = sorted((t for t, v in by_tile.items() if v["window"]), key=lambda t: (-len(by_tile[t]["window"]), t))
     if a.tiles:
         tiles = [t for t in tiles if t in a.tiles.split(",")]
+    if a.near:
+        from shapely.geometry import Point, shape
+        la, lo = (float(x) for x in a.near.split(","))
+        pt = Point(lo, la)
+        tiles = [t for t in tiles if any(shape(it.geometry).contains(pt) for it in by_tile[t]["window"])]
     mine = [t for i, t in enumerate(tiles) if i % a.groups == a.group]
     log(f"Plăci cu imagini noi: {len(tiles)}; în grupa asta: {len(mine)} {mine}")
 
