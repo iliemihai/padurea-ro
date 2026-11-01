@@ -13,10 +13,13 @@ imagini Sentinel-2 noi (la 2–5 zile)
         │
         ▼
 1. Detectorul (cod, fără AI)          pipeline/detect.py
-   - referința: pădurea din lunile dinainte și din aceeași perioadă de anul trecut
-   - pentru fiecare imagine nouă: unde a dispărut verdele (NDVI) și a crescut solul gol (NBR, SWIR)
+   - unde căutăm: pădure în ESA WorldCover, deasă și verde în ultima vară
+   - referința de sezon: fiecare imagine nouă se compară cu aceeași perioadă de acum un an
+     (iarna cu iarna, toamna cu toamna), ca frunzele căzute să nu arate ca o tăiere
+   - pentru fiecare imagine nouă: unde a dispărut verdele (NDVI) și a crescut solul gol (NBR, SWIR),
+     mai mult decât în pădurea din jur; fără frunze contează mai ales infraroșul (NBR)
    - păstrează doar ce rămâne schimbat în imaginile următoare
-   - respinge schimbările care cuprind tot dealul (toamnă, ceață)
+   - respinge ce se vedea deja schimbat înainte și schimbările care cuprind tot dealul (ceață)
         │  candidați
         ▼
 2. Analistul AI                        pipeline/judge.py
@@ -33,13 +36,15 @@ imagini Sentinel-2 noi (la 2–5 zile)
 4. Verificarea pe poze și criticul     pipeline/vischeck.py, pipeline/critic.py
    - zona trebuie să fi arătat ca pădurea din jur înainte și să se schimbe vizibil după
    - pune dovezile cap la cap: încredere ridicată, medie sau scăzută
+   - zonele văzute schimbate într-o singură imagine („de confirmat”) nu apar pe site: stau în
+     data/neconfirmate.json până le vedem iar (atunci devin publice) sau 30 de zile (apoi le uităm)
         │
         ▼
 5. Redactorul                          pipeline/writer.py
    - textul fișei, în cuvinte neutre
         │
         ▼
-docs/data/alerts.json  →  harta (docs/)
+docs/data/alerts.json (ultimele 90 de zile) + docs/data/arhiva/ (pe luni)  →  harta (docs/)
 ```
 
 Totul rulează în fiecare dimineață în GitHub Actions (`.github/workflows/daily.yml`): detectorul pe 8 grupe de plăci în paralel, apoi agenții, apoi publicarea pe GitHub Pages.
@@ -51,6 +56,7 @@ pip install -r requirements.txt
 python -m pipeline.run_tiles --group 0 --groups 8 --days 30      # o grupă de plăci
 python -m pipeline.run_finish                                     # agenții și publicarea în docs/
 python -m tests.test_synthetic                                    # test pe date inventate
+python -m tests.test_season                                       # detectorul pe o placă inventată, iarna și toamna
 python -m pipeline.eval_judge qwen3.5:4b                          # testează judecătorul AI pe alertele verificate
 ```
 
@@ -73,7 +79,7 @@ Literele sunt incluse în `docs/fonts.css`, ca site-ul să nu depindă de alt se
 
 ## Limite
 
-Norii ascund pădurea uneori zile întregi. Iarna, fără frunze, vedem mai ales pădurile de rășinoase. Nu vedem zone mai mici de 1 ha și nici tăierile de sub coronament. Și AI-ul greșește. Dacă vezi o alertă greșită, deschide un issue.
+Norii ascund pădurea uneori zile întregi, iar zăpada săptămâni; o tăiere făcută atunci apare când se vede din nou locul, cu intervalul în care s-a putut întâmpla. Fără frunze, semnalul e mai slab decât vara. Nu vedem zone mai mici de 1 ha și nici tăierile de sub coronament. Și AI-ul greșește. Dacă vezi o alertă greșită, deschide un issue.
 
 ## Cheile (secrete)
 

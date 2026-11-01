@@ -9,8 +9,9 @@ on:
         description: "Anul testat (trebuie să existe în Hansen)"
         default: "2025"
       ends:
-        description: "Sfârșitul fiecărei ferestre de 90 de zile (JSON)"
-        default: '["2025-03-31", "2025-06-30", "2025-09-30", "2025-12-31"]'
+        description: "Sfârșitul fiecărei ferestre de 90 de zile (JSON). Se suprapun 30 de zile, ca o zonă de la capătul
+          unei ferestre să poată fi confirmată în următoarea, cum se întâmplă zilnic; prima doar încălzește istoricul."
+        default: '["2024-12-31", "2025-03-01", "2025-05-01", "2025-07-01", "2025-09-01", "2025-11-01", "2025-12-31"]'
       from_run:
         description: "Refă doar scorul, cu detecțiile unei rulări anterioare (id-ul ei); gol = rulează tot"
         default: ""
@@ -51,6 +52,7 @@ jobs:
       - name: Detectorul și AI-ul, pe fereastra care se termină pe ${{ matrix.end }}
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          PADUREA_AI_REUSE: "0"
         run: python -m pipeline.run_tiles --group ${{ matrix.group }} --groups 8 --days 90 --end "${{ matrix.end }}" --judge
       - uses: actions/upload-artifact@v4
         with:
@@ -83,6 +85,8 @@ jobs:
       - name: Agenții, fereastră cu fereastră, ca în rulările zilnice
         env:
           PADUREA_NO_WIND: "1"
+          PADUREA_PENDING: ev/neconfirmate.json
+          PADUREA_EXPIRED: ev/expirate.json
         run: |
           mkdir -p ev/docs/data && cp -r docs/data/static ev/docs/data/
           for end in $(echo '${{ inputs.ends }}' | python -c "import json,sys; print(' '.join(json.load(sys.stdin)))"); do
@@ -92,7 +96,7 @@ jobs:
             PADUREA_OUT="$PWD/ev/out_$end" PADUREA_DOCS="$PWD/ev/docs" python -m pipeline.run_finish
           done
       - name: Scorurile
-        run: python -m pipeline.evaluate --year "${{ inputs.year }}" --docs ev/docs --out "ev/evaluare_${{ inputs.year }}.json"
+        run: python -m pipeline.evaluate --year "${{ inputs.year }}" --docs ev/docs --out "ev/evaluare_${{ inputs.year }}.json" --extra ev/neconfirmate.json ev/expirate.json
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -101,6 +105,8 @@ jobs:
             ev/evaluare_*.json
             ev/docs/data/alerts.json
             ev/docs/data/arhiva/
+            ev/neconfirmate.json
+            ev/expirate.json
           retention-days: 30
       - name: Salvez scorurile în repo
         run: |
@@ -109,4 +115,4 @@ jobs:
           git config user.email "actions@users.noreply.github.com"
           git add "data/evaluare_${{ inputs.year }}.json"
           git commit -m "Testul pe ${{ inputs.year }}: scorurile față de Hansen" || echo "nimic nou"
-          git pull --rebase origin main && git push origin HEAD:main
+          git pull --rebase origin "${{ github.ref_name }}" && git push origin "HEAD:${{ github.ref_name }}"

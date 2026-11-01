@@ -119,7 +119,7 @@ jobs:
         run: |
           git config user.name "padurea-ro bot"
           git config user.email "actions@users.noreply.github.com"
-          git add docs/data docs/img
+          git add -A docs/data docs/img data/neconfirmate.json
           git commit -m "Date noi: $(date -u +%Y-%m-%d)" || echo "nimic nou"
           git pull --rebase origin main && git push origin HEAD:main
       - uses: actions/configure-pages@v5

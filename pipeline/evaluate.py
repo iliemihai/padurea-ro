@@ -5,8 +5,8 @@ python -m pipeline.evaluate --year 2025 --docs ev/docs [--out ev/evaluare_2025.j
 Precizia: din zonele noastre văzute prima dată în anul testat, câte au cel puțin 20% din suprafață pierdere Hansen în
 anul testat sau în cel dinainte (o tăiere din iarnă o vedem uneori abia primăvara). Pe niveluri de încredere și pe ce
 a crezut AI-ul.
-Recall: din petele de pierdere Hansen din anul testat (cel puțin 0,5 ha, în România), câte ating o zonă de-a noastră,
-pe mărimi; și cât din suprafața lor e acoperită. „Până la nivelul X” = găsite de zone cu încrederea X sau mai mare.
+Recall: din petele de pierdere Hansen din anul testat (cel puțin 0,5 ha, în România), câte ating o zonă de-a noastră
+(văzută prima dată din octombrie anul dinainte), pe mărimi; și cât din suprafața lor e acoperită. „Până la nivelul X” = găsite de zone cu încrederea X sau mai mare.
 
 Hansen e o referință independentă (Landsat, 30 m, un an întreg), dar nu perfectă: are și doborâturi de vânt și incendii,
 ratează tăierile parțiale, iar anul lui nu se potrivește la zi cu ferestrele noastre. Cifrele sunt aproximative.
@@ -29,16 +29,18 @@ PX = 0.00025          # pixelul Hansen, în grade
 TRUE_FRAC = 0.2       # o zonă „se potrivește” dacă măcar atât din ea e pierdere Hansen
 
 
-def load_zones(docs, year):
+def load_zones(docs, year, extra=(), since=None):
+    """Zonele publice (alerts.json și arhiva) plus, din `extra`, cele neconfirmate (în așteptare și expirate),
+    văzute prima dată între `since` (implicit 1 ianuarie) și sfârșitul anului."""
     zs = []
-    p = docs / "data" / "alerts.json"
-    if p.exists():
-        zs += json.loads(p.read_text(encoding="utf-8")).get("alerts", [])
-    for f in sorted((docs / "data" / "arhiva").glob("????-??.json")):
-        zs += json.loads(f.read_text(encoding="utf-8")).get("alerts", [])
+    files = [docs / "data" / "alerts.json"] + sorted((docs / "data" / "arhiva").glob("????-??.json")) + [Path(x) for x in extra]
+    for f in files:
+        if f.exists():
+            zs += json.loads(f.read_text(encoding="utf-8")).get("alerts", [])
+    lo, hi = since or f"{year}-01-01", f"{year}-12-31"
     seen, out = set(), []
     for a in zs:
-        if a["id"] in seen or not a["first_seen"].startswith(str(year)):
+        if a["id"] in seen or not lo <= a["first_seen"] <= hi:
             continue
         seen.add(a["id"])
         out.append(a)
@@ -68,7 +70,7 @@ def precision(zones, src, year):
             continue
         frac = float((np.isin(arr, good) & inside).sum()) / n
         rows.append({"id": a["id"], "nivel": a.get("incredere"), "ha": a.get("ha"), "ai": (a.get("ai") or {}).get("categorie"),
-                     "arie_protejata": bool(a.get("arii")), "frac": round(frac, 3)})
+                     "arie_protejata": bool(a.get("arii")), "frac": round(frac, 3), "first_seen": a["first_seen"]})
     return rows
 
 
@@ -123,19 +125,26 @@ def main():
     ap.add_argument("--year", type=int, default=2025)
     ap.add_argument("--docs", default=str(C.DOCS))
     ap.add_argument("--out", default="")
+    ap.add_argument("--extra", nargs="*", default=[], help="fișiere cu zonele neconfirmate (nu sunt pe site)")
     a = ap.parse_args()
     import rasterio
     from .run_tiles import hansen_lossyear
     src = rasterio.open(hansen_lossyear())
-    zones = load_zones(Path(a.docs), a.year)
+    zones = load_zones(Path(a.docs), a.year, a.extra)
     rows = precision(zones, src, a.year)
-    counts, area_tot, area_hit = recall(zones, src, a.year)
+    # la recall contează și zonele din toamna de dinainte: Hansen trece uneori o tăiere din noiembrie la anul următor
+    counts, area_tot, area_hit = recall(load_zones(Path(a.docs), a.year, a.extra, since=f"{a.year - 1}-10-01"), src, a.year)
 
     prec = {}
     for lv in LEVELS:
         r = [x for x in rows if x["nivel"] == lv]
         prec[lv] = {"zone": len(r), "precizie_%": pct(sum(x["frac"] >= TRUE_FRAC for x in r), len(r)),
                     "jumatate_%": pct(sum(x["frac"] >= 0.5 for x in r), len(r))}
+    # pe trimestre: Hansen pune o tăiere din noiembrie–decembrie uneori abia în anul următor
+    by_q = {}
+    for q in range(4):
+        r = [x for x in rows if x["nivel"] in ("ridicată", "medie") and (int(x["first_seen"][5:7]) - 1) // 3 == q]
+        by_q[f"T{q + 1}"] = {"zone": len(r), "precizie_%": pct(sum(x["frac"] >= TRUE_FRAC for x in r), len(r))}
     conf = [x for x in rows if x["nivel"] in ("ridicată", "medie")]
     by_ai = {}
     for x in conf:
@@ -150,6 +159,7 @@ def main():
         "an": a.year, "zone": len(rows), "prag_potrivire": TRUE_FRAC,
         "precizie": prec,
         "precizie_dupa_ai_(ridicata+medie)": {k: {"zone": v[0], "precizie_%": pct(v[1], v[0])} for k, v in by_ai.items()},
+        "precizie_pe_trimestre_(ridicata+medie)": by_q,
         "recall_pete": rec,
         "recall_pete_total": {"pete": n_all, **{f"pana_la_{lv}_%": pct(tot[lv], n_all) for lv in LEVELS}},
         "recall_suprafata": {"ha_hansen": round(area_tot), **{f"pana_la_{lv}_%": pct(area_hit[lv], area_tot) for lv in LEVELS}},

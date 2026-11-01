@@ -50,8 +50,10 @@ def make_thumbs(p, items, out_dir, name):
     # după: imaginea în care se vede schimbarea, apoi celelalte de după, de la cea mai nouă
     after_c = sorted([i for i in pool if item_date(i) >= first_seen],
                      key=lambda i: (item_date(i) != after_d, -item_date(i).toordinal()))
+    # dacă cele mai noi sunt toate cu nori sau zăpadă, încercăm și cele mai senine dintre cele mai vechi (vara)
+    before_c = before_c[:6] + sorted(before_c[6:], key=lambda i: i.properties.get("eo:cloud_cover", 100))[:3]
     res = {}
-    for key, cands in (("b", before_c[:8]), ("a", after_c[:8])):
+    for key, cands in (("b", before_c), ("a", after_c[:8])):
         rgb, d = best_chip(cands, bbox, size)
         if rgb is None and cands:
             rgb, d = best_chip(cands[:3], bbox, size, min_clear=0.4)

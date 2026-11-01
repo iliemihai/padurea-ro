@@ -25,10 +25,14 @@ A simple detector flagged it because the vegetation became much less green.
 Decide what really happened in the middle of the image. Pick exactly one category:
 - "taiere": trees were removed (clear-cut, logging or windthrow). New bare soil, stumps or slash with sharp edges; often new tracks or roads.
 - "incendiu": a burn scar. Black, dark brown or purple-grey burned area with irregular edges.
-- "toamna": the same forest with autumn colours. Green turned brown, yellow or orange, but the shapes and texture of the canopy stay the same.
+- "toamna": only a seasonal change of the same forest: autumn colours, or a leafless winter forest (brown or grey). The flagged area looks like the forest around it in AFTER, with the same canopy texture.
 - "nori": clouds, haze, smoke or cloud shadow cover the BEFORE or the AFTER image, so it only looks changed.
 - "agricol": farmland, pasture or a meadow (ploughed, mowed or harvested fields), not a forest.
 - "neclar": you cannot tell.
+The two images can be from different seasons (for example BEFORE in summer, AFTER in winter or early spring). Then the whole
+forest looks different in AFTER and that alone is not a change: compare the flagged area with the forest AROUND it in the
+same AFTER image. A cut shows open ground, slash or snow with sharp edges, where the forest around still shows tree crowns
+and their shadows.
 Give "incredere" between 0 and 1 and "motiv": one short sentence in Romanian about what you see.
 In "motiv", call the images «înainte» and «după» (never BEFORE/AFTER) and say «zona marcată» instead of mentioning a rectangle."""
 

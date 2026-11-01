@@ -257,17 +257,31 @@ def test_merge_rules():
 
 
 def test_arhiva_split():
-    """Pe site din start: ultimele 90 de zile; „de confirmat” mai vechi de 30 de zile trec în arhivă, marcate."""
+    """Pe site din start: ultimele 90 de zile, doar zonele confirmate; „de confirmat” stau deoparte 30 de zile, apoi se uită."""
     from pipeline import arhiva
     z = [{"id": "a", "incredere": "de confirmat", "first_seen": "2026-10-20"},
          {"id": "b", "incredere": "de confirmat", "first_seen": "2026-09-15"},
          {"id": "c", "incredere": "ridicată", "first_seen": "2026-09-15"},
          {"id": "d", "incredere": "ridicată", "first_seen": "2026-07-01"},
          {"id": "e", "incredere": "ridicată", "first_seen": "2026-07-01", "extinsa": "2026-10-25"}]
-    recent, old = arhiva.split(z, "2026-11-01")
-    assert sorted(a["id"] for a in recent) == ["a", "c", "e"] and sorted(a["id"] for a in old) == ["b", "d"]
-    assert z[1].get("expirata") and not z[3].get("expirata")
+    recent, old, pending, expired = arhiva.split(z, "2026-11-01")
+    assert sorted(a["id"] for a in recent) == ["c", "e"] and [a["id"] for a in old] == ["d"]
+    assert [a["id"] for a in pending] == ["a"] and [a["id"] for a in expired] == ["b"]
     print("Arhiva: OK")
+
+
+def test_confirm_across_runs():
+    """O zonă văzută într-o singură imagine devine confirmată când o vedem schimbată iar, într-o imagine mai nouă."""
+    from pipeline import run_finish as R
+    old = _sq(25.0, 46.0, id="P", n_dates=1, confirmed=False, after_date="2026-10-01", first_seen="2026-10-01")
+    old.pop("_g")
+    same_day = _sq(25.0, 46.0, n_dates=1, confirmed=False, first_seen="2026-10-01", after_date="2026-10-01")
+    R.merge_history([same_day], [old])
+    assert not old["confirmed"], old
+    later = _sq(25.0, 46.0, n_dates=1, confirmed=False, first_seen="2026-10-01", after_date="2026-10-09")
+    R.merge_history([later], [old])
+    assert old["confirmed"] and old["after_date"] == "2026-10-09", old
+    print("Confirmarea între rulări: OK")
 
 
 def test_romania():
@@ -286,4 +300,5 @@ if __name__ == "__main__":
     test_romania()
     test_merge_rules()
     test_arhiva_split()
+    test_confirm_across_runs()
     main()

@@ -11,6 +11,7 @@ import math
 import os
 import subprocess
 import time
+import urllib.error
 import urllib.parse
 import urllib.request
 import zipfile
@@ -65,17 +66,30 @@ class Places:
         return self.rows[i][0], round(d * 111.32, 1)
 
 
+WIND_CELL = 0.1   # grade (~10 km): rafalele sunt la fel pe toată celula, deci o singură întrebare pe celulă
+
+
 def winds(alerts):
-    """Rafala maximă (km/h) între data „înainte" și data „după", pentru fiecare alertă."""
+    """Rafala maximă (km/h) între data „înainte" și data „după", pentru zonele confirmate (celelalte nu apar pe site).
+    Zonele apropiate împart aceeași întrebare; la „prea multe cereri" (HTTP 429) ne oprim, vântul e doar un indiciu."""
     out = {}
     if os.environ.get("PADUREA_NO_WIND"):   # testul pe trecut: Open-Meteo dă doar ultimele 92 de zile, deci nu ajută
         log("Vântul: sărit")
         return out
-    for i in range(0, len(alerts), 40):
-        chunk = alerts[i:i + 40]
+    cells = {}
+    for a in alerts:
+        if a.get("confirmed") or a.get("n_dates", 0) >= 2:
+            k = (round(a["lat"] / WIND_CELL) * WIND_CELL, round(a["lon"] / WIND_CELL) * WIND_CELL)
+            cells.setdefault(k, []).append(a)
+    keys = sorted(cells)
+    series, stop, failed = {}, False, 0
+    for i in range(0, len(keys), 50):
+        if stop or failed >= 2:     # serviciul nu răspunde: nu țin rularea pe loc pentru un indiciu
+            break
+        chunk = keys[i:i + 50]
         q = {
-            "latitude": ",".join(f"{a['lat']:.3f}" for a in chunk),
-            "longitude": ",".join(f"{a['lon']:.3f}" for a in chunk),
+            "latitude": ",".join(f"{la:.2f}" for la, _ in chunk),
+            "longitude": ",".join(f"{lo:.2f}" for _, lo in chunk),
             "daily": "wind_gusts_10m_max", "past_days": 92, "forecast_days": 1, "timezone": "Europe/Bucharest",
         }
         url = "https://api.open-meteo.com/v1/forecast?" + urllib.parse.urlencode(q)
@@ -85,21 +99,36 @@ def winds(alerts):
                 with urllib.request.urlopen(url, timeout=30) as r:
                     data = json.load(r)
                 break
+            except urllib.error.HTTPError as exc:
+                log(f"  vântul n-a mers (încercarea {attempt + 1}): HTTP {exc.code}")
+                if exc.code == 429 and attempt >= 1:
+                    stop = True
+                    break
+                time.sleep(10 * (attempt + 1))
             except Exception as exc:
                 log(f"  vântul n-a mers (încercarea {attempt + 1}):", repr(exc)[:120])
                 time.sleep(5 * (attempt + 1))
         if data is None:
+            failed += 1
             continue
+        failed = 0
         if isinstance(data, dict):
             data = [data]
-        for a, d in zip(chunk, data):
-            days = d.get("daily", {}).get("time", [])
-            gust = d.get("daily", {}).get("wind_gusts_10m_max", [])
+        for k, d in zip(chunk, data):
+            series[k] = (d.get("daily", {}).get("time", []), d.get("daily", {}).get("wind_gusts_10m_max", []))
+        time.sleep(1)
+    for k, zone in cells.items():
+        if k not in series:
+            continue
+        days, gust = series[k]
+        for a in zone:
             lo = a.get("before_date") or a["first_seen"]
             hi = a["after_date"]
             vals = [g for t, g in zip(days, gust) if g is not None and lo <= t <= hi]
             if vals:
                 out[a["id"]] = round(max(vals))
+    log(f"Vântul: {len(out)} zone, din {len(series)} celule de {len(cells)}" + (" (oprit la HTTP 429)" if stop else "")
+        + (" (oprit: serviciul nu răspunde)" if failed >= 2 else ""))
     return out
 
 

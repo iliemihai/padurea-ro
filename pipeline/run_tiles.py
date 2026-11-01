@@ -51,14 +51,57 @@ def ro_checker():
     return inside
 
 
+def reuse_history(patches, days=60):
+    """Zonele găsite iar în fiecare zi (fereastra e de 30 de zile) nu mai trec prin AI și nu mai primesc poze noi:
+    luăm ce avem deja de la zona din istoric peste care cad (cel puțin jumătate din ele, văzute prima dată la cel
+    mult `days` zile). Întoarce (câte au primit părerea AI, câte au deja poze)."""
+    import os
+    from shapely.geometry import shape
+    from shapely.strtree import STRtree
+    if os.environ.get("PADUREA_AI_REUSE", "1") == "0":
+        return 0, 0
+    hist = []
+    for f in (C.DOCS / "data" / "alerts.json", C.PENDING):
+        if f.exists():
+            hist += [h for h in json.loads(f.read_text(encoding="utf-8")).get("alerts", [])
+                     if h.get("ai") or (h.get("img_before") and h.get("img_after"))]
+    if not hist:
+        return 0, 0
+    geoms = [shape(h["geometry"]) for h in hist]
+    tree = STRtree(geoms)
+    n_ai = n_img = 0
+    for p in patches:
+        g = shape(p["geometry"])
+        if g.area == 0:
+            continue
+        for i in tree.query(g):
+            h = hist[int(i)]
+            near = abs((dt.date.fromisoformat(h["first_seen"]) - dt.date.fromisoformat(p["first_seen"])).days) <= days
+            if not near or g.intersection(geoms[int(i)]).area < 0.5 * g.area:
+                continue
+            if h.get("ai") and not p.get("ai"):
+                p["ai"] = dict(h["ai"], refolosit=True)
+                n_ai += 1
+            if h.get("img_before") and h.get("img_after"):
+                p["_known_img"] = True
+                n_img += 1
+            break
+    return n_ai, n_img
+
+
 def plan(cat, d0, d1):
-    """Toate imaginile Sentinel-2 de care avem nevoie, pe plăci."""
+    """Toate imaginile Sentinel-2 de care avem nevoie, pe plăci: fereastra, lunile dinainte, aceeași perioadă de acum
+    un an (pentru referința de sezon a fiecărei imagini) și ultima vară (unde era pădure deasă)."""
+    from .detect import summer_range
+    r0 = d0 - dt.timedelta(days=C.RECENT_DAYS)
     ranges = {
         "window": (d0, d1),
-        "recent": (d0 - dt.timedelta(days=C.RECENT_DAYS), d0 - dt.timedelta(days=1)),
-        "lastyear": (d0 - dt.timedelta(days=365 + C.LASTYEAR_PAD), d1 - dt.timedelta(days=365 - C.LASTYEAR_PAD)),
+        "recent": (r0, d0 - dt.timedelta(days=1)),
+        "lastyear": (r0 - dt.timedelta(days=365 + C.SEASON_PAD + C.ANCHOR_DAYS),
+                     d1 - dt.timedelta(days=365 - C.SEASON_PAD - C.ANCHOR_DAYS)),
+        "summer": summer_range(d0),
     }
-    by_tile = defaultdict(lambda: {"window": [], "recent": [], "lastyear": []})
+    by_tile = defaultdict(lambda: {"window": [], "recent": [], "lastyear": [], "summer": []})
     for key, (a, b) in ranges.items():
         items = search(cat, "sentinel-2-l2a", C.RO_BBOX, a.isoformat(), b.isoformat(), cloud=C.MAX_SCENE_CLOUD)
         log(f"  {key}: {a} – {b}: {len(items)} imagini")
@@ -94,7 +137,8 @@ def main():
     infos, patches, rejected = [], [], []
     for n, tile in enumerate(mine, 1):
         log(f"Placa {tile} ({n}/{len(mine)}): {len(by_tile[tile]['window'])} imagini noi, "
-            f"{len(by_tile[tile]['recent'])} recente, {len(by_tile[tile]['lastyear'])} de anul trecut")
+            f"{len(by_tile[tile]['recent'])} recente, {len(by_tile[tile]['lastyear'])} de anul trecut, "
+            f"{len(by_tile[tile]['summer'])} din vară")
         try:
             info, ps, rj = detect_tile(cat, tile, by_tile[tile], d0, d1, lossyear, inside)
         except Exception as exc:
@@ -115,17 +159,26 @@ def main():
     patches.sort(key=lambda p: -p["ha"])
     rejected.sort(key=lambda p: -p["ha"])
     every = list(by_tile.values())
-    items_by_tile = {t: v["window"] + v["recent"] for t, v in by_tile.items()}
+    # pozele „înainte” pot veni și din vară, dacă iarna n-a fost nicio zi senină peste zonă
+    items_by_tile = {t: v["window"] + v["recent"] + v["summer"] for t, v in by_tile.items()}
     conf = [p for p in patches if p.get("confirmed")]
-    singles = [p for p in patches if not p.get("confirmed")][:C.THUMB_SINGLES]
+    n_ai, n_img = reuse_history(patches)
+    # pozele: întâi zonele confirmate care n-au încă poze în istoric, apoi (dacă mai e loc) celelalte
+    fresh = [p for p in conf if not p.get("_known_img")]
+    known = [p for p in conf if p.get("_known_img")]
+    shots = (fresh + known)[:C.THUMB_MAX_CONFIRMED]
+    singles = [p for p in patches if not p.get("confirmed") and not p.get("_known_img")][:C.THUMB_SINGLES]
     rconf = [p for p in rejected if p.get("confirmed")][:40]   # și câteva respinse, ca să verificăm regulile
-    log(f"Imagini înainte/după: {len(conf)} zone confirmate, {len(singles)} neconfirmate, {len(rconf)} respinse (control)")
-    thumbs_for(conf[:C.THUMB_MAX_CONFIRMED] + singles + rconf, items_by_tile, out_img)
+    log(f"Imagini înainte/după: {len(shots)} din {len(conf)} zone confirmate ({n_img} au deja poze din rulările trecute), "
+        f"{len(singles)} neconfirmate, {len(rconf)} respinse (control)")
+    thumbs_for(shots + singles + rconf, items_by_tile, out_img)
 
     which = backend() if a.judge else None
     if which and conf:
-        log(f"Judecătorul AI ({which}) pentru cel mult {C.JUDGE_MAX_PER_GROUP} zone confirmate")
-        for p in conf[:C.JUDGE_MAX_PER_GROUP] + rejected[:3]:
+        todo = [p for p in conf if not p.get("ai")][:C.JUDGE_MAX_PER_GROUP]
+        log(f"Judecătorul AI ({which}): {n_ai} zone aveau deja părerea lui din rulările trecute; "
+            f"acum cel mult {C.JUDGE_MAX_PER_GROUP} din celelalte {sum(1 for p in conf if not p.get('ai'))}")
+        for p in todo + rejected[:3]:
             b, af = p.get("img_before"), p.get("img_after")
             if not af:
                 continue

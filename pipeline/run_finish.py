@@ -1,6 +1,7 @@
 """Pasul 2: unește grupele, scoate dublurile, ține minte istoricul, adaugă contextul, criticul și textul, publică.
 
-Istoricul stă în docs/data/alerts.json (ultimele 90 de zile) și în arhiva pe luni (pipeline/arhiva.py).
+Istoricul stă în docs/data/alerts.json (ultimele 90 de zile), în arhiva pe luni și în data/neconfirmate.json
+(zonele încă neconfirmate, care nu apar pe site; vezi pipeline/arhiva.py).
 O zonă găsită azi se potrivește cu cele vechi așa:
   - peste jumătate din ea e peste o zonă veche: e aceeași tăiere, văzută iar; actualizăm zona veche
   - atinge o zonă veche care s-a schimbat în ultimele EXT_DAYS zile: tăierea se lărgește; unim zonele
@@ -20,8 +21,6 @@ from .sat import log
 
 ALERTS = C.DOCS / "data" / "alerts.json"
 RUNS = C.DOCS / "data" / "runs.json"
-KEEP = ("tile", "ha", "lat", "lon", "county", "first_seen", "before_date", "after_date", "n_dates",
-        "ndvi_ref", "nbr_ref", "neigh_drop", "persist", "geometry", "bbox", "chip_bbox", "ai")
 SAME = 0.5          # cât din zona nouă trebuie să fie peste una veche ca să fie aceeași tăiere
 EXT_DAYS = 14       # cât timp după ultima schimbare o lărgire mai ține de aceeași zonă
 BUF = 0.0002        # ~20 m: zonele care se ating
@@ -60,6 +59,7 @@ def dedup(patches):
             continue
         twin["first_seen"] = min(twin["first_seen"], p["first_seen"])
         twin["n_dates"] = max(twin["n_dates"], p["n_dates"])
+        twin["confirmed"] = bool(twin.get("confirmed") or p.get("confirmed"))
         if not twin.get("ai") and p.get("ai"):
             twin["ai"] = p["ai"]
     return kept
@@ -69,10 +69,14 @@ def new_id(p):
     return f"{p['first_seen'].replace('-', '')}_{round(p['lat'] * 1000)}_{round(p['lon'] * 1000)}"
 
 
-def _seen_again(m, p):
-    """Aceeași zonă, văzută iar: date, număr de imagini, perechea de poze cea mai nouă."""
+def _seen_again(m, p, same=True):
+    """Aceeași zonă (same=True) sau una care o lărgește, văzută iar: date, număr de imagini, perechea de poze
+    cea mai nouă."""
     m["first_seen"] = min(m["first_seen"], p["first_seen"])
     m["n_dates"] = max(m.get("n_dates", 0), p.get("n_dates", 0))
+    # același loc, văzut schimbat și într-o imagine mai nouă decât data trecută: e confirmat
+    again = same and p["after_date"] > m.get("after_date", "")
+    m["confirmed"] = bool(m.get("confirmed") or p.get("confirmed") or again or m["n_dates"] >= C.CONFIRM_DATES)
     if p["after_date"] > m["after_date"]:
         m["after_date"] = p["after_date"]
         if p.get("img_after") and p.get("key"):
@@ -119,7 +123,7 @@ def merge_history(found, hist):
         if best is not None:
             gap = (dt.date.fromisoformat(p["first_seen"]) - dt.date.fromisoformat(best["after_date"])).days
             if gap <= EXT_DAYS:
-                _seen_again(best, p)
+                _seen_again(best, p, same=False)
                 u = best["_g"].union(g)
                 best["geometry"], best["_g"] = geojson(u), u
                 best["ha"] = round(best["ha"] + p["ha"] * (1 - frac), 1)
@@ -172,7 +176,8 @@ def main():
 
     doc = json.loads(ALERTS.read_text()) if ALERTS.exists() else {"alerts": []}
     months = arhiva.load()
-    hist = [dict(a, _src="r") for a in doc.get("alerts", [])] + [dict(a, _src="m") for zone in months.values() for a in zone]
+    hist = ([dict(a, _src="r") for a in doc.get("alerts", [])] + [dict(a, _src="r") for a in arhiva.load_pending()]
+            + [dict(a, _src="m") for zone in months.values() for a in zone])
     n, touched = merge_history(found, hist)
     log(f"Istoric: {n['noi']} noi ({n['langa_altele']} lângă zone mai vechi), {n['actualizate']} văzute iar, "
         f"{n['largite']} lărgite; {len(hist)} în total")
@@ -196,15 +201,16 @@ def main():
     for a in live:
         a.pop("_g", None)
         clean.append({k: v for k, v in a.items() if not k.startswith("_") and k not in ("key", "motiv")})
-    recent, old = arhiva.split(clean, d1)
+    recent, old, pending, expired = arhiva.split(clean, d1)
     for a in old:
         rest.setdefault(arhiva.month(a), []).append(a)
     now = dt.datetime.now(dt.timezone.utc).isoformat(timespec="minutes").replace("+00:00", "Z")
     index = arhiva.save(rest, now)
+    n_img = arhiva.save_pending(pending, expired, now)
     ALERTS.parent.mkdir(parents=True, exist_ok=True)
     arhiva.write_recent(ALERTS, doc, recent, d1, [d0, d1], now)
-    log(f"Pe site din start: {len(recent)} zone; în arhivă: {sum(i['n'] for i in index)} "
-        f"({sum(i['expirate'] for i in index)} rămase neconfirmate)")
+    log(f"Pe site din start: {len(recent)} zone; în arhivă: {sum(i['n'] for i in index)}; "
+        f"neconfirmate (nu apar pe site): {len(pending)} în așteptare, {len(expired)} uitate, {n_img} poze scoase")
 
     runs = json.loads(RUNS.read_text()) if RUNS.exists() else []
     seen_ha = sum(t.get("forest_ha", 0) for t in tiles if t.get("status") == "ok")
@@ -212,7 +218,7 @@ def main():
         "time": now, "window": [d0, d1], "tiles": len(tiles),
         "tiles_ok": sum(1 for t in tiles if t.get("status") == "ok"),
         "forest_ha_checked": seen_ha, "found": len(found), "new": n["noi"], "updated": n["actualizate"],
-        "extended": n["largite"], "near_older": n["langa_altele"],
+        "extended": n["largite"], "near_older": n["langa_altele"], "pending": len(pending), "expired": len(expired),
         "rejected_neighbors": len(rejected), "judge": next((p["ai"]["model"] for p in patches if p.get("ai")), None),
         "tile_status": [{k: t.get(k) for k in ("tile", "status", "bbox", "window_scenes", "skipped", "patches", "rejected")} for t in tiles],
     })

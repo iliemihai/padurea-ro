@@ -63,6 +63,8 @@ def enum(xs, prep=""):
 def text(a):
     if a.get("before_date"):
         cand = f"Între {zi(a['before_date'])} și {zi(a['first_seen'])}"
+    elif a.get("vara"):
+        cand = f"Între vara lui {a['vara']} și {zi(a['first_seen'])}"
     else:
         cand = f"Până pe {zi(a['first_seen'])}"
     s = [f"{cand}, pe aproximativ {ha(a['ha'])} de pădure{unde(a)}, imaginile Sentinel-2 arată că vegetația a dispărut sau s-a schimbat puternic."]

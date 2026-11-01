@@ -31,11 +31,20 @@ def _masks(a, w, h):
     return zone, far & ~near
 
 
+SEASON_GAP = 100   # zile: poze din anotimpuri diferite (vară înainte, iarnă după) nu se pot compara pe culori
+
+
 def measure(a, img_dir):
-    """Măsurătorile pentru o zonă, sau None dacă nu avem ambele poze."""
+    """Măsurătorile pentru o zonă, sau None dacă nu avem ambele poze din același anotimp."""
+    import datetime as dt
     b, af = a.get("img_before"), a.get("img_after")
     if not b or not af or not a.get("chip_bbox") or not a.get("geometry"):
         return None
+    try:
+        if (dt.date.fromisoformat(af["date"]) - dt.date.fromisoformat(b["date"])).days > SEASON_GAP:
+            return None
+    except (KeyError, TypeError, ValueError):
+        pass
     fb, fa = img_dir / b["file"], img_dir / af["file"]
     if not fb.exists() or not fa.exists():
         return None

@@ -36,7 +36,9 @@ def score(a):
         why.append(f"sateliții NASA (FIRMS) au văzut foc la {fi['dist_m']} m de zonă, pe {cand}")
     gap = _days(a.get("before_date"), a.get("first_seen"))
     if gap is not None and gap > GAP_MAX:
-        s -= 1; why.append(f"ultima imagine cu zona intactă e cu {gap} de zile înainte; poate fi și o schimbare de sezon")
+        s -= 1; why.append(f"ultima imagine cu zona intactă e cu {gap} de zile înainte, deci nu știm bine când s-a schimbat")
+    elif gap is None and a.get("vara"):
+        s -= 1; why.append(f"ultima dată am văzut-o intactă în vara lui {a['vara']} (de atunci, nori sau zăpadă)")
     ai = a.get("ai")
     if ai:
         c, conf = ai["categorie"], ai.get("incredere", 0.5)

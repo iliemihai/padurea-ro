@@ -3,12 +3,14 @@
   "use strict";
 
   var REPO = "https://github.com/iliemihai/padurea-ro";
-  var CONF = [["ridicată", "hi"], ["medie", "mid"], ["scăzută", "lo"], ["de confirmat", "un"]];
+  /* zonele „de confirmat” (văzute într-o singură imagine) nu ajung pe site: testul pe 2025 a arătat că sunt aproape toate alarme false */
+  var CONF = [["ridicată", "hi"], ["medie", "mid"], ["scăzută", "lo"]];
+  var ICONS = CONF.concat([["de confirmat", "un"]]);
   var CONF_TOKEN = { "ridicată": "--color-data-hi", "medie": "--color-data-mid", "scăzută": "--color-data-lo", "de confirmat": "--color-data-un" };
   var LUNI = ["ian.", "feb.", "mar.", "apr.", "mai", "iun.", "iul.", "aug.", "sept.", "oct.", "nov.", "dec."];
   var LUNI_L = ["ianuarie", "februarie", "martie", "aprilie", "mai", "iunie", "iulie", "august", "septembrie", "octombrie", "noiembrie", "decembrie"];
 
-  var state = { days: 30, conf: { "ridicată": true, "medie": false, "scăzută": false, "de confirmat": false }, shown: 40, sel: null, years: [21, 25], cty: {}, arii: false, ariiMode: false, arhiva: false };
+  var state = { days: 30, conf: { "ridicată": true, "medie": false, "scăzută": false }, shown: 40, sel: null, years: [21, 25], cty: {}, arii: false, ariiMode: false };
   var DATA = { alerts: [], data_until: null, generated: null }, RUNS = [], VERIF = {}, FIRMS_FC = null, map, hansen = null;
   var ARH = null, ARH_LOADED = {}; /* arhiva pe luni: indexul și lunile deja aduse */
   var COUNTY_BB = {}, RO_FC = null, PLACE_LAYERS = ["pl-5", "pl-4", "pl-3", "pl-2", "pl-01"];
@@ -85,7 +87,7 @@
   ]).then(function (res) {
     ARH = res[6] && res[6].luni && res[6].luni.length ? res[6] : null;
     FIRMS_FC = res[5] || { type: "FeatureCollection", features: [] };
-    if (res[0]) DATA = res[0];
+    if (res[0]) { DATA = res[0]; DATA.alerts = (DATA.alerts || []).filter(isPublic); }
     VERIF = (res[4] && res[4].zone) || {};
     RUNS = res[1] || [];
     try { initMap(res[2], res[3]); } catch (e) { mapMissing(); }
@@ -114,7 +116,9 @@
     var s = periodStart(), u = DATA.data_until;
     return !!s && ((a.first_seen >= s && a.first_seen <= u) || (!!a.extinsa && a.extinsa >= s && a.extinsa <= u));
   }
-  function shownArh(a) { return !a.expirata || state.arhiva; }
+  /* datele mai vechi pot avea încă zone neconfirmate: nu le arătăm */
+  function isPublic(a) { return !!CONF_TOKEN[a.incredere] && a.incredere !== "de confirmat" && !a.expirata; }
+  function shownArh(a) { return isPublic(a); }
   function visible() { return DATA.alerts.filter(function (a) { return inPeriod(a) && state.conf[a.incredere] && inCounty(a) && inArii(a) && shownArh(a); }); }
   function inArii(a) { return !state.arii || !!(a.arii && a.arii.length); }
 
@@ -154,13 +158,13 @@
     if (!silent) { renderAll(); ensureArchive(); }
   }
 
-  /* ---------- arhiva: lunile vechi se aduc doar când perioada le cere sau când e bifată arhiva ---------- */
+  /* ---------- arhiva: lunile vechi se aduc doar când perioada le cere ---------- */
   function loadMonth(m) {
     if (ARH_LOADED[m]) return ARH_LOADED[m];
     ARH_LOADED[m] = getJSON("data/arhiva/" + m + ".json").then(function (d) {
       var have = {};
       DATA.alerts.forEach(function (a) { have[a.id] = 1; });
-      (d.alerts || []).forEach(function (a) { if (!have[a.id]) { a._arh = true; DATA.alerts.push(a); } });
+      (d.alerts || []).forEach(function (a) { if (!have[a.id] && isPublic(a)) { a._arh = true; DATA.alerts.push(a); } });
     }).catch(function () { ARH_LOADED[m] = null; });
     return ARH_LOADED[m];
   }
@@ -170,7 +174,7 @@
     var need = ARH.luni.filter(function (m) {
       if (ARH_LOADED[m.luna]) return false;
       if (m.pana_la < s || m.de_la > DATA.data_until) return false;
-      return state.arhiva || m.de_la < rec;
+      return m.de_la < rec;
     });
     if (!need.length) return Promise.resolve();
     var note = document.getElementById("arh-note"); if (note) note.hidden = false;
@@ -178,15 +182,6 @@
       if (note) note.hidden = true;
       renderAll();
     });
-  }
-  function setArhiva(on, silent) {
-    state.arhiva = on; state.shown = 40;
-    var c = document.getElementById("arhiva"); if (c) c.checked = on;
-    if (on && !state.conf["de confirmat"]) {
-      state.conf["de confirmat"] = true;
-      var ch = document.querySelector('#conf .chip[data-conf="de confirmat"]'); if (ch) ch.setAttribute("aria-pressed", "true");
-    }
-    if (!silent) { renderAll(); ensureArchive(); }
   }
 
   function initControls() {
@@ -221,12 +216,6 @@
     document.getElementById("lyr-loss").addEventListener("change", function (e) { setVis("hansen", e.target.checked); });
     document.getElementById("lyr-counties").addEventListener("change", function (e) { setVis("counties", e.target.checked); });
     document.getElementById("lyr-arii").addEventListener("change", function (e) { setAriiMode(e.target.checked); });
-    var exp = ARH ? ARH.luni.reduce(function (t, m) { return t + (m.expirate || 0); }, 0) : 0;
-    if (exp) {
-      document.getElementById("tg-arhiva").hidden = false;
-      document.getElementById("arhiva-n").textContent = fmt(exp);
-      document.getElementById("arhiva").addEventListener("change", function (e) { setArhiva(e.target.checked); });
-    }
     var anyProt = DATA.alerts.some(isProt);
     document.getElementById("ariibtn").hidden = !anyProt;
     document.getElementById("lg-p").hidden = !anyProt;
@@ -394,7 +383,7 @@
     v.slice(0, state.shown).forEach(function (a) {
       var li = el("li"), b = el("button", "row"), meta = [];
       b.type = "button";
-      b.appendChild(el("span", "visually-hidden", (a.incredere === "de confirmat" ? "De confirmat" : "Încredere " + a.incredere) + ". "));
+      b.appendChild(el("span", "visually-hidden", "Încredere " + a.incredere + ". "));
       b.appendChild(key(a.incredere, isProt(a)));
       b.appendChild(el("span", "t", placeName(a)));
       b.appendChild(el("span", "d", ziScurt(a.first_seen)));
@@ -425,7 +414,6 @@
       if (!retried && ARH && ARH.luni.some(function (x) { return x.luna === m; })) loadMonth(m).then(function () { selectById(id, fly, true); });
       return;
     }
-    if (a.expirata && !state.arhiva) setArhiva(true, true);
     if (!inPeriod(a)) setPeriod(Math.max(1, Math.round((pd(DATA.data_until) - pd(a.first_seen)) / 864e5) + 1), true);
     if (!state.conf[a.incredere]) { state.conf[a.incredere] = true; var c = document.querySelector('#conf .chip[data-conf="' + a.incredere + '"]'); if (c) c.setAttribute("aria-pressed", "true"); }
     if (!inCounty(a)) { state.cty = {}; renderCounties(); updateCountyLayers(); }
@@ -448,12 +436,11 @@
     d.appendChild(kindBlock(a));
     d.appendChild(el("p", "where", fmt(a.ha, 1) + " ha" + whereText(a)));
     var bd = el("div", "badges");
-    var c1 = el("span", "badge"); c1.appendChild(key(a.incredere)); c1.appendChild(document.createTextNode(a.incredere === "de confirmat" ? "de confirmat" : "încredere " + a.incredere)); bd.appendChild(c1);
+    var c1 = el("span", "badge"); c1.appendChild(key(a.incredere)); c1.appendChild(document.createTextNode("încredere " + a.incredere)); bd.appendChild(c1);
     if (isVerified(a)) bd.appendChild(el("span", "badge ok", "verificat și din alte surse"));
     if (a.vant) bd.appendChild(el("span", "badge", "vânt puternic"));
     if (a.arii && a.arii.length) bd.appendChild(el("span", "badge arie", "în arie protejată"));
     if (a.extinsa) bd.appendChild(el("span", "badge", "s-a lărgit pe " + ziScurt(a.extinsa)));
-    if (a.expirata) bd.appendChild(el("span", "badge", "rămasă neconfirmată, în arhivă"));
     d.appendChild(bd);
     d.appendChild(compare(a, false));
     if (a.img_after) d.appendChild(chipControl(a));
@@ -841,7 +828,7 @@
   function addIcons(m) {
     var S = 40, edge = tok("--color-paper-3").css, prot = tok("--color-protected").css;
     function img(draw) { var c = document.createElement("canvas"); c.width = c.height = S; var x = c.getContext("2d"); draw(x); return x.getImageData(0, 0, S, S); }
-    CONF.forEach(function (c) {
+    ICONS.forEach(function (c) {
       var fill = confColor(c[0]);
       if (c[1] === "un") {
         m.addImage("k-un", img(function (x) {
@@ -855,7 +842,7 @@
     /* în arie protejată: chenar albastru, gros, în jurul aceluiași pătrat */
     var P = 52;
     function imgP(draw) { var c = document.createElement("canvas"); c.width = c.height = P; var x = c.getContext("2d"); draw(x); return x.getImageData(0, 0, P, P); }
-    CONF.forEach(function (c) {
+    ICONS.forEach(function (c) {
       var fill = confColor(c[0]);
       m.addImage("k-" + c[1] + "-p", imgP(function (x) {
         x.fillStyle = edge; x.fillRect(0, 0, P, P);
