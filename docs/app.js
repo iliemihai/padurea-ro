@@ -306,6 +306,15 @@
     r.textContent = state.days === 1 ? "Schimbări văzute prima dată pe " + zi(DATA.data_until) : "Schimbări văzute prima dată între " + (sameYear ? ziScurt(s) : zi(s)) + " și " + zi(DATA.data_until);
     var cv = document.getElementById("coverage");
     if (cv) cv.textContent = c0 ? (state.days > cov ? "Avem date doar din " + zi(c0, true) + ", așa că vezi tot ce avem. " : "") + "Istoricul începe pe " + zi(c0, true) + " și crește în fiecare zi." : "";
+    var wn = document.getElementById("winter-note");
+    if (wn) wn.hidden = !touchesWinter(s, DATA.data_until);
+  }
+  /* iarna (1 decembrie – 15 martie) detectorul nu caută: perioada aleasă cade, măcar în parte, atunci? */
+  function isWinterDay(t) { var md = t.slice(5, 10); return md >= "12-01" || md <= "03-15"; }
+  function touchesWinter(s, u) {
+    if (!s || !u) return false;
+    for (var t = pd(s).getTime(), end = pd(u).getTime(); t <= end; t += 5 * 864e5) if (isWinterDay(new Date(t).toISOString())) return true;
+    return isWinterDay(u);
   }
 
   function renderStats() {
@@ -465,7 +474,8 @@
     d.appendChild(ev);
     var kv = el("dl", "kv");
     function row(k, v, num) { kv.appendChild(el("dt", null, k)); var dd = el("dd", num ? "num" : null); if (v instanceof Node) dd.appendChild(v); else dd.textContent = v; kv.appendChild(dd); }
-    row("Intactă pe", zi(a.before_date, true), true);
+    if (a.before_date || !a.vara) row("Intactă pe", zi(a.before_date, true), true);
+    else row("Intactă", "în vara lui " + a.vara + " (de atunci, nori, zăpadă sau iarnă)");
     row("Schimbată pe", zi(a.first_seen, true), true);
     row("Ultima imagine", zi(a.after_date, true), true);
     if (a.rafala_kmh != null) { var w = el("span"); w.appendChild(el("span", "num", fmt(a.rafala_kmh) + " km/h")); w.appendChild(document.createTextNode(" în acel interval")); row("Vânt maxim", w); }
