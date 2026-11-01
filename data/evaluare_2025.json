@@ -1,59 +1,55 @@
 {
  "an": 2025,
- "zone": 29087,
+ "zone": 25645,
  "prag_potrivire": 0.2,
  "precizie": {
   "ridicată": {
-   "zone": 519,
-   "precizie_%": 69.6,
-   "jumatate_%": 50.1
+   "zone": 413,
+   "precizie_%": 78.5,
+   "jumatate_%": 64.6
   },
   "medie": {
-   "zone": 1582,
-   "precizie_%": 61.8,
-   "jumatate_%": 39.1
+   "zone": 984,
+   "precizie_%": 76.8,
+   "jumatate_%": 52.5
   },
   "scăzută": {
-   "zone": 3499,
-   "precizie_%": 46.4,
-   "jumatate_%": 28.7
+   "zone": 1784,
+   "precizie_%": 65.4,
+   "jumatate_%": 41.6
   },
   "de confirmat": {
-   "zone": 23487,
-   "precizie_%": 12.2,
-   "jumatate_%": 5.9
+   "zone": 22464,
+   "precizie_%": 13.3,
+   "jumatate_%": 6.6
   }
  },
  "precizie_dupa_ai_(ridicata+medie)": {
   "taiere": {
-   "zone": 792,
-   "precizie_%": 67.9
+   "zone": 688,
+   "precizie_%": 76.9
   },
   "fără AI": {
-   "zone": 1284,
-   "precizie_%": 61.7
+   "zone": 696,
+   "precizie_%": 78.7
   },
   "incendiu": {
-   "zone": 24,
-   "precizie_%": 29.2
-  },
-  "agricol": {
-   "zone": 1,
-   "precizie_%": 100.0
+   "zone": 13,
+   "precizie_%": 23.1
   }
  },
  "precizie_pe_trimestre_(ridicata+medie)": {
   "T1": {
-   "zone": 22,
-   "precizie_%": 63.6
+   "zone": 26,
+   "precizie_%": 92.3
   },
   "T2": {
-   "zone": 1601,
-   "precizie_%": 71.9
+   "zone": 1211,
+   "precizie_%": 79.9
   },
   "T3": {
-   "zone": 478,
-   "precizie_%": 36.2
+   "zone": 160,
+   "precizie_%": 55.0
   },
   "T4": {
    "zone": 0,
@@ -63,39 +59,39 @@
  "recall_pete": {
   "0,5–1 ha": {
    "pete": 4779,
-   "pana_la_ridicată_%": 1.3,
-   "pana_la_medie_%": 5.4,
-   "pana_la_scăzută_%": 12.9,
-   "pana_la_de confirmat_%": 31.3
+   "pana_la_ridicată_%": 0.9,
+   "pana_la_medie_%": 3.4,
+   "pana_la_scăzută_%": 7.8,
+   "pana_la_de confirmat_%": 27.5
   },
   "1–5 ha": {
    "pete": 5664,
-   "pana_la_ridicată_%": 4.1,
-   "pana_la_medie_%": 17.4,
-   "pana_la_scăzută_%": 41.3,
-   "pana_la_de confirmat_%": 71.9
+   "pana_la_ridicată_%": 3.4,
+   "pana_la_medie_%": 13.7,
+   "pana_la_scăzută_%": 31.3,
+   "pana_la_de confirmat_%": 67.4
   },
   "peste 5 ha": {
    "pete": 636,
-   "pana_la_ridicată_%": 28.9,
-   "pana_la_medie_%": 66.0,
-   "pana_la_scăzută_%": 82.9,
-   "pana_la_de confirmat_%": 92.9
+   "pana_la_ridicată_%": 25.0,
+   "pana_la_medie_%": 58.0,
+   "pana_la_scăzută_%": 74.1,
+   "pana_la_de confirmat_%": 90.9
   }
  },
  "recall_pete_total": {
   "pete": 11079,
-  "pana_la_ridicată_%": 4.3,
-  "pana_la_medie_%": 15.0,
-  "pana_la_scăzută_%": 31.4,
-  "pana_la_de confirmat_%": 55.6
+  "pana_la_ridicată_%": 3.6,
+  "pana_la_medie_%": 11.8,
+  "pana_la_scăzută_%": 23.6,
+  "pana_la_de confirmat_%": 51.5
  },
  "recall_suprafata": {
   "ha_hansen": 20557,
-  "pana_la_ridicată_%": 11.2,
-  "pana_la_medie_%": 28.8,
-  "pana_la_scăzută_%": 47.2,
-  "pana_la_de confirmat_%": 67.0
+  "pana_la_ridicată_%": 9.4,
+  "pana_la_medie_%": 24.1,
+  "pana_la_scăzută_%": 38.7,
+  "pana_la_de confirmat_%": 63.0
  },
  "fals_pozitive_mari": [
   {
@@ -108,15 +104,6 @@
    "first_seen": "2025-04-25"
   },
   {
-   "id": "20250425_46965_24028",
-   "nivel": "medie",
-   "ha": 40.8,
-   "ai": "taiere",
-   "arie_protejata": false,
-   "frac": 0.0,
-   "first_seen": "2025-04-25"
-  },
-  {
    "id": "20250423_46632_28005",
    "nivel": "medie",
    "ha": 36.8,
@@ -124,42 +111,6 @@
    "arie_protejata": true,
    "frac": 0.007,
    "first_seen": "2025-04-23"
-  },
-  {
-   "id": "20250422_46890_24133",
-   "nivel": "medie",
-   "ha": 35.5,
-   "ai": "incendiu",
-   "arie_protejata": false,
-   "frac": 0.0,
-   "first_seen": "2025-04-22"
-  },
-  {
-   "id": "20250427_47661_23306",
-   "nivel": "medie",
-   "ha": 32.5,
-   "ai": "taiere",
-   "arie_protejata": false,
-   "frac": 0.0,
-   "first_seen": "2025-04-27"
-  },
-  {
-   "id": "20250704_45847_23525",
-   "nivel": "ridicată",
-   "ha": 29.6,
-   "ai": "taiere",
-   "arie_protejata": false,
-   "frac": 0.082,
-   "first_seen": "2025-07-04"
-  },
-  {
-   "id": "20250425_47005_24021",
-   "nivel": "medie",
-   "ha": 28.6,
-   "ai": "taiere",
-   "arie_protejata": false,
-   "frac": 0.0,
-   "first_seen": "2025-04-25"
   },
   {
    "id": "20250427_47816_25510",
@@ -171,33 +122,6 @@
    "first_seen": "2025-04-27"
   },
   {
-   "id": "20250706_45853_23595",
-   "nivel": "ridicată",
-   "ha": 23.2,
-   "ai": "taiere",
-   "arie_protejata": false,
-   "frac": 0.075,
-   "first_seen": "2025-07-06"
-  },
-  {
-   "id": "20250424_45036_25956",
-   "nivel": "ridicată",
-   "ha": 20.8,
-   "ai": "taiere",
-   "arie_protejata": false,
-   "frac": 0.0,
-   "first_seen": "2025-04-24"
-  },
-  {
-   "id": "20250425_44736_22573",
-   "nivel": "medie",
-   "ha": 20.6,
-   "ai": "incendiu",
-   "arie_protejata": true,
-   "frac": 0.06,
-   "first_seen": "2025-04-25"
-  },
-  {
    "id": "20250512_46396_22469",
    "nivel": "ridicată",
    "ha": 19.8,
@@ -205,15 +129,6 @@
    "arie_protejata": true,
    "frac": 0.0,
    "first_seen": "2025-05-12"
-  },
-  {
-   "id": "20250424_45123_26576",
-   "nivel": "medie",
-   "ha": 18.7,
-   "ai": "taiere",
-   "arie_protejata": false,
-   "frac": 0.0,
-   "first_seen": "2025-04-24"
   },
   {
    "id": "20250429_45668_22794",
@@ -225,40 +140,13 @@
    "first_seen": "2025-04-29"
   },
   {
-   "id": "20250726_44731_22608",
+   "id": "20250706_45854_23594",
    "nivel": "ridicată",
-   "ha": 17.8,
-   "ai": "taiere",
-   "arie_protejata": true,
-   "frac": 0.011,
-   "first_seen": "2025-07-26"
-  },
-  {
-   "id": "20250424_45041_26057",
-   "nivel": "ridicată",
-   "ha": 17.1,
+   "ha": 18.1,
    "ai": "taiere",
    "arie_protejata": false,
-   "frac": 0.0,
-   "first_seen": "2025-04-24"
-  },
-  {
-   "id": "20250425_44761_22799",
-   "nivel": "medie",
-   "ha": 16.6,
-   "ai": "taiere",
-   "arie_protejata": true,
-   "frac": 0.0,
-   "first_seen": "2025-04-25"
-  },
-  {
-   "id": "20250422_46237_22770",
-   "nivel": "ridicată",
-   "ha": 16.3,
-   "ai": "taiere",
-   "arie_protejata": true,
-   "frac": 0.0,
-   "first_seen": "2025-04-22"
+   "frac": 0.09,
+   "first_seen": "2025-07-06"
   },
   {
    "id": "20250510_46472_23015",
@@ -270,6 +158,15 @@
    "first_seen": "2025-05-10"
   },
   {
+   "id": "20250425_44761_22799",
+   "nivel": "medie",
+   "ha": 15.5,
+   "ai": "taiere",
+   "arie_protejata": true,
+   "frac": 0.0,
+   "first_seen": "2025-04-25"
+  },
+  {
    "id": "20250602_45161_29327",
    "nivel": "medie",
    "ha": 14.7,
@@ -279,40 +176,13 @@
    "first_seen": "2025-06-02"
   },
   {
-   "id": "20250318_47916_23877",
-   "nivel": "medie",
-   "ha": 14.2,
-   "ai": "taiere",
-   "arie_protejata": true,
-   "frac": 0.0,
-   "first_seen": "2025-03-18"
-  },
-  {
-   "id": "20250429_45469_23829",
-   "nivel": "medie",
-   "ha": 14.2,
-   "ai": null,
-   "arie_protejata": false,
-   "frac": 0.038,
-   "first_seen": "2025-04-29"
-  },
-  {
-   "id": "20250425_44985_22355",
-   "nivel": "medie",
-   "ha": 13.4,
-   "ai": "incendiu",
-   "arie_protejata": false,
-   "frac": 0.0,
-   "first_seen": "2025-04-25"
-  },
-  {
-   "id": "20250721_46056_21797",
+   "id": "20250719_45848_23525",
    "nivel": "ridicată",
-   "ha": 13.1,
+   "ha": 13.6,
    "ai": "taiere",
    "arie_protejata": false,
-   "frac": 0.063,
-   "first_seen": "2025-07-21"
+   "frac": 0.136,
+   "first_seen": "2025-07-19"
   },
   {
    "id": "20250429_45787_23268",
@@ -324,49 +194,175 @@
    "first_seen": "2025-04-29"
   },
   {
-   "id": "20250604_44397_22541",
+   "id": "20250524_46696_25363",
    "nivel": "ridicată",
-   "ha": 12.7,
+   "ha": 11.7,
    "ai": "taiere",
    "arie_protejata": true,
-   "frac": 0.068,
-   "first_seen": "2025-06-04"
+   "frac": 0.029,
+   "first_seen": "2025-05-24"
   },
   {
-   "id": "20250605_45165_28387",
+   "id": "20250502_46251_21856",
    "nivel": "ridicată",
-   "ha": 12.2,
+   "ha": 11.7,
    "ai": "taiere",
-   "arie_protejata": true,
-   "frac": 0.069,
-   "first_seen": "2025-06-05"
+   "arie_protejata": false,
+   "frac": 0.06,
+   "first_seen": "2025-05-02"
   },
   {
-   "id": "20250421_45124_28422",
+   "id": "20250429_45658_22906",
    "nivel": "medie",
-   "ha": 12.0,
+   "ha": 10.9,
+   "ai": null,
+   "arie_protejata": true,
+   "frac": 0.0,
+   "first_seen": "2025-04-29"
+  },
+  {
+   "id": "20250430_46764_22483",
+   "nivel": "medie",
+   "ha": 10.9,
+   "ai": "taiere",
+   "arie_protejata": true,
+   "frac": 0.0,
+   "first_seen": "2025-04-22"
+  },
+  {
+   "id": "20250427_47766_25345",
+   "nivel": "medie",
+   "ha": 10.4,
+   "ai": null,
+   "arie_protejata": true,
+   "frac": 0.125,
+   "first_seen": "2025-04-27"
+  },
+  {
+   "id": "20250404_47534_25615",
+   "nivel": "ridicată",
+   "ha": 9.6,
+   "ai": "taiere",
+   "arie_protejata": true,
+   "frac": 0.0,
+   "first_seen": "2025-04-04"
+  },
+  {
+   "id": "20250608_45847_24938",
+   "nivel": "ridicată",
+   "ha": 9.4,
+   "ai": "incendiu",
+   "arie_protejata": true,
+   "frac": 0.0,
+   "first_seen": "2025-06-08"
+  },
+  {
+   "id": "20250425_47103_23690",
+   "nivel": "medie",
+   "ha": 9.1,
+   "ai": "taiere",
+   "arie_protejata": false,
+   "frac": 0.059,
+   "first_seen": "2025-04-25"
+  },
+  {
+   "id": "20250429_45156_22347",
+   "nivel": "ridicată",
+   "ha": 8.8,
+   "ai": "taiere",
+   "arie_protejata": false,
+   "frac": 0.0,
+   "first_seen": "2025-04-29"
+  },
+  {
+   "id": "20250427_47314_25061",
+   "nivel": "medie",
+   "ha": 8.6,
+   "ai": null,
+   "arie_protejata": false,
+   "frac": 0.17,
+   "first_seen": "2025-04-27"
+  },
+  {
+   "id": "20250603_45155_28384",
+   "nivel": "ridicată",
+   "ha": 8.3,
+   "ai": "taiere",
+   "arie_protejata": true,
+   "frac": 0.153,
+   "first_seen": "2025-06-03"
+  },
+  {
+   "id": "20250421_45116_28571",
+   "nivel": "medie",
+   "ha": 8.1,
    "ai": "taiere",
    "arie_protejata": true,
    "frac": 0.0,
    "first_seen": "2025-04-21"
   },
   {
-   "id": "20250604_44832_21615",
+   "id": "20250726_44731_22608",
    "nivel": "ridicată",
-   "ha": 12.0,
-   "ai": "taiere",
+   "ha": 8.0,
+   "ai": "incendiu",
    "arie_protejata": true,
-   "frac": 0.162,
-   "first_seen": "2025-06-04"
+   "frac": 0.0,
+   "first_seen": "2025-07-26"
   },
   {
-   "id": "20250502_46251_21856",
-   "nivel": "ridicată",
-   "ha": 11.8,
+   "id": "20250502_45686_24490",
+   "nivel": "medie",
+   "ha": 7.7,
+   "ai": "taiere",
+   "arie_protejata": true,
+   "frac": 0.142,
+   "first_seen": "2025-05-02"
+  },
+  {
+   "id": "20250404_47750_25760",
+   "nivel": "medie",
+   "ha": 7.5,
    "ai": "taiere",
    "arie_protejata": false,
-   "frac": 0.059,
+   "frac": 0.0,
+   "first_seen": "2025-04-04"
+  },
+  {
+   "id": "20250502_47089_23378",
+   "nivel": "ridicată",
+   "ha": 7.5,
+   "ai": "taiere",
+   "arie_protejata": false,
+   "frac": 0.033,
    "first_seen": "2025-05-02"
+  },
+  {
+   "id": "20250422_46023_24503",
+   "nivel": "medie",
+   "ha": 7.2,
+   "ai": "taiere",
+   "arie_protejata": true,
+   "frac": 0.019,
+   "first_seen": "2025-04-22"
+  },
+  {
+   "id": "20250502_46539_22570",
+   "nivel": "ridicată",
+   "ha": 7.2,
+   "ai": "incendiu",
+   "arie_protejata": true,
+   "frac": 0.0,
+   "first_seen": "2025-05-02"
+  },
+  {
+   "id": "20250606_44828_22208",
+   "nivel": "ridicată",
+   "ha": 7.2,
+   "ai": "taiere",
+   "arie_protejata": false,
+   "frac": 0.181,
+   "first_seen": "2025-06-06"
   }
  ]
 }
