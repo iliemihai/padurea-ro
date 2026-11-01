@@ -121,11 +121,14 @@ def save_points(pts, path, until):
         except Exception:
             old = []
     keep_from = (until - dt.timedelta(days=C.FIRMS_KEEP_DAYS)).isoformat()
+    from . import romania
     seen, feats = set(), []
     for p in pts + old:
         d = p.get("date") or p.get("d")
         if not d or d < keep_from:
             continue
+        if not romania.contains(p["lon"], p["lat"]):
+            continue      # pe hartă arătăm doar focurile din țară; cele de lângă graniță contează totuși la potrivirea zonelor
         k = (round(p["lat"], 3), round(p["lon"], 3), d, str(p.get("time") or p.get("t") or "")[:3])
         if k in seen:
             continue

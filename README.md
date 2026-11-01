@@ -61,13 +61,14 @@ python -m pipeline.eval_judge qwen3.5:4b                          # testează ju
 - Hansen et al., [Global Forest Change 2000–2025](https://glad.earthengine.app/view/global-forest-change), Universitatea Maryland
 - [GeoNames](https://www.geonames.org/) (localități), [Open-Meteo](https://open-meteo.com/) (vânt)
 - Limitele comunelor, orașelor și municipiilor (UAT): [geo-spatial.org](https://www.geo-spatial.org/), simplificate în [akaleeroy/romania-uat](https://github.com/akaleeroy/romania-uat), adunate în `data/uat_ro.geojson`
-- Fundalul hărții: [Sentinel-2 cloudless](https://s2maps.eu) de EOX IT Services GmbH (CC BY-NC-SA 4.0), © OpenStreetMap, © CARTO
+- Fundalul hărții: [Sentinel-2 cloudless](https://s2maps.eu) de EOX IT Services GmbH (CC BY-NC-SA 4.0), Esri World Imagery, © OpenStreetMap
+- Numele localităților de pe hartă: GeoNames, în `docs/data/static/places.json`, și conturul țării în `docs/data/static/romania.geojson`; le reface `python -m pipeline.static_map`
 
 ## Aspectul site-ului
 
 Designul vine din [Hallmark](https://github.com/Nutlope/hallmark), tema Rim: hârtie aproape neagră, Switzer pentru text, Geist Mono pentru tot ce se măsoară (date, hectare, coordonate), o singură culoare de semnal (portocaliu). Culorile stau în `docs/tokens.css` și în blocul `:root` din `docs/style.css`; harta le citește de acolo.
 
-Literele sunt incluse în `docs/fonts.css`, ca site-ul să nu depindă de alt server: Switzer (Indian Type Foundry, licența ITF Free Font License, de pe [Fontshare](https://www.fontshare.com/fonts/switzer)) și Geist Mono (Vercel, SIL Open Font License 1.1).
+Literele sunt incluse în `docs/fonts.css`, ca site-ul să nu depindă de alt server: Switzer (Indian Type Foundry, licența ITF Free Font License, de pe [Fontshare](https://www.fontshare.com/fonts/switzer)) și Geist Mono (Vercel, SIL Open Font License 1.1). Numele de pe hartă folosesc Noto Sans (SIL Open Font License 1.1), în formatul pentru MapLibre, din [protomaps/basemaps-assets](https://github.com/protomaps/basemaps-assets), puse în `docs/fonts/`.
 
 ## Limite
 

@@ -224,7 +224,17 @@ def test_uat():
     assert uat.apply([a]) == 1
     assert "din comuna Burila Mare, lângă Vrancea, județul Mehedinți" in writer.text(a), writer.text(a)
     assert uat.ro("Şişeşti") == "Șișești"
+    assert uat.modern("Vînjuleț") == "Vânjuleț" and uat.modern("Întorsura Buzăului") == "Întorsura Buzăului"
+    assert u.find(22.79, 44.44)["nume"] == "Vânjuleț"
     print("Comuna: OK")
+
+
+def test_romania():
+    """Conturul țării: punctele din țară da, cele de peste graniță nu (pentru focuri și nume pe hartă)."""
+    from pipeline import romania
+    assert romania.contains(24.0, 46.0) and romania.contains(29.3, 45.1)
+    assert not romania.contains(21.3, 47.6) and not romania.contains(25.0, 43.3)
+    print("Contur: OK")
 
 
 if __name__ == "__main__":
@@ -232,4 +242,5 @@ if __name__ == "__main__":
     test_vischeck()
     test_firms()
     test_uat()
+    test_romania()
     main()

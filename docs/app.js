@@ -8,8 +8,12 @@
   var LUNI = ["ian.", "feb.", "mar.", "apr.", "mai", "iun.", "iul.", "aug.", "sept.", "oct.", "nov.", "dec."];
   var LUNI_L = ["ianuarie", "februarie", "martie", "aprilie", "mai", "iunie", "iulie", "august", "septembrie", "octombrie", "noiembrie", "decembrie"];
 
-  var state = { days: 30, conf: { "ridicată": true, "medie": false, "scăzută": false, "de confirmat": false }, shown: 40, sel: null, years: [21, 25] };
+  var state = { days: 30, conf: { "ridicată": true, "medie": false, "scăzută": false, "de confirmat": false }, shown: 40, sel: null, years: [21, 25], cty: {} };
   var DATA = { alerts: [], data_until: null, generated: null }, RUNS = [], VERIF = {}, FIRMS_FC = null, map, hansen = null;
+  var COUNTY_BB = {}, RO_FC = null, PLACE_LAYERS = ["pl-5", "pl-4", "pl-3", "pl-2", "pl-01"];
+  /* literele pentru numele de pe hartă (Noto Sans) stau lângă pagină, în fonts/; harta nu iese din jurul României */
+  var GLYPHS = document.baseURI.replace(/[#?].*$/, "").replace(/[^/]*$/, "") + "fonts/{fontstack}/{range}.pbf";
+  var MAXB = [[15.5, 39.5], [34.5, 52.5]];
   var NARROW = window.matchMedia("(max-width: 60rem)");
   var LOADERR = false; /* alerts.json n-a venit din alt motiv decât că nu există încă */
   document.getElementById("period-hint").hidden = state.days > 3; /* vizibil fără JavaScript, ascuns de la început la perioadele lungi */
@@ -82,6 +86,7 @@
     RUNS = res[1] || [];
     try { initMap(res[2], res[3]); } catch (e) { mapMissing(); }
     initControls();
+    initCounties(res[3]);
     renderAll();
     var m = location.hash.match(/a=([\w-]+)/);
     if (m) selectById(m[1], true);
@@ -102,7 +107,18 @@
   /* ---------- perioada și filtrele ---------- */
   function periodStart() { return DATA.data_until ? addDays(DATA.data_until, -(state.days - 1)) : null; }
   function inPeriod(a) { var s = periodStart(); return s && a.first_seen >= s && a.first_seen <= DATA.data_until; }
-  function visible() { return DATA.alerts.filter(function (a) { return inPeriod(a) && state.conf[a.incredere]; }); }
+  function visible() { return DATA.alerts.filter(function (a) { return inPeriod(a) && state.conf[a.incredere] && inCounty(a); }); }
+
+  /* județele alese, pe hartă sau din listă; niciunul = toată țara */
+  function countyOf(a) { return (a.uat && a.uat.judet) || a.county || ""; }
+  function ctyList() { return Object.keys(state.cty).sort(function (x, y) { return x.localeCompare(y, "ro"); }); }
+  function inCounty(a) { return !ctyList().length || !!state.cty[countyOf(a)]; }
+  function ctyText() {
+    var k = ctyList();
+    if (!k.length) return "";
+    if (k.length === 1) return k[0] === "București" ? " în București" : " în județul " + k[0];
+    return " în județele " + k.slice(0, -1).join(", ") + " și " + k[k.length - 1];
+  }
 
   function daysLabel(n) { return n === 1 ? "ultima zi" : "ultimele " + n + " " + de(n) + "zile"; }
   /* de când avem date: cea mai veche fereastră analizată (istoricul crește cu fiecare rulare) */
@@ -171,7 +187,18 @@
   function setBase(base) {
     BASE = base;
     Array.prototype.forEach.call(document.querySelectorAll("#base button"), function (c) { c.setAttribute("aria-pressed", String(c.dataset.base === base)); });
-    setVis("sat", base === "sat"); setVis("hd", base === "hd"); setVis("osm", base === "osm"); setVis("labels", base !== "osm");
+    setVis("sat", base === "sat"); setVis("hd", base === "hd"); setVis("osm", base === "osm");
+    PLACE_LAYERS.forEach(function (id) { setVis(id, base !== "osm"); });
+    paintForBase();
+  }
+  /* pe harta obișnuită (deschisă la culoare) liniile devin închise, ca să se vadă */
+  function paintForBase() {
+    if (!map || !map.getLayer) return;
+    var light = BASE === "osm", fg = tok(light ? "--color-paper-3" : "--color-ink").css, bg = tok(light ? "--color-ink" : "--color-paper-3").css;
+    [["ro-line", "line-color", fg], ["ro-halo", "line-color", bg], ["counties", "line-color", fg], ["cty-hover", "line-color", fg],
+     ["cty-sel-line", "line-color", fg], ["cty-sel-halo", "line-color", bg], ["cty-sel-fill", "fill-color", fg]].forEach(function (x) {
+      if (map.getLayer(x[0])) map.setPaintProperty(x[0], x[1], x[2]);
+    });
   }
   /* unele servere de hărți pot lipsi (blocate sau căzute): încercăm câte o bucată și ascundem ce nu merge */
   function probe(url) {
@@ -233,7 +260,7 @@
 
   function renderStats() {
     var v = visible(), ha = v.reduce(function (t, a) { return t + a.ha; }, 0);
-    var cty = {}; v.forEach(function (a) { if (a.county) cty[a.county] = 1; });
+    var cty = {}; v.forEach(function (a) { var c = countyOf(a); if (c) cty[c] = 1; });
     var st = document.getElementById("stats");
     st.replaceChildren();
     if (!DATA.data_until) { document.getElementById("spark").replaceChildren(); return; }
@@ -241,7 +268,7 @@
       var d = el("div"); d.appendChild(el("b", null, x[0])); d.appendChild(el("span", null, x[1])); st.appendChild(d);
     });
     renderSpark(v);
-    var all = DATA.alerts.filter(inPeriod);
+    var all = DATA.alerts.filter(function (a) { return inPeriod(a) && inCounty(a); });
     Array.prototype.forEach.call(document.querySelectorAll("#conf .chip"), function (b) {
       var n = all.filter(function (a) { return a.incredere === b.dataset.conf; }).length;
       b.querySelector(".n").textContent = fmt(n);
@@ -279,20 +306,24 @@
     var v = visible().sort(function (a, b) { return (b.first_seen > a.first_seen) - (b.first_seen < a.first_seen) || b.ha - a.ha; });
     if (!DATA.data_until) return;
     if (!v.length) {
-      var s0 = periodStart(), older = DATA.alerts.filter(function (a) { return state.conf[a.incredere] && a.first_seen < s0; })
+      var s0 = periodStart(), older = DATA.alerts.filter(function (a) { return state.conf[a.incredere] && inCounty(a) && a.first_seen < s0; })
         .sort(function (a, b) { return (b.first_seen > a.first_seen) - (b.first_seen < a.first_seen); })[0];
       if (older) {
         var need = Math.round((pd(DATA.data_until) - pd(older.first_seen)) / 864e5) + 1;
         var em = el("div", "empty");
-        em.appendChild(el("p", null, "Nicio zonă cu nivelurile alese în " + daysLabel(state.days) + ". Cea mai recentă e din " + zi(older.first_seen, true) + ", în " + placeInline(older) + "."));
+        em.appendChild(el("p", null, "Nicio zonă cu nivelurile alese" + ctyText() + " în " + daysLabel(state.days) + ". Cea mai recentă e din " + zi(older.first_seen, true) + ", în " + placeInline(older) + "."));
         var go = el("button", "more", "Arată din " + ziScurt(older.first_seen)); go.type = "button";
         go.addEventListener("click", function () { setPeriod(need); });
         em.appendChild(go); box.appendChild(em);
         return;
       }
-      var hidden = DATA.alerts.filter(inPeriod).length;
-      box.appendChild(el("p", "empty", hidden ? "Nicio schimbare cu acest nivel de încredere în perioada aleasă. Bifează și „scăzută” ca să le vezi pe toate." :
-        "Nicio schimbare nouă în perioada aleasă. Poate fi și din cauza norilor: pădurea acoperită de nori nu se vede. Încearcă o perioadă mai lungă."));
+      var hidden = DATA.alerts.filter(function (a) { return inPeriod(a) && inCounty(a); }).length;
+      var msg = hidden ? "Nicio schimbare cu acest nivel de încredere" + ctyText() + " în perioada aleasă. Bifează și „scăzută” ca să le vezi pe toate." :
+        "Nicio schimbare nouă" + ctyText() + " în perioada aleasă. Poate fi și din cauza norilor: pădurea acoperită de nori nu se vede. Încearcă o perioadă mai lungă.";
+      if (!ctyList().length) { box.appendChild(el("p", "empty", msg)); return; }
+      var ec = el("div", "empty"); ec.appendChild(el("p", null, msg));
+      var wide = el("button", "more", "Arată toată țara"); wide.type = "button"; wide.addEventListener("click", clearCounties);
+      ec.appendChild(wide); box.appendChild(ec);
       return;
     }
     v.slice(0, state.shown).forEach(function (a) {
@@ -323,6 +354,7 @@
     if (!a) return;
     if (!inPeriod(a)) setPeriod(Math.max(1, Math.round((pd(DATA.data_until) - pd(a.first_seen)) / 864e5) + 1), true);
     if (!state.conf[a.incredere]) { state.conf[a.incredere] = true; var c = document.querySelector('#conf .chip[data-conf="' + a.incredere + '"]'); if (c) c.setAttribute("aria-pressed", "true"); }
+    if (!inCounty(a)) { state.cty = {}; renderCounties(); updateCountyLayers(); }
     renderAll();
     select(a, fly);
   }
@@ -678,20 +710,19 @@
       container: "map",
       bounds: [[20.2, 43.55], [29.8, 48.3]],
       fitBoundsOptions: { padding: 20 },
-      maxZoom: 16, minZoom: 5,
+      maxZoom: 16, minZoom: 5, maxBounds: MAXB,
       cooperativeGestures: NARROW.matches,
       attributionControl: { compact: true },
       style: {
         version: 8,
+        glyphs: GLYPHS,
         sources: {
           sat: { type: "raster", tiles: ["https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless-2023_3857/default/g/{z}/{y}/{x}.jpg"], tileSize: 256, maxzoom: 15,
                  attribution: '<a href="https://s2maps.eu" target="_blank">Sentinel-2 cloudless</a> de EOX IT Services GmbH (date Copernicus Sentinel modificate)' },
           osm: { type: "raster", tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"], tileSize: 256, maxzoom: 19,
                  attribution: '© <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a>' },
           hd: { type: "raster", tiles: ["https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"], tileSize: 256, maxzoom: 18,
-                attribution: 'Imagini: Esri, Maxar, Earthstar Geographics (pot fi mai vechi)' },
-          labels: { type: "raster", tiles: ["https://a.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}.png", "https://b.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}.png"], tileSize: 256,
-                    attribution: '© <a href="https://carto.com/attributions" target="_blank">CARTO</a>' }
+                attribution: 'Imagini: Esri, Maxar, Earthstar Geographics (pot fi mai vechi)' }
         },
         layers: [
           { id: "bg", type: "background", paint: { "background-color": tok("--color-map").css } },
@@ -709,14 +740,20 @@
       if (hj) {
         hansen = { meta: hj };
         map.addSource("hansen", { type: "image", url: "data/static/hansen.webp", coordinates: [[hj.west, hj.north], [hj.east, hj.north], [hj.east, hj.south], [hj.west, hj.south]] });
-        map.addLayer({ id: "hansen", type: "raster", source: "hansen", maxzoom: 12, paint: { "raster-opacity": ["interpolate", ["linear"], ["zoom"], 6, 0.85, 10, 0.7, 12, 0.35], "raster-resampling": "nearest", "raster-fade-duration": 0 } });
+        /* pierderile Hansen pornesc ascunse: le arată doar cine bifează stratul sau alege anii */
+        map.addLayer({ id: "hansen", type: "raster", source: "hansen", maxzoom: 12, layout: { visibility: document.getElementById("lyr-loss").checked ? "visible" : "none" }, paint: { "raster-opacity": ["interpolate", ["linear"], ["zoom"], 6, 0.85, 10, 0.7, 12, 0.35], "raster-resampling": "nearest", "raster-fade-duration": 0 } });
         loadHansen();
       }
       if (counties) {
+        var none = ["in", ["get", "n"], ["literal", ctyList()]];
         map.addSource("counties", { type: "geojson", data: counties });
+        map.addLayer({ id: "cty-hit", type: "fill", source: "counties", paint: { "fill-color": ink, "fill-opacity": 0 } });
+        map.addLayer({ id: "cty-sel-fill", type: "fill", source: "counties", filter: none, paint: { "fill-color": ink, "fill-opacity": 0.07 } });
         map.addLayer({ id: "counties", type: "line", source: "counties", paint: { "line-color": ink, "line-opacity": 0.35, "line-width": 0.8 } });
+        map.addLayer({ id: "cty-hover", type: "line", source: "counties", filter: ["==", ["get", "n"], ""], paint: { "line-color": ink, "line-opacity": 0.7, "line-width": 1.4 } });
+        map.addLayer({ id: "cty-sel-halo", type: "line", source: "counties", filter: none, paint: { "line-color": tok("--color-paper-3").css, "line-width": 5, "line-opacity": 0.6 } });
+        map.addLayer({ id: "cty-sel-line", type: "line", source: "counties", filter: none, paint: { "line-color": ink, "line-width": 2.2 } });
       }
-      map.addLayer({ id: "labels", type: "raster", source: "labels", paint: { "raster-opacity": 0.9 } });
       map.addSource("firms", { type: "geojson", data: FIRMS_FC || { type: "FeatureCollection", features: [] } });
       map.addLayer({ id: "firms", type: "symbol", source: "firms", layout: {
         "icon-image": "k-fire", "icon-allow-overlap": true, "icon-ignore-placement": true,
@@ -751,10 +788,126 @@
       });
       document.getElementById("lyr-firms").addEventListener("change", function (e) { setVis("firms", e.target.checked); });
       if (!FIRMS_FC || !FIRMS_FC.features || !FIRMS_FC.features.length) { document.getElementById("tg-firms").hidden = true; document.getElementById("lg-firms").hidden = true; }
+      if (counties) countyEvents();
+      /* conturul țării și numele localităților vin după, ca lista să nu aștepte după ele */
+      Promise.all([getJSON("data/static/romania.geojson").catch(function () { return null; }),
+                   getJSON("data/static/places.json").catch(function () { return null; })]).then(function (r) {
+        RO_FC = r[0];
+        addContour(map);
+        if (map2 && map2.loaded()) addContour(map2);
+        if (r[1] && r[1].p) addPlaces(map, r[1].p);
+        paintForBase();
+      });
       probe("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/7/45/72").then(function (ok) { if (!ok) unavailable("hd"); });
       probe("https://tile.openstreetmap.org/7/72/45.png").then(function (ok) { if (!ok) unavailable("osm"); });
       updateMapData();
       updateSelection();
+    });
+  }
+
+  /* ---------- județele pe hartă: trecut cu mouse-ul arată numele și câte zone are, clic îl alege sau îl scoate ---------- */
+  function countyEvents() {
+    var cpop = new maplibregl.Popup({ closeButton: false, closeOnClick: false, offset: 14 }), hov = "", txt = "";
+    function onAlert(pt) {
+      var ls = ["a-pt", "a-fill", "firms"].filter(function (l) { return map.getLayer(l); });
+      return map.queryRenderedFeatures(pt, { layers: ls }).length > 0;
+    }
+    function clear() { if (hov) { hov = ""; map.setFilter("cty-hover", ["==", ["get", "n"], ""]); } cpop.remove(); }
+    map.on("mousemove", "cty-hit", function (e) {
+      if (onAlert(e.point)) { clear(); return; }
+      var n = e.features[0].properties.n;
+      map.getCanvas().style.cursor = "pointer";
+      if (n !== hov) {
+        hov = n; map.setFilter("cty-hover", ["==", ["get", "n"], n]);
+        var c = DATA.alerts.filter(function (a) { return inPeriod(a) && state.conf[a.incredere] && countyOf(a) === n; }).length;
+        txt = n + ": " + (c ? fmt(c) + " " + (c === 1 ? "zonă" : de(c) + "zone") : "nicio zonă") + (state.cty[n] ? " (ales)" : "");
+      }
+      cpop.setLngLat(e.lngLat).setText(txt).addTo(map);
+    });
+    map.on("mouseleave", "cty-hit", function () { map.getCanvas().style.cursor = ""; clear(); });
+    map.on("click", function (e) {
+      if (onAlert(e.point) || !map.getLayer("cty-hit")) return;
+      var f = map.queryRenderedFeatures(e.point, { layers: ["cty-hit"] })[0];
+      if (f) { hov = ""; toggleCounty(f.properties.n, true); }
+    });
+  }
+  function bboxOf(g) {
+    var b = [180, 90, -180, -90];
+    (function walk(c) { if (typeof c[0] === "number") { b[0] = Math.min(b[0], c[0]); b[1] = Math.min(b[1], c[1]); b[2] = Math.max(b[2], c[0]); b[3] = Math.max(b[3], c[1]); } else c.forEach(walk); })(g.coordinates);
+    return b;
+  }
+  function initCounties(fc) {
+    var pick = document.getElementById("cty-pick");
+    if (!pick) return;
+    if (!fc || !fc.features) { document.getElementById("cty-block").hidden = true; return; }
+    fc.features.forEach(function (f) { COUNTY_BB[f.properties.n] = bboxOf(f.geometry); });
+    Object.keys(COUNTY_BB).sort(function (x, y) { return x.localeCompare(y, "ro"); }).forEach(function (n) { var o = el("option", null, n); o.value = n; pick.appendChild(o); });
+    pick.addEventListener("change", function () { if (pick.value) toggleCounty(pick.value, true); });
+    renderCounties();
+  }
+  function renderCounties() {
+    var box = document.getElementById("ctys"), pick = document.getElementById("cty-pick"), k = ctyList();
+    if (!box || !pick) return;
+    box.replaceChildren();
+    k.forEach(function (n) {
+      var b = el("button", "chip cty"); b.type = "button"; b.setAttribute("aria-pressed", "true"); b.setAttribute("aria-label", "Scoate " + n);
+      b.appendChild(el("span", null, n)); b.appendChild(el("span", "x", "×"));
+      b.addEventListener("click", function () { toggleCounty(n, false); });
+      box.appendChild(b);
+    });
+    if (k.length) { var all = el("button", "more", "Toată țara"); all.type = "button"; all.addEventListener("click", clearCounties); box.appendChild(all); }
+    box.hidden = !k.length;
+    pick.options[0].textContent = k.length ? "Adaugă alt județ" : "Toată țara";
+    Array.prototype.forEach.call(pick.options, function (o) { if (o.value) o.disabled = !!state.cty[o.value]; });
+    pick.value = "";
+    document.getElementById("cty-hint").hidden = !!k.length;
+  }
+  function toggleCounty(n, fly) {
+    if (state.cty[n]) delete state.cty[n]; else state.cty[n] = true;
+    state.shown = 40;
+    if (state.sel) unselect();
+    renderCounties(); renderAll(); updateCountyLayers();
+    if (fly && state.cty[n]) fitCounties();
+  }
+  function clearCounties() { state.cty = {}; state.shown = 40; renderCounties(); renderAll(); updateCountyLayers(); }
+  function updateCountyLayers() {
+    if (!map || !map.getLayer) return;
+    var f = ["in", ["get", "n"], ["literal", ctyList()]];
+    ["cty-sel-fill", "cty-sel-halo", "cty-sel-line"].forEach(function (id) { if (map.getLayer(id)) map.setFilter(id, f); });
+  }
+  function fitCounties() {
+    var k = ctyList(), b = [180, 90, -180, -90];
+    if (!map || !k.length) return;
+    k.forEach(function (n) { var c = COUNTY_BB[n]; if (c) b = [Math.min(b[0], c[0]), Math.min(b[1], c[1]), Math.max(b[2], c[2]), Math.max(b[3], c[3])]; });
+    if (b[0] > b[2]) return;
+    map.fitBounds([[b[0], b[1]], [b[2], b[3]]], { padding: NARROW.matches ? 24 : 60, maxZoom: 10, duration: REDUCED ? 0 : 800 });
+  }
+
+  /* ---------- conturul României și numele localităților (GeoNames), fără servicii din afară ---------- */
+  function addContour(m, light) {
+    if (!RO_FC || !m || !m.getStyle || m.getSource("ro")) return;
+    var before = m.getLayer("firms") ? "firms" : m.getLayer("a-fill") ? "a-fill" : undefined;
+    m.addSource("ro", { type: "geojson", data: RO_FC });
+    m.addLayer({ id: "ro-halo", type: "line", source: "ro", paint: { "line-color": tok(light ? "--color-ink" : "--color-paper-3").css, "line-width": 4.5, "line-opacity": 0.5 } }, before);
+    m.addLayer({ id: "ro-line", type: "line", source: "ro", paint: { "line-color": tok(light ? "--color-paper-3" : "--color-ink").css, "line-width": 1.6, "line-opacity": 0.9 } }, before);
+  }
+  function addPlaces(m, pts) {
+    if (m.getSource("places")) return;
+    m.addSource("places", { type: "geojson", attribution: 'Nume: <a href="https://www.geonames.org" target="_blank">GeoNames</a>',
+      data: { type: "FeatureCollection", features: pts.map(function (p) { return { type: "Feature", geometry: { type: "Point", coordinates: [p[0], p[1]] }, properties: { n: p[2], r: p[3] } }; }) } });
+    var ink = tok("--color-ink").css, ink2 = tok("--color-ink-2").css, mut = tok("--color-muted").css, halo = tok("--color-paper-3").css;
+    function z(a, b, c, d) { return ["interpolate", ["linear"], ["zoom"], a, b, c, d]; }
+    [/* id, de la zoom, ce ranguri, literă, mărime, culoare */
+      ["pl-5", 11, ["==", ["get", "r"], 5], "noto-regular", z(11, 10.5, 14, 12), mut],
+      ["pl-4", 9.5, ["==", ["get", "r"], 4], "noto-regular", z(9.5, 11, 13, 12.5), ink2],
+      ["pl-3", 8, ["==", ["get", "r"], 3], "noto-regular", z(8, 11, 11, 13), ink2],
+      ["pl-2", 7, ["==", ["get", "r"], 2], "noto-medium", z(7, 11.5, 10, 13.5), ink],
+      ["pl-01", 0, ["<=", ["get", "r"], 1], "noto-medium", ["interpolate", ["linear"], ["zoom"], 5, ["match", ["get", "r"], 0, 13, 11.5], 9, ["match", ["get", "r"], 0, 16, 14]], ink]
+    ].forEach(function (s) {
+      m.addLayer({ id: s[0], type: "symbol", source: "places", minzoom: s[1], filter: s[2],
+        layout: { "text-field": ["get", "n"], "text-font": [s[3]], "text-size": s[4], "text-max-width": 12, "text-padding": 3,
+                  "symbol-sort-key": ["get", "r"], visibility: BASE === "osm" ? "none" : "visible" },
+        paint: { "text-color": s[5], "text-halo-color": halo, "text-halo-width": 1.4, "text-halo-blur": 0.4 } }, m.getLayer("firms") ? "firms" : undefined);
     });
   }
 
@@ -808,7 +961,7 @@
   }
   function initMap2() {
     map2 = new maplibregl.Map({
-      container: "map2", center: map.getCenter(), zoom: map.getZoom(), maxZoom: 18, minZoom: 5,
+      container: "map2", center: map.getCenter(), zoom: map.getZoom(), maxZoom: 18, minZoom: 5, maxBounds: MAXB,
       attributionControl: { compact: true },
       style: { version: 8, sources: { osm: { type: "raster", tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"], tileSize: 256, maxzoom: 19,
         attribution: '© <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a>' } },
@@ -824,6 +977,7 @@
       map2.addLayer({ id: "a-line", type: "line", source: "alerts", minzoom: 9, paint: { "line-color": color, "line-width": 2.4 } });
       map2.addLayer({ id: "a-pt", type: "symbol", source: "points", maxzoom: 12.5, layout: { "icon-image": PT_IMAGE, "icon-size": 0.9, "icon-allow-overlap": true, "icon-ignore-placement": true } });
       map2.addLayer({ id: "sel-line", type: "line", source: "sel", paint: { "line-color": dark, "line-width": 3 } });
+      addContour(map2, true);
       ["a-pt", "a-fill"].forEach(function (id) {
         map2.on("mouseenter", id, function () { map2.getCanvas().style.cursor = "pointer"; });
         map2.on("mouseleave", id, function () { map2.getCanvas().style.cursor = ""; });

@@ -105,6 +105,18 @@ button:disabled { opacity: 0.55; cursor: not-allowed; }
 .chip[aria-pressed="true"] { color: var(--color-ink); border-color: var(--color-ink-2); background: var(--color-paper-2); }
 .chip[aria-pressed="false"] .key { opacity: 0.4; }
 .chip .n { font-family: var(--font-outlier); font-variant-numeric: tabular-nums; color: var(--color-ink-2); }
+.chip.cty { grid-template-columns: minmax(0, 1fr) auto; }
+.chip.cty .x { font-family: var(--font-outlier); color: var(--color-muted); }
+.chip.cty:hover .x { color: var(--color-ink); }
+.ctys .more { grid-column: 1 / -1; }
+.pick {
+  width: 100%; min-height: 40px; padding: 0 calc(var(--space-sm) + 20px) 0 var(--space-sm); border: var(--rule-hair) solid var(--color-rule); border-radius: 0;
+  background-color: var(--color-paper-2); color: var(--color-ink); font: inherit; font-size: var(--text-sm); cursor: pointer; appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, var(--color-muted) 50%), linear-gradient(135deg, var(--color-muted) 50%, transparent 50%);
+  background-position: calc(100% - 17px) 50%, calc(100% - 12px) 50%; background-size: 5px 5px, 5px 5px; background-repeat: no-repeat;
+}
+.pick:hover { border-color: var(--color-muted-2); }
+.pick option { background: var(--color-paper-2); color: var(--color-ink); }
 .chip[aria-pressed="false"] .n { color: var(--color-muted); }
 
 .key { display: inline-block; flex: none; width: 10px; height: 10px; background: var(--color-data-lo); }
@@ -342,7 +354,7 @@ body.noscroll { overflow-y: clip; }
   .legend { max-width: calc(100% - 7rem); }
 }
 @media (max-width: 60rem), (pointer: coarse) {
-  .seg button, .seg.small button, .mini, .back, .more, .chip, .explain summary, .layers summary, .splitbtn, .tg, .about summary { min-height: 44px; }
+  .seg button, .seg.small button, .mini, .back, .more, .chip, .pick, .explain summary, .layers summary, .splitbtn, .tg, .about summary { min-height: 44px; }
   .actions a { display: inline-flex; align-items: center; min-height: 44px; }
   .maplibregl-ctrl-group button { width: 44px; height: 44px; }
 }

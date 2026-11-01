@@ -5,15 +5,26 @@ adunate într-un singur fișier: data/uat_ro.geojson. Pentru fiecare UAT păstr�
 Limitele sunt simplificate, deci lângă o graniță între două comune răspunsul poate fi vecinul; atunci îl marcăm „aproape”.
 """
 import json
+import re
 
 from . import config as C
 
 RO_FIX = str.maketrans({"ş": "ș", "Ş": "Ș", "ţ": "ț", "Ţ": "Ț"})
+INNER_I = re.compile(r"(?<=\w)î(?=\w)")
+INNER_I_UP = re.compile(r"(?<=\w)Î(?=\w)")
 
 
 def ro(s):
     """Numele din GeoNames vin cu sedilă (ş, ţ); în română corect e virgula de dedesubt (ș, ț)."""
     return s.translate(RO_FIX) if isinstance(s, str) else s
+
+
+def modern(s):
+    """Ortografia de azi: „â” în interiorul cuvintelor („Vînjuleț” → „Vânjuleț”); „î” rămâne la început și la sfârșit.
+    Limitele UAT de la geo-spatial.org au numele scrise cu „î” peste tot; GeoNames și site-ul folosesc „â”."""
+    if not isinstance(s, str):
+        return s
+    return INNER_I_UP.sub("Â", INNER_I.sub("â", ro(s)))
 
 
 class UAT:
@@ -25,7 +36,9 @@ class UAT:
         from shapely.geometry import shape
         from shapely.strtree import STRtree
         fc = json.loads(path.read_text(encoding="utf-8"))
-        self.items = [(shape(f["geometry"]), f["properties"]) for f in fc["features"]]
+        self.items = [(shape(f["geometry"]), dict(f["properties"], nume=modern(f["properties"]["nume"]),
+                                                   judet=modern(f["properties"].get("judet"))))
+                      for f in fc["features"]]
         self.tree = STRtree([g for g, _ in self.items])
 
     def find(self, lon, lat):

@@ -46,6 +46,13 @@
       </details>
     </section>
 
+    <section class="block" id="cty-block" aria-labelledby="h-cty">
+      <h2 id="h-cty" class="lbl">Județe</h2>
+      <select id="cty-pick" class="pick" aria-labelledby="h-cty"><option value="">Toată țara</option></select>
+      <div class="chips ctys" id="ctys" hidden></div>
+      <p class="hint" id="cty-hint">Sau dă clic pe un județ pe hartă. Poți alege mai multe.</p>
+    </section>
+
     <section class="block grow results" id="listbox" aria-labelledby="h-list">
       <h2 id="h-list" class="lbl">Schimbări găsite</h2>
       <div class="stats" id="stats"></div>
@@ -72,7 +79,7 @@
           <li>NASA FIRMS (VIIRS, MODIS)</li>
           <li>GeoNames, Open-Meteo</li>
           <li>limitele comunelor: geo-spatial.org</li>
-          <li>fundal: Sentinel-2 cloudless de EOX, © OpenStreetMap, CARTO</li>
+          <li>fundal: Sentinel-2 cloudless de EOX, Esri World Imagery, © OpenStreetMap; numele localităților: GeoNames</li>
         </ul>
         <p>Dacă vezi o greșeală, <a href="https://github.com/iliemihai/padurea-ro/issues" target="_blank" rel="noopener">spune-ne pe GitHub</a>.</p>
       </div>
@@ -95,7 +102,7 @@
           <p class="note" id="base-note" hidden>Fundalul din satelit nu s-a putut încărca. Arătăm pădurile din datele Hansen, iar la fiecare zonă, poza ei din satelit.</p>
           <label class="tg" id="tg-split"><input type="checkbox" id="lyr-split"><span>Harta normală alături, sincronizată</span></label>
           <label class="tg" id="tg-firms"><input type="checkbox" id="lyr-firms" checked><span>Foc văzut de sateliții NASA (FIRMS), în perioada aleasă</span></label>
-          <label class="tg"><input type="checkbox" id="lyr-loss" checked><span>Pădure pierdută, Hansen</span></label>
+          <label class="tg"><input type="checkbox" id="lyr-loss"><span>Pădure pierdută, Hansen</span></label>
           <div class="seg small" id="years" role="group" aria-label="Anii pierderilor"></div>
           <div class="ramp"><i id="ramp" aria-hidden="true"></i><span>2001</span><span>2025</span></div>
           <label class="tg"><input type="checkbox" id="lyr-counties" checked><span>Județe</span></label>
