@@ -14,11 +14,13 @@ imagini Sentinel-2 noi (la 2–5 zile)
         ▼
 1. Detectorul (cod, fără AI)          pipeline/detect.py
    - unde căutăm: pădure în ESA WorldCover, deasă și verde în ultima vară
-   - referința de sezon: fiecare imagine nouă se compară cu aceeași perioadă de acum un an
-     (iarna cu iarna, toamna cu toamna), ca frunzele căzute să nu arate ca o tăiere
-   - pentru fiecare imagine nouă: unde a dispărut verdele (NDVI) și a crescut solul gol (NBR, SWIR),
-     mai mult decât în pădurea din jur; fără frunze contează mai ales infraroșul (NBR)
-   - păstrează doar ce rămâne schimbat în imaginile următoare
+   - referința de sezon: fiecare imagine nouă se compară cu aceeași perioadă de acum un an,
+     ca frunzele care vin sau cad la alte date să nu arate ca o tăiere
+   - pentru fiecare imagine nouă: unde a scăzut infraroșul de undă scurtă (NBR, SWIR) și verdele (NDVI)
+     mai mult decât în pădurea din jur
+   - iarna (1 noiembrie – 15 martie) nu caută: o tăiere din iarnă apare primăvara, cu intervalul ei;
+     toamna, pragurile sunt mai stricte și zonele rămân cel mult „scăzută”
+   - păstrează doar ce rămâne schimbat în imaginile următoare (confirmată = în cel puțin 3 imagini)
    - respinge ce se vedea deja schimbat înainte și schimbările care cuprind tot dealul (ceață)
         │  candidați
         ▼
@@ -79,7 +81,7 @@ Literele sunt incluse în `docs/fonts.css`, ca site-ul să nu depindă de alt se
 
 ## Limite
 
-Norii ascund pădurea uneori zile întregi, iar zăpada săptămâni; o tăiere făcută atunci apare când se vede din nou locul, cu intervalul în care s-a putut întâmpla. Fără frunze, semnalul e mai slab decât vara. Nu vedem zone mai mici de 1 ha și nici tăierile de sub coronament. Și AI-ul greșește. Dacă vezi o alertă greșită, deschide un issue.
+Norii ascund pădurea uneori zile întregi. Între noiembrie și mijlocul lui martie nu căutăm deloc: o tăiere făcută atunci apare primăvara, cu intervalul în care s-a putut întâmpla. Nu vedem zone mai mici de 1 ha și nici tăierile de sub coronament. Și AI-ul greșește. Dacă vezi o alertă greșită, deschide un issue.
 
 ## Cheile (secrete)
 

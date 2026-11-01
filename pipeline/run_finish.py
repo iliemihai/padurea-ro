@@ -73,10 +73,11 @@ def _seen_again(m, p, same=True):
     """Aceeași zonă (same=True) sau una care o lărgește, văzută iar: date, număr de imagini, perechea de poze
     cea mai nouă."""
     m["first_seen"] = min(m["first_seen"], p["first_seen"])
-    m["n_dates"] = max(m.get("n_dates", 0), p.get("n_dates", 0))
-    # același loc, văzut schimbat și într-o imagine mai nouă decât data trecută: e confirmat
+    # același loc, văzut schimbat și într-o imagine mai nouă decât data trecută: încă o zi în care se vede schimbat
+    # (fereastra de 30 de zile alunecă, deci zilele vechi pot să nu mai fie numărate în rularea de azi)
     again = same and p["after_date"] > m.get("after_date", "")
-    m["confirmed"] = bool(m.get("confirmed") or p.get("confirmed") or again or m["n_dates"] >= C.CONFIRM_DATES)
+    m["n_dates"] = max(m.get("n_dates", 0), p.get("n_dates", 0), m.get("n_dates", 0) + 1 if again else 0)
+    m["confirmed"] = bool(m.get("confirmed") or p.get("confirmed") or m["n_dates"] >= C.CONFIRM_DATES)
     if p["after_date"] > m["after_date"]:
         m["after_date"] = p["after_date"]
         if p.get("img_after") and p.get("key"):

@@ -309,8 +309,8 @@
     var wn = document.getElementById("winter-note");
     if (wn) wn.hidden = !touchesWinter(s, DATA.data_until);
   }
-  /* iarna (1 decembrie – 15 martie) detectorul nu caută: perioada aleasă cade, măcar în parte, atunci? */
-  function isWinterDay(t) { var md = t.slice(5, 10); return md >= "12-01" || md <= "03-15"; }
+  /* iarna (1 noiembrie – 15 martie) detectorul nu caută: perioada aleasă cade, măcar în parte, atunci? */
+  function isWinterDay(t) { var md = t.slice(5, 10); return md >= "11-01" || md <= "03-15"; }
   function touchesWinter(s, u) {
     if (!s || !u) return false;
     for (var t = pd(s).getTime(), end = pd(u).getTime(); t <= end; t += 5 * 864e5) if (isWinterDay(new Date(t).toISOString())) return true;

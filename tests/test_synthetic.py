@@ -117,12 +117,12 @@ def main():
 def test_critic():
     """Criticul: fără poză de dinainte nu dăm încredere; o poză veche sau un AI nehotărât scad scorul."""
     from pipeline.critic import score
-    base = {"confirmed": True, "n_dates": 3, "ha": 4.0, "neigh_drop": 0.01, "first_seen": "2026-10-04",
-            "before_date": "2026-09-17", "img_before": {"date": "2026-09-17"},
+    base = {"confirmed": True, "n_dates": 3, "ha": 4.0, "neigh_drop": 0.01, "first_seen": "2026-07-04",
+            "before_date": "2026-06-17", "img_before": {"date": "2026-06-17"},
             "ai": {"categorie": "taiere", "incredere": 0.8}}
     assert score(base)[0] == "ridicată"
     assert score({**base, "img_before": None})[0] == "de confirmat"
-    assert score({**base, "before_date": "2026-08-13"})[1] == score(base)[1] - 1
+    assert score({**base, "before_date": "2026-05-13"})[1] == score(base)[1] - 1
     assert score({**base, "ai": {"categorie": "neclar", "incredere": 0.3}})[0] == "medie"
     assert score({**base, "ai": {"categorie": "toamna", "incredere": 0.8}})[0] == "scăzută"
     print("criticul: OK")
@@ -162,8 +162,8 @@ def test_vischeck():
     for want, a in cases.items():
         v = vischeck.measure(a, tmp)
         assert vischeck.verdict(v) == want, (want, v)
-    base = {"confirmed": True, "n_dates": 3, "ha": 4.0, "neigh_drop": 0.01, "first_seen": "2026-10-04",
-            "before_date": "2026-09-17", "img_before": {"date": "2026-09-17"}, "ai": {"categorie": "taiere", "incredere": 0.8}}
+    base = {"confirmed": True, "n_dates": 3, "ha": 4.0, "neigh_drop": 0.01, "first_seen": "2026-07-04",
+            "before_date": "2026-06-17", "img_before": {"date": "2026-06-17"}, "ai": {"categorie": "taiere", "incredere": 0.8}}
     assert score({**base, "vis": {"verdict": "vizibil"}})[0] == "ridicată"
     assert score({**base, "vis": {"verdict": "deschisa"}})[0] == "scăzută"
     assert score({**base, "vis": {"verdict": "nevazut"}})[0] == "scăzută"
@@ -271,17 +271,33 @@ def test_arhiva_split():
 
 
 def test_confirm_across_runs():
-    """O zonă văzută într-o singură imagine devine confirmată când o vedem schimbată iar, într-o imagine mai nouă."""
+    """O zonă văzută într-o singură imagine devine confirmată când o vedem schimbată în încă două imagini mai noi,
+    chiar dacă fiecare rulare (fereastra alunecă) vede doar una."""
     from pipeline import run_finish as R
     old = _sq(25.0, 46.0, id="P", n_dates=1, confirmed=False, after_date="2026-10-01", first_seen="2026-10-01")
     old.pop("_g")
     same_day = _sq(25.0, 46.0, n_dates=1, confirmed=False, first_seen="2026-10-01", after_date="2026-10-01")
     R.merge_history([same_day], [old])
-    assert not old["confirmed"], old
+    assert not old["confirmed"] and old["n_dates"] == 1, old
     later = _sq(25.0, 46.0, n_dates=1, confirmed=False, first_seen="2026-10-01", after_date="2026-10-09")
     R.merge_history([later], [old])
-    assert old["confirmed"] and old["after_date"] == "2026-10-09", old
+    assert not old["confirmed"] and old["n_dates"] == 2, old
+    last = _sq(25.0, 46.0, n_dates=1, confirmed=False, first_seen="2026-10-01", after_date="2026-10-14")
+    R.merge_history([last], [old])
+    assert old["confirmed"] and old["n_dates"] == 3 and old["after_date"] == "2026-10-14", old
     print("Confirmarea între rulări: OK")
+
+
+def test_autumn_cap():
+    """Văzută schimbată doar toamna: cel mult „scăzută”; văzută și după toamnă: nivelul obișnuit."""
+    from pipeline import critic
+    a = {"confirmed": True, "n_dates": 4, "img_before": {"file": "x"}, "ha": 5, "neigh_drop": 0.01,
+         "first_seen": "2025-10-05", "after_date": "2025-10-20", "before_date": "2025-09-30",
+         "ai": {"categorie": "taiere", "incredere": 0.9}}
+    assert critic.score(a)[0] == "scăzută", critic.score(a)
+    a["after_date"] = "2026-04-20"
+    assert critic.score(a)[0] == "ridicată", critic.score(a)
+    print("Toamna: OK")
 
 
 def test_romania():
@@ -301,4 +317,5 @@ if __name__ == "__main__":
     test_merge_rules()
     test_arhiva_split()
     test_confirm_across_runs()
+    test_autumn_cap()
     main()

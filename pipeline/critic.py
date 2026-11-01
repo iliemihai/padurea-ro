@@ -18,6 +18,12 @@ def _days(a, b):
         return None
 
 
+def _autumn_only(a):
+    from .detect import autumn
+    first, last = a.get("first_seen"), a.get("after_date") or a.get("first_seen")
+    return bool(first) and autumn(first) and autumn(last) and first[:4] == last[:4]
+
+
 def score(a):
     if not a.get("confirmed"):
         return "de confirmat", 0, ["văzută schimbată într-o singură imagine; așteptăm a doua"]
@@ -51,6 +57,10 @@ def score(a):
     else:
         why.append("fără părerea AI")
     level = "ridicată" if s >= 5 else ("medie" if s >= 3 else "scăzută")
+    # văzută schimbată doar toamna: frunzele care se îngălbenesc mai devreme decât anul trecut arată la fel
+    if _autumn_only(a):
+        level = "scăzută"
+        why.append("văzută schimbată doar toamna, când și frunzele care se îngălbenesc pot arăta așa; o urmărim și primăvara")
     # ce se vede în poze are ultimul cuvânt: dacă pozele nu arată o pădure care dispare, nu dăm încredere
     vis = (a.get("vis") or {}).get("verdict")
     if vis in VIS_TXT:

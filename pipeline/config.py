@@ -31,9 +31,9 @@ ANCHOR_DAYS = 15          # câte o referință de sezon la fiecare N zile
 SUMMER = ("06-15", "08-31")  # „pădure deasă” se verifică pe ultima vară încheiată dinaintea ferestrei
 LEAFON_NDVI = 0.70        # căutăm doar unde referința de sezon e pădure cu frunze (sau rășinoase verzi)
 # Iarna nu căutăm deloc: testul pe iarna 2024–2025 a dat 5% potriviri cu Hansen (zăpadă și sol ud sub foioasele
-# desfrunzite, diferite de la un an la altul). O tăiere de iarnă apare primăvara, când pădurea din jur înverzește,
-# cu intervalul în care s-a putut întâmpla.
-WINTER = ("12-01", "03-15")
+# desfrunzite, diferite de la un an la altul), iar zonele din noiembrie 2025 au avut 0–2%. O tăiere de iarnă apare
+# primăvara, când pădurea din jur înverzește, cu intervalul în care s-a putut întâmpla.
+WINTER = ("11-01", "03-15")
 MAX_SCENE_CLOUD = 85      # sărim imaginile cu mai mult de atâția % nori (după metadate)
 MIN_SCENE_CLEAR = 0.05    # și pe cele în care se vede curat sub 5% din pădurea plăcii
 
@@ -55,17 +55,19 @@ NDVI_NOW_MAX = 0.75       # acum: nu mai arată a pădure deasă
 NBR_DROP = 0.15           # și indicele cu SWIR a scăzut cu atât mai mult decât în jur
 NBR_NOW_MAX = 0.45
 # Toamna (frunze care se îngălbenesc la date diferite de la un an la altul) păstrăm pragurile vechi, stricte:
-# o tăiere rasă tot trece de ele, iar una parțială apare primăvara.
-AUTUMN = ("09-15", "11-30")
+# o tăiere rasă tot trece de ele, iar una parțială apare primăvara. Și tot ce găsim toamna rămâne cel mult „scăzută”
+# până o vedem schimbată și după (testul pe 2025: 38% potriviri în octombrie, față de 70–88% din mai până în iulie).
+AUTUMN = ("09-15", "10-31")
 NDVI_DROP_AUTUMN = 0.25
 NDVI_NOW_MAX_AUTUMN = 0.50
 NBR_DROP_AUTUMN = 0.25
 NBR_NOW_MAX_AUTUMN = 0.35
 HAZE_BLUE = 0.09          # albastru mare ȘI aproape cât roșul = nor sau ceață (solul gol e mai roșu decât albastru)
 HAZE_BLUE_RED = 0.85
-CONFIRM_DATES = 2         # o zonă e confirmată când se vede schimbată în cel puțin atâtea zile diferite
+CONFIRM_DATES = 3         # o zonă e confirmată când se vede schimbată în cel puțin atâtea zile diferite
+                          # (testul pe 2025: cu 2 zile, 17% potriviri cu Hansen; cu 3, 70%; cu 4, 75%)
 THUMB_SINGLES = 20        # imagini și pentru cele mai mari zone încă neconfirmate
-THUMB_MAX_CONFIRMED = 150 # cel mult atâtea zone confirmate cu imagini, pe placă
+THUMB_MAX_CONFIRMED = 400 # cel mult atâtea zone confirmate cu imagini, pe grupă (fără poze, zona nu apare pe site)
 
 # Regulile de publicare (rules.py), aplicate pe măsurătorile salvate pentru fiecare zonă (pe medii, pe toată zona)
 RULE_NBR_NOW_MAX = 0.42   # după: indicele SWIR al zonei arată sol, lemn tăiat, ars sau vegetație rară, nu pădure
