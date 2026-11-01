@@ -1,0 +1,1345 @@
+{
+ "label": "Rusca Montană, parcela 37 (Greenpeace)",
+ "lat": 45.59,
+ "lon": 22.4,
+ "km": 8.0,
+ "zone": [
+  {
+   "id": "20260505_45589_22359",
+   "incredere": "ridicată",
+   "ha": 6.6,
+   "lat": 45.58948,
+   "lon": 22.35875,
+   "dist_km": 3.21,
+   "first_seen": "2026-05-05",
+   "before_date": null,
+   "after_date": "2026-06-29",
+   "vara": 2025,
+   "n_dates": 8,
+   "uat": {
+    "siruta": "53728",
+    "nume": "Rusca Montană",
+    "tip": "comuna",
+    "judet": "Caraș-Severin"
+   },
+   "localitate": "Lozna-Pleși",
+   "arii": [
+    {
+     "cod": "ROSAC0219",
+     "nume": "Rusca Montană",
+     "tip": "sit Natura 2000",
+     "parte": 1.0
+    }
+   ],
+   "ai": {
+    "categorie": "taiere",
+    "incredere": 0.9,
+    "motiv": "În imaginea «după», zona marcată din mijloc apare ca un teren deschis, cu sol gol și zone bej-roz cu margini ascuțite, iar în jurul ei pădurea păstrează coronamentul dens; în imaginea «înainte» acolo era acoperire forestieră continuă. Aspectul indică o tăiere rasă, nu o schimbare sezonieră sau un in",
+    "model": "claude-haiku-5-5",
+    "secunde": 1.7
+   },
+   "dovezi": [
+    "văzută schimbată în 8 imagini diferite",
+    "peste 3 ha",
+    "pădurea din jur e neschimbată",
+    "ultima dată am văzut-o intactă în vara lui 2025 (de atunci, nori sau zăpadă)",
+    "AI-ul vede pădure dispărută"
+   ],
+   "text": "Între vara lui 2025 și 5 mai 2026, pe aproximativ 6,6 ha de pădure din comuna Rusca Montană, lângă Lozna-Pleși, județul Caraș-Severin, imaginile Sentinel-2 arată că vegetația a dispărut sau s-a schimbat puternic. Schimbarea se vede în 8 imagini diferite. Zona se află în situl Natura 2000 ROSAC0219 Rusca Montană. În jur s-a mai pierdut pădure în 2012, 2013, 2018, 2021, 2023 (Hansen). Nu am verificat dacă există o autorizație de exploatare (unele se pot căuta în aplicația Inspectorul Pădurii). E o schimbare care merită verificată.",
+   "img_before": {
+    "file": "20260505_45589_22359_b.webp",
+    "date": "2025-08-28"
+   },
+   "img_after": {
+    "file": "20260505_45589_22359_a.webp",
+    "date": "2026-06-29"
+   },
+   "geometry": {
+    "type": "MultiPolygon",
+    "coordinates": [
+     [
+      [
+       [
+        22.3592,
+        45.59006
+       ],
+       [
+        22.3592,
+        45.59042
+       ],
+       [
+        22.36023,
+        45.5904
+       ],
+       [
+        22.36022,
+        45.59004
+       ],
+       [
+        22.35971,
+        45.59005
+       ],
+       [
+        22.35968,
+        45.58897
+       ],
+       [
+        22.36019,
+        45.58896
+       ],
+       [
+        22.36018,
+        45.58824
+       ],
+       [
+        22.36069,
+        45.58824
+       ],
+       [
+        22.36068,
+        45.58788
+       ],
+       [
+        22.35863,
+        45.5879
+       ],
+       [
+        22.35862,
+        45.58754
+       ],
+       [
+        22.35811,
+        45.58755
+       ],
+       [
+        22.35814,
+        45.58863
+       ],
+       [
+        22.35762,
+        45.58864
+       ],
+       [
+        22.35761,
+        45.58828
+       ],
+       [
+        22.3571,
+        45.58828
+       ],
+       [
+        22.35714,
+        45.58972
+       ],
+       [
+        22.35765,
+        45.58971
+       ],
+       [
+        22.35766,
+        45.59007
+       ],
+       [
+        22.35817,
+        45.59007
+       ],
+       [
+        22.35815,
+        45.58935
+       ],
+       [
+        22.35867,
+        45.58934
+       ],
+       [
+        22.35868,
+        45.59006
+       ],
+       [
+        22.3592,
+        45.59006
+       ]
+      ]
+     ],
+     [
+      [
+       [
+        22.35818,
+        45.59043
+       ],
+       [
+        22.35767,
+        45.59043
+       ],
+       [
+        22.35768,
+        45.59115
+       ],
+       [
+        22.3582,
+        45.59115
+       ],
+       [
+        22.35821,
+        45.59151
+       ],
+       [
+        22.35872,
+        45.5915
+       ],
+       [
+        22.35874,
+        45.59222
+       ],
+       [
+        22.35925,
+        45.59222
+       ],
+       [
+        22.35924,
+        45.59186
+       ],
+       [
+        22.35975,
+        45.59185
+       ],
+       [
+        22.35974,
+        45.59149
+       ],
+       [
+        22.35923,
+        45.5915
+       ],
+       [
+        22.35922,
+        45.59114
+       ],
+       [
+        22.35871,
+        45.59114
+       ],
+       [
+        22.35868,
+        45.59006
+       ],
+       [
+        22.35817,
+        45.59007
+       ],
+       [
+        22.35818,
+        45.59043
+       ]
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "id": "20260505_45657_22389",
+   "incredere": "ridicată",
+   "ha": 4.3,
+   "lat": 45.6566,
+   "lon": 22.38903,
+   "dist_km": 7.46,
+   "first_seen": "2026-05-05",
+   "before_date": null,
+   "after_date": "2026-06-29",
+   "vara": 2025,
+   "n_dates": 7,
+   "uat": {
+    "siruta": "53728",
+    "nume": "Rusca Montană",
+    "tip": "comuna",
+    "judet": "Caraș-Severin"
+   },
+   "localitate": "Rușchița",
+   "arii": [
+    {
+     "cod": "ROSCI0355",
+     "nume": "Podișul Lipovei - Poiana Ruscă",
+     "tip": "sit Natura 2000",
+     "parte": 1.0
+    }
+   ],
+   "ai": {
+    "categorie": "taiere",
+    "incredere": 0.85,
+    "motiv": "În «după», zona marcată din mijloc apare ca un petic deschis, cu sol gol și rămășițe de exploatare, cu margini ascuțite și un traseu vizibil, în timp ce pădurea din jur păstrează coroane dense; în «înainte» zona era acoperită de vegetație, deci este vorba de o tăiere, nu de o schimbare sezonieră.",
+    "model": "claude-haiku-5-5",
+    "secunde": 1.8
+   },
+   "dovezi": [
+    "văzută schimbată în 7 imagini diferite",
+    "peste 3 ha",
+    "pădurea din jur e neschimbată",
+    "ultima dată am văzut-o intactă în vara lui 2025 (de atunci, nori sau zăpadă)",
+    "AI-ul vede pădure dispărută"
+   ],
+   "text": "Între vara lui 2025 și 5 mai 2026, pe aproximativ 4,3 ha de pădure din comuna Rusca Montană, lângă Rușchița, județul Caraș-Severin, imaginile Sentinel-2 arată că vegetația a dispărut sau s-a schimbat puternic. Schimbarea se vede în 7 imagini diferite. Zona se află în situl Natura 2000 ROSCI0355 Podișul Lipovei - Poiana Ruscă. În jur s-a mai pierdut pădure în 2001, 2010, 2018 (Hansen). Nu am verificat dacă există o autorizație de exploatare (unele se pot căuta în aplicația Inspectorul Pădurii). E o schimbare care merită verificată.",
+   "img_before": {
+    "file": "20260505_45657_22389_b.webp",
+    "date": "2025-08-30"
+   },
+   "img_after": {
+    "file": "20260505_45657_22389_a.webp",
+    "date": "2026-06-29"
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       22.38857,
+       45.65811
+      ],
+      [
+       22.38856,
+       45.65775
+      ],
+      [
+       22.38804,
+       45.65776
+      ],
+      [
+       22.38802,
+       45.65668
+      ],
+      [
+       22.3875,
+       45.65668
+      ],
+      [
+       22.3875,
+       45.65632
+      ],
+      [
+       22.38698,
+       45.65633
+      ],
+      [
+       22.38697,
+       45.65597
+      ],
+      [
+       22.388,
+       45.65596
+      ],
+      [
+       22.38799,
+       45.6556
+      ],
+      [
+       22.3885,
+       45.65559
+      ],
+      [
+       22.38851,
+       45.65595
+      ],
+      [
+       22.39005,
+       45.65593
+      ],
+      [
+       22.39004,
+       45.65557
+      ],
+      [
+       22.39056,
+       45.65557
+      ],
+      [
+       22.39055,
+       45.65521
+      ],
+      [
+       22.39106,
+       45.6552
+      ],
+      [
+       22.39108,
+       45.65592
+      ],
+      [
+       22.39057,
+       45.65593
+      ],
+      [
+       22.39058,
+       45.65629
+      ],
+      [
+       22.39006,
+       45.65629
+      ],
+      [
+       22.39009,
+       45.65737
+      ],
+      [
+       22.38958,
+       45.65738
+      ],
+      [
+       22.38958,
+       45.65774
+      ],
+      [
+       22.38907,
+       45.65774
+      ],
+      [
+       22.38908,
+       45.6581
+      ],
+      [
+       22.38857,
+       45.65811
+      ]
+     ],
+     [
+      [
+       22.38904,
+       45.65666
+      ],
+      [
+       22.38956,
+       45.65666
+      ],
+      [
+       22.38955,
+       45.6563
+      ],
+      [
+       22.38904,
+       45.6563
+      ],
+      [
+       22.38904,
+       45.65666
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "id": "20260505_45585_22388",
+   "incredere": "ridicată",
+   "ha": 4.3,
+   "lat": 45.58546,
+   "lon": 22.38752,
+   "dist_km": 1.1,
+   "first_seen": "2026-05-05",
+   "before_date": null,
+   "after_date": "2026-06-29",
+   "vara": 2025,
+   "n_dates": 8,
+   "uat": {
+    "siruta": "53728",
+    "nume": "Rusca Montană",
+    "tip": "comuna",
+    "judet": "Caraș-Severin"
+   },
+   "localitate": "Lozna-Pleși",
+   "arii": [
+    {
+     "cod": "ROSAC0219",
+     "nume": "Rusca Montană",
+     "tip": "sit Natura 2000",
+     "parte": 1.0
+    }
+   ],
+   "ai": {
+    "categorie": "taiere",
+    "incredere": 0.85,
+    "motiv": "În «după» apar suprafețe mari de sol gol, bej-roz, cu margini ascuțite și urme de drumuri noi, care lipsesc în «înainte»; zona marcată arată ca o tăiere a pădurii, nu ca o simplă schimbare sezonieră, deoarece pădurea din jur își păstrează coroanele.",
+    "model": "claude-haiku-5-5",
+    "secunde": 1.4
+   },
+   "dovezi": [
+    "văzută schimbată în 8 imagini diferite",
+    "peste 3 ha",
+    "pădurea din jur e neschimbată",
+    "ultima dată am văzut-o intactă în vara lui 2025 (de atunci, nori sau zăpadă)",
+    "AI-ul vede pădure dispărută"
+   ],
+   "text": "Între vara lui 2025 și 5 mai 2026, pe aproximativ 4,3 ha de pădure din comuna Rusca Montană, lângă Lozna-Pleși, județul Caraș-Severin, imaginile Sentinel-2 arată că vegetația a dispărut sau s-a schimbat puternic. Schimbarea se vede în 8 imagini diferite. Zona se află în situl Natura 2000 ROSAC0219 Rusca Montană. În jur s-a mai pierdut pădure în 2016, 2019, 2020, 2021, 2025 (Hansen). Nu am verificat dacă există o autorizație de exploatare (unele se pot căuta în aplicația Inspectorul Pădurii). E o schimbare care merită verificată.",
+   "img_before": {
+    "file": "20260505_45585_22388_b.webp",
+    "date": "2025-08-28"
+   },
+   "img_after": {
+    "file": "20260505_45585_22388_a.webp",
+    "date": "2026-06-29"
+   },
+   "geometry": {
+    "type": "MultiPolygon",
+    "coordinates": [
+     [
+      [
+       [
+        22.39186,
+        45.5839
+       ],
+       [
+        22.39135,
+        45.58391
+       ],
+       [
+        22.39136,
+        45.58427
+       ],
+       [
+        22.39187,
+        45.58426
+       ],
+       [
+        22.39186,
+        45.5839
+       ]
+      ]
+     ],
+     [
+      [
+       [
+        22.39086,
+        45.58463
+       ],
+       [
+        22.39034,
+        45.58464
+       ],
+       [
+        22.39035,
+        45.585
+       ],
+       [
+        22.39138,
+        45.58499
+       ],
+       [
+        22.39136,
+        45.58427
+       ],
+       [
+        22.39085,
+        45.58427
+       ],
+       [
+        22.39086,
+        45.58463
+       ]
+      ]
+     ],
+     [
+      [
+       [
+        22.38933,
+        45.58501
+       ],
+       [
+        22.38932,
+        45.58465
+       ],
+       [
+        22.38829,
+        45.58467
+       ],
+       [
+        22.3883,
+        45.58503
+       ],
+       [
+        22.38728,
+        45.58504
+       ],
+       [
+        22.38729,
+        45.5854
+       ],
+       [
+        22.38472,
+        45.58543
+       ],
+       [
+        22.38473,
+        45.58579
+       ],
+       [
+        22.38422,
+        45.5858
+       ],
+       [
+        22.38423,
+        45.58616
+       ],
+       [
+        22.38371,
+        45.58616
+       ],
+       [
+        22.38372,
+        45.58652
+       ],
+       [
+        22.38577,
+        45.5865
+       ],
+       [
+        22.38577,
+        45.58614
+       ],
+       [
+        22.38628,
+        45.58613
+       ],
+       [
+        22.38627,
+        45.58577
+       ],
+       [
+        22.38781,
+        45.58575
+       ],
+       [
+        22.3878,
+        45.58539
+       ],
+       [
+        22.39036,
+        45.58536
+       ],
+       [
+        22.39035,
+        45.585
+       ],
+       [
+        22.38933,
+        45.58501
+       ]
+      ]
+     ],
+     [
+      [
+       [
+        22.39088,
+        45.58571
+       ],
+       [
+        22.39087,
+        45.58535
+       ],
+       [
+        22.39036,
+        45.58536
+       ],
+       [
+        22.39037,
+        45.58572
+       ],
+       [
+        22.39088,
+        45.58571
+       ]
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "id": "20260505_45595_22354",
+   "incredere": "medie",
+   "ha": 3.2,
+   "lat": 45.59495,
+   "lon": 22.35449,
+   "dist_km": 3.59,
+   "first_seen": "2026-05-05",
+   "before_date": null,
+   "after_date": "2026-06-29",
+   "vara": 2025,
+   "n_dates": 7,
+   "uat": {
+    "siruta": "53728",
+    "nume": "Rusca Montană",
+    "tip": "comuna",
+    "judet": "Caraș-Severin"
+   },
+   "localitate": "Lozna-Pleși",
+   "arii": [
+    {
+     "cod": "ROSAC0219",
+     "nume": "Rusca Montană",
+     "tip": "sit Natura 2000",
+     "parte": 1.0
+    }
+   ],
+   "ai": null,
+   "dovezi": [
+    "văzută schimbată în 7 imagini diferite",
+    "peste 3 ha",
+    "pădurea din jur e neschimbată",
+    "ultima dată am văzut-o intactă în vara lui 2025 (de atunci, nori sau zăpadă)",
+    "fără părerea AI"
+   ],
+   "text": "Între vara lui 2025 și 5 mai 2026, pe aproximativ 3,2 ha de pădure din comuna Rusca Montană, lângă Lozna-Pleși, județul Caraș-Severin, imaginile Sentinel-2 arată că vegetația a dispărut sau s-a schimbat puternic. Schimbarea se vede în 7 imagini diferite. Zona se află în situl Natura 2000 ROSAC0219 Rusca Montană. În jur s-a mai pierdut pădure în 2009, 2015, 2016, 2017, 2021 (Hansen). Nu am verificat dacă există o autorizație de exploatare (unele se pot căuta în aplicația Inspectorul Pădurii). E o schimbare care merită verificată.",
+   "img_before": {
+    "file": "20260505_45595_22354_b.webp",
+    "date": "2025-08-28"
+   },
+   "img_after": {
+    "file": "20260505_45595_22354_a.webp",
+    "date": "2026-06-29"
+   },
+   "geometry": {
+    "type": "MultiPolygon",
+    "coordinates": [
+     [
+      [
+       [
+        22.35342,
+        45.59517
+       ],
+       [
+        22.35341,
+        45.59481
+       ],
+       [
+        22.35393,
+        45.5948
+       ],
+       [
+        22.35392,
+        45.59444
+       ],
+       [
+        22.3534,
+        45.59445
+       ],
+       [
+        22.35339,
+        45.59373
+       ],
+       [
+        22.35287,
+        45.59373
+       ],
+       [
+        22.35288,
+        45.59409
+       ],
+       [
+        22.35237,
+        45.5941
+       ],
+       [
+        22.35238,
+        45.59446
+       ],
+       [
+        22.35289,
+        45.59445
+       ],
+       [
+        22.35292,
+        45.59553
+       ],
+       [
+        22.35394,
+        45.59552
+       ],
+       [
+        22.35395,
+        45.59588
+       ],
+       [
+        22.35446,
+        45.59587
+       ],
+       [
+        22.35445,
+        45.59515
+       ],
+       [
+        22.35342,
+        45.59517
+       ]
+      ]
+     ],
+     [
+      [
+       [
+        22.357,
+        45.59476
+       ],
+       [
+        22.35649,
+        45.59477
+       ],
+       [
+        22.3565,
+        45.59513
+       ],
+       [
+        22.35701,
+        45.59512
+       ],
+       [
+        22.357,
+        45.59476
+       ]
+      ]
+     ],
+     [
+      [
+       [
+        22.35598,
+        45.59478
+       ],
+       [
+        22.35546,
+        45.59478
+       ],
+       [
+        22.35545,
+        45.59442
+       ],
+       [
+        22.35443,
+        45.59443
+       ],
+       [
+        22.35445,
+        45.59515
+       ],
+       [
+        22.35496,
+        45.59515
+       ],
+       [
+        22.35497,
+        45.59551
+       ],
+       [
+        22.35599,
+        45.5955
+       ],
+       [
+        22.356,
+        45.59586
+       ],
+       [
+        22.35651,
+        45.59585
+       ],
+       [
+        22.3565,
+        45.59513
+       ],
+       [
+        22.35598,
+        45.59514
+       ],
+       [
+        22.35598,
+        45.59478
+       ]
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "id": "20260505_45587_22392",
+   "incredere": "scăzută",
+   "ha": 2.9,
+   "lat": 45.58685,
+   "lon": 22.39154,
+   "dist_km": 0.75,
+   "first_seen": "2026-05-05",
+   "before_date": null,
+   "after_date": "2026-06-29",
+   "vara": 2025,
+   "n_dates": 6,
+   "uat": {
+    "siruta": "53728",
+    "nume": "Rusca Montană",
+    "tip": "comuna",
+    "judet": "Caraș-Severin"
+   },
+   "localitate": "Lozna-Pleși",
+   "arii": [
+    {
+     "cod": "ROSAC0219",
+     "nume": "Rusca Montană",
+     "tip": "sit Natura 2000",
+     "parte": 1.0
+    }
+   ],
+   "ai": null,
+   "dovezi": [
+    "văzută schimbată în 6 imagini diferite",
+    "pădurea din jur e neschimbată",
+    "ultima dată am văzut-o intactă în vara lui 2025 (de atunci, nori sau zăpadă)",
+    "fără părerea AI"
+   ],
+   "text": "Între vara lui 2025 și 5 mai 2026, pe aproximativ 2,9 ha de pădure din comuna Rusca Montană, lângă Lozna-Pleși, județul Caraș-Severin, imaginile Sentinel-2 arată că vegetația a dispărut sau s-a schimbat puternic. Schimbarea se vede în 6 imagini diferite. Zona se află în situl Natura 2000 ROSAC0219 Rusca Montană. În jur s-a mai pierdut pădure în 2004, 2007, 2016, 2020, 2025 (Hansen). Nu am verificat dacă există o autorizație de exploatare (unele se pot căuta în aplicația Inspectorul Pădurii). E o schimbare care merită verificată.",
+   "img_before": {
+    "file": "20260505_45587_22392_b.webp",
+    "date": "2025-08-30"
+   },
+   "img_after": {
+    "file": "20260505_45587_22392_a.webp",
+    "date": "2026-06-29"
+   },
+   "geometry": {
+    "type": "MultiPolygon",
+    "coordinates": [
+     [
+      [
+       [
+        22.39318,
+        45.58533
+       ],
+       [
+        22.39267,
+        45.58533
+       ],
+       [
+        22.39269,
+        45.58641
+       ],
+       [
+        22.39321,
+        45.58641
+       ],
+       [
+        22.39318,
+        45.58533
+       ]
+      ]
+     ],
+     [
+      [
+       [
+        22.39013,
+        45.58644
+       ],
+       [
+        22.39218,
+        45.58642
+       ],
+       [
+        22.39217,
+        45.58606
+       ],
+       [
+        22.39012,
+        45.58608
+       ],
+       [
+        22.39013,
+        45.58644
+       ]
+      ]
+     ],
+     [
+      [
+       [
+        22.39322,
+        45.58677
+       ],
+       [
+        22.3927,
+        45.58677
+       ],
+       [
+        22.39269,
+        45.58641
+       ],
+       [
+        22.39218,
+        45.58642
+       ],
+       [
+        22.3922,
+        45.58714
+       ],
+       [
+        22.39322,
+        45.58713
+       ],
+       [
+        22.39322,
+        45.58677
+       ]
+      ]
+     ],
+     [
+      [
+       [
+        22.39118,
+        45.58751
+       ],
+       [
+        22.39221,
+        45.5875
+       ],
+       [
+        22.3922,
+        45.58714
+       ],
+       [
+        22.39169,
+        45.58714
+       ],
+       [
+        22.39168,
+        45.58679
+       ],
+       [
+        22.39065,
+        45.5868
+       ],
+       [
+        22.39066,
+        45.58716
+       ],
+       [
+        22.39117,
+        45.58715
+       ],
+       [
+        22.39118,
+        45.58751
+       ]
+      ]
+     ],
+     [
+      [
+       [
+        22.39015,
+        45.58716
+       ],
+       [
+        22.39017,
+        45.58788
+       ],
+       [
+        22.39068,
+        45.58788
+       ],
+       [
+        22.39066,
+        45.58716
+       ],
+       [
+        22.39015,
+        45.58716
+       ]
+      ]
+     ],
+     [
+      [
+       [
+        22.39018,
+        45.5886
+       ],
+       [
+        22.39017,
+        45.58788
+       ],
+       [
+        22.38965,
+        45.58789
+       ],
+       [
+        22.38967,
+        45.58861
+       ],
+       [
+        22.39018,
+        45.5886
+       ]
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "id": "20260505_45604_22353",
+   "incredere": "scăzută",
+   "ha": 2.2,
+   "lat": 45.60379,
+   "lon": 22.3526,
+   "dist_km": 4.0,
+   "first_seen": "2026-05-05",
+   "before_date": null,
+   "after_date": "2026-06-29",
+   "vara": 2025,
+   "n_dates": 7,
+   "uat": {
+    "siruta": "53728",
+    "nume": "Rusca Montană",
+    "tip": "comuna",
+    "judet": "Caraș-Severin"
+   },
+   "localitate": "Lozna-Pleși",
+   "arii": [
+    {
+     "cod": "ROSAC0219",
+     "nume": "Rusca Montană",
+     "tip": "sit Natura 2000",
+     "parte": 1.0
+    }
+   ],
+   "ai": null,
+   "dovezi": [
+    "văzută schimbată în 7 imagini diferite",
+    "pădurea din jur e neschimbată",
+    "ultima dată am văzut-o intactă în vara lui 2025 (de atunci, nori sau zăpadă)",
+    "fără părerea AI"
+   ],
+   "text": "Între vara lui 2025 și 5 mai 2026, pe aproximativ 2,2 ha de pădure din comuna Rusca Montană, lângă Lozna-Pleși, județul Caraș-Severin, imaginile Sentinel-2 arată că vegetația a dispărut sau s-a schimbat puternic. Schimbarea se vede în 7 imagini diferite. Zona se află în situl Natura 2000 ROSAC0219 Rusca Montană. În jur s-a mai pierdut pădure în 2004, 2005, 2006, 2008, 2009 (Hansen). Nu am verificat dacă există o autorizație de exploatare (unele se pot căuta în aplicația Inspectorul Pădurii). E o schimbare care merită verificată.",
+   "img_before": {
+    "file": "20260505_45604_22353_b.webp",
+    "date": "2025-08-28"
+   },
+   "img_after": {
+    "file": "20260505_45604_22353_a.webp",
+    "date": "2026-06-29"
+   },
+   "geometry": {
+    "type": "MultiPolygon",
+    "coordinates": [
+     [
+      [
+       [
+        22.35312,
+        45.60417
+       ],
+       [
+        22.35311,
+        45.60345
+       ],
+       [
+        22.35362,
+        45.60344
+       ],
+       [
+        22.35361,
+        45.60308
+       ],
+       [
+        22.3531,
+        45.60309
+       ],
+       [
+        22.35308,
+        45.60237
+       ],
+       [
+        22.35257,
+        45.60238
+       ],
+       [
+        22.35258,
+        45.60274
+       ],
+       [
+        22.35155,
+        45.60275
+       ],
+       [
+        22.35156,
+        45.60311
+       ],
+       [
+        22.35259,
+        45.6031
+       ],
+       [
+        22.35261,
+        45.60418
+       ],
+       [
+        22.35312,
+        45.60417
+       ]
+      ]
+     ],
+     [
+      [
+       [
+        22.35159,
+        45.60419
+       ],
+       [
+        22.3516,
+        45.60491
+       ],
+       [
+        22.35365,
+        45.60488
+       ],
+       [
+        22.35365,
+        45.60452
+       ],
+       [
+        22.35262,
+        45.60454
+       ],
+       [
+        22.35261,
+        45.60418
+       ],
+       [
+        22.35159,
+        45.60419
+       ]
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "id": "20260505_45601_22353",
+   "incredere": "scăzută",
+   "ha": 2.1,
+   "lat": 45.60098,
+   "lon": 22.35252,
+   "dist_km": 3.9,
+   "first_seen": "2026-05-05",
+   "before_date": null,
+   "after_date": "2026-06-29",
+   "vara": 2025,
+   "n_dates": 6,
+   "uat": {
+    "siruta": "53728",
+    "nume": "Rusca Montană",
+    "tip": "comuna",
+    "judet": "Caraș-Severin"
+   },
+   "localitate": "Lozna-Pleși",
+   "arii": [
+    {
+     "cod": "ROSAC0219",
+     "nume": "Rusca Montană",
+     "tip": "sit Natura 2000",
+     "parte": 1.0
+    }
+   ],
+   "ai": null,
+   "dovezi": [
+    "văzută schimbată în 6 imagini diferite",
+    "pădurea din jur e neschimbată",
+    "ultima dată am văzut-o intactă în vara lui 2025 (de atunci, nori sau zăpadă)",
+    "fără părerea AI"
+   ],
+   "text": "Între vara lui 2025 și 5 mai 2026, pe aproximativ 2,1 ha de pădure din comuna Rusca Montană, lângă Lozna-Pleși, județul Caraș-Severin, imaginile Sentinel-2 arată că vegetația a dispărut sau s-a schimbat puternic. Schimbarea se vede în 6 imagini diferite. Zona se află în situl Natura 2000 ROSAC0219 Rusca Montană. În jur s-a mai pierdut pădure în 2009, 2012, 2015, 2018, 2020 (Hansen). Nu am verificat dacă există o autorizație de exploatare (unele se pot căuta în aplicația Inspectorul Pădurii). E o schimbare care merită verificată.",
+   "img_before": {
+    "file": "20260505_45601_22353_b.webp",
+    "date": "2025-08-28"
+   },
+   "img_after": {
+    "file": "20260505_45601_22353_a.webp",
+    "date": "2026-06-29"
+   },
+   "geometry": {
+    "type": "MultiPolygon",
+    "coordinates": [
+     [
+      [
+       [
+        22.35199,
+        45.5995
+       ],
+       [
+        22.35147,
+        45.59951
+       ],
+       [
+        22.35149,
+        45.60023
+       ],
+       [
+        22.352,
+        45.60022
+       ],
+       [
+        22.35199,
+        45.5995
+       ]
+      ]
+     ],
+     [
+      [
+       [
+        22.35201,
+        45.60058
+       ],
+       [
+        22.3515,
+        45.60059
+       ],
+       [
+        22.35152,
+        45.60131
+       ],
+       [
+        22.35203,
+        45.6013
+       ],
+       [
+        22.35204,
+        45.60166
+       ],
+       [
+        22.35358,
+        45.60164
+       ],
+       [
+        22.35359,
+        45.602
+       ],
+       [
+        22.3541,
+        45.602
+       ],
+       [
+        22.35408,
+        45.60128
+       ],
+       [
+        22.35306,
+        45.60129
+       ],
+       [
+        22.35305,
+        45.60093
+       ],
+       [
+        22.35253,
+        45.60094
+       ],
+       [
+        22.35252,
+        45.60022
+       ],
+       [
+        22.352,
+        45.60022
+       ],
+       [
+        22.35201,
+        45.60058
+       ]
+      ]
+     ]
+    ]
+   }
+  }
+ ]
+}
