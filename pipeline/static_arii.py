@@ -154,6 +154,8 @@ def cdda_tip(name, iucn, desig):
         return "parc natural"
     if "biosfer" in n:
         return "rezervația biosferei"
+    if n.startswith("geoparc"):
+        return "geoparc"
     i = (iucn or "").strip().upper()
     if i == "IA" or "științific" in n or "stiintific" in n:
         return "rezervație științifică"

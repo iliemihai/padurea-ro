@@ -8,7 +8,7 @@
   var LUNI = ["ian.", "feb.", "mar.", "apr.", "mai", "iun.", "iul.", "aug.", "sept.", "oct.", "nov.", "dec."];
   var LUNI_L = ["ianuarie", "februarie", "martie", "aprilie", "mai", "iunie", "iulie", "august", "septembrie", "octombrie", "noiembrie", "decembrie"];
 
-  var state = { days: 30, conf: { "ridicată": true, "medie": false, "scăzută": false, "de confirmat": false }, shown: 40, sel: null, years: [21, 25], cty: {} };
+  var state = { days: 30, conf: { "ridicată": true, "medie": false, "scăzută": false, "de confirmat": false }, shown: 40, sel: null, years: [21, 25], cty: {}, arii: false };
   var DATA = { alerts: [], data_until: null, generated: null }, RUNS = [], VERIF = {}, FIRMS_FC = null, map, hansen = null;
   var COUNTY_BB = {}, RO_FC = null, PLACE_LAYERS = ["pl-5", "pl-4", "pl-3", "pl-2", "pl-01"];
   /* literele pentru numele de pe hartă (Noto Sans) stau lângă pagină, în fonts/; harta nu iese din jurul României */
@@ -107,7 +107,8 @@
   /* ---------- perioada și filtrele ---------- */
   function periodStart() { return DATA.data_until ? addDays(DATA.data_until, -(state.days - 1)) : null; }
   function inPeriod(a) { var s = periodStart(); return s && a.first_seen >= s && a.first_seen <= DATA.data_until; }
-  function visible() { return DATA.alerts.filter(function (a) { return inPeriod(a) && state.conf[a.incredere] && inCounty(a); }); }
+  function visible() { return DATA.alerts.filter(function (a) { return inPeriod(a) && state.conf[a.incredere] && inCounty(a) && inArii(a); }); }
+  function inArii(a) { return !state.arii || !!(a.arii && a.arii.length); }
 
   /* județele alese, pe hartă sau din listă; niciunul = toată țara */
   function countyOf(a) { return (a.uat && a.uat.judet) || a.county || ""; }
@@ -119,6 +120,8 @@
     if (k.length === 1) return k[0] === "București" ? " în București" : " în județul " + k[0];
     return " în județele " + k.slice(0, -1).join(", ") + " și " + k[k.length - 1];
   }
+  /* ce filtre de loc sunt puse, pentru mesajele cu „nicio zonă” */
+  function ctxText() { return (state.arii ? " din arii protejate" : "") + ctyText(); }
 
   function daysLabel(n) { return n === 1 ? "ultima zi" : "ultimele " + n + " " + de(n) + "zile"; }
   /* de când avem date: cea mai veche fereastră analizată (istoricul crește cu fiecare rulare) */
@@ -173,6 +176,10 @@
     });
     document.getElementById("lyr-loss").addEventListener("change", function (e) { setVis("hansen", e.target.checked); });
     document.getElementById("lyr-counties").addEventListener("change", function (e) { setVis("counties", e.target.checked); });
+    document.getElementById("lyr-arii").addEventListener("change", function (e) { toggleArii(e.target.checked); });
+    var oa = document.getElementById("only-arii");
+    if (DATA.alerts.some(function (a) { return a.arii && a.arii.length; })) document.getElementById("tg-only-arii").hidden = false;
+    oa.addEventListener("change", function () { setOnlyArii(oa.checked); });
     document.getElementById("base").addEventListener("click", function (e) {
       var b = e.target.closest("button"); if (b && !b.disabled) setBase(b.dataset.base);
     });
@@ -268,7 +275,7 @@
       var d = el("div"); d.appendChild(el("b", null, x[0])); d.appendChild(el("span", null, x[1])); st.appendChild(d);
     });
     renderSpark(v);
-    var all = DATA.alerts.filter(function (a) { return inPeriod(a) && inCounty(a); });
+    var all = DATA.alerts.filter(function (a) { return inPeriod(a) && inCounty(a) && inArii(a); });
     Array.prototype.forEach.call(document.querySelectorAll("#conf .chip"), function (b) {
       var n = all.filter(function (a) { return a.incredere === b.dataset.conf; }).length;
       b.querySelector(".n").textContent = fmt(n);
@@ -306,24 +313,25 @@
     var v = visible().sort(function (a, b) { return (b.first_seen > a.first_seen) - (b.first_seen < a.first_seen) || b.ha - a.ha; });
     if (!DATA.data_until) return;
     if (!v.length) {
-      var s0 = periodStart(), older = DATA.alerts.filter(function (a) { return state.conf[a.incredere] && inCounty(a) && a.first_seen < s0; })
+      var s0 = periodStart(), older = DATA.alerts.filter(function (a) { return state.conf[a.incredere] && inCounty(a) && inArii(a) && a.first_seen < s0; })
         .sort(function (a, b) { return (b.first_seen > a.first_seen) - (b.first_seen < a.first_seen); })[0];
       if (older) {
         var need = Math.round((pd(DATA.data_until) - pd(older.first_seen)) / 864e5) + 1;
         var em = el("div", "empty");
-        em.appendChild(el("p", null, "Nicio zonă cu nivelurile alese" + ctyText() + " în " + daysLabel(state.days) + ". Cea mai recentă e din " + zi(older.first_seen, true) + ", în " + placeInline(older) + "."));
+        em.appendChild(el("p", null, "Nicio zonă cu nivelurile alese" + ctxText() + " în " + daysLabel(state.days) + ". Cea mai recentă e din " + zi(older.first_seen, true) + ", în " + placeInline(older) + "."));
         var go = el("button", "more", "Arată din " + ziScurt(older.first_seen)); go.type = "button";
         go.addEventListener("click", function () { setPeriod(need); });
         em.appendChild(go); box.appendChild(em);
         return;
       }
-      var hidden = DATA.alerts.filter(function (a) { return inPeriod(a) && inCounty(a); }).length;
-      var msg = hidden ? "Nicio schimbare cu acest nivel de încredere" + ctyText() + " în perioada aleasă. Bifează și „scăzută” ca să le vezi pe toate." :
-        "Nicio schimbare nouă" + ctyText() + " în perioada aleasă. Poate fi și din cauza norilor: pădurea acoperită de nori nu se vede. Încearcă o perioadă mai lungă.";
-      if (!ctyList().length) { box.appendChild(el("p", "empty", msg)); return; }
+      var hidden = DATA.alerts.filter(function (a) { return inPeriod(a) && inCounty(a) && inArii(a); }).length;
+      var msg = hidden ? "Nicio schimbare cu acest nivel de încredere" + ctxText() + " în perioada aleasă. Bifează și „scăzută” ca să le vezi pe toate." :
+        "Nicio schimbare nouă" + ctxText() + " în perioada aleasă. Poate fi și din cauza norilor: pădurea acoperită de nori nu se vede. Încearcă o perioadă mai lungă.";
+      if (!ctyList().length && !state.arii) { box.appendChild(el("p", "empty", msg)); return; }
       var ec = el("div", "empty"); ec.appendChild(el("p", null, msg));
-      var wide = el("button", "more", "Arată toată țara"); wide.type = "button"; wide.addEventListener("click", clearCounties);
-      ec.appendChild(wide); box.appendChild(ec);
+      if (ctyList().length) { var wide = el("button", "more", "Arată toată țara"); wide.type = "button"; wide.addEventListener("click", clearCounties); ec.appendChild(wide); }
+      if (state.arii) { var out = el("button", "more", "Arată și zonele din afara ariilor protejate"); out.type = "button"; out.addEventListener("click", function () { setOnlyArii(false); }); ec.appendChild(out); }
+      box.appendChild(ec);
       return;
     }
     v.slice(0, state.shown).forEach(function (a) {
@@ -336,6 +344,7 @@
       b.appendChild(el("span", "p", headline(a).t));
       b.appendChild(el("span", "a", fmt(a.ha, 1) + " ha"));
       if (isVerified(a)) meta.push("verificat și din alte surse");
+      if (a.arii && a.arii.length) meta.push("în arie protejată");
       meta.push(a.n_dates >= 2 ? "văzută în " + a.n_dates + " imagini" : "o singură imagine");
       b.appendChild(el("span", "s", upFirst(meta.join(", "))));
       b.addEventListener("click", function () { select(a, true); });
@@ -355,6 +364,7 @@
     if (!inPeriod(a)) setPeriod(Math.max(1, Math.round((pd(DATA.data_until) - pd(a.first_seen)) / 864e5) + 1), true);
     if (!state.conf[a.incredere]) { state.conf[a.incredere] = true; var c = document.querySelector('#conf .chip[data-conf="' + a.incredere + '"]'); if (c) c.setAttribute("aria-pressed", "true"); }
     if (!inCounty(a)) { state.cty = {}; renderCounties(); updateCountyLayers(); }
+    if (!inArii(a)) setOnlyArii(false, true);
     renderAll();
     select(a, fly);
   }
@@ -376,6 +386,7 @@
     var c1 = el("span", "badge"); c1.appendChild(key(a.incredere)); c1.appendChild(document.createTextNode(a.incredere === "de confirmat" ? "de confirmat" : "încredere " + a.incredere)); bd.appendChild(c1);
     if (isVerified(a)) bd.appendChild(el("span", "badge ok", "verificat și din alte surse"));
     if (a.vant) bd.appendChild(el("span", "badge", "vânt puternic"));
+    if (a.arii && a.arii.length) bd.appendChild(el("span", "badge arie", "în arie protejată"));
     d.appendChild(bd);
     d.appendChild(compare(a, false));
     if (a.img_after) d.appendChild(chipControl(a));
@@ -386,6 +397,7 @@
     link("OpenStreetMap", "https://www.openstreetmap.org/?mlat=" + a.lat + "&mlon=" + a.lon + "#map=15/" + a.lat + "/" + a.lon);
     link("Raportează o greșeală", REPO + "/issues/new?title=" + encodeURIComponent("Alerta " + a.id) + "&body=" + encodeURIComponent("Ce e greșit la alerta " + a.id + "?\n\n" + location.href));
     d.appendChild(act);
+    if (a.arii && a.arii.length) d.appendChild(ariiBlock(a));
     var vi = verifItems(a); if (vi.length) d.appendChild(verifBlock(vi));
     d.appendChild(ownerBlock(a));
     var ev = el("ul", "ev"); (a.dovezi || []).forEach(function (x) { ev.appendChild(el("li", null, x)); });
@@ -515,6 +527,68 @@
       box.appendChild(it);
     });
     return box;
+  }
+
+  /* ---------- ariile protejate în care cade zona: doar informație, nivelul de încredere nu se schimbă ---------- */
+  var ARIE = { "parc național": "Parcul Național", "parc natural": "Parcul Natural", "rezervație științifică": "rezervația științifică",
+    "rezervație naturală": "rezervația naturală", "monument al naturii": "monumentul naturii", "rezervația biosferei": "Rezervația Biosferei",
+    "geoparc": "Geoparcul", "arie protejată națională": "aria protejată" };
+  var ARIE_REG = {
+    "rezervație științifică": "Rezervațiile științifice au regim de protecție strictă.",
+    "parc național": "În parcurile naționale legea interzice exploatarea în zonele de protecție strictă și integrală; în restul parcului tăierile sunt permise, cu restricții. Harta acestor zone nu e publică într-o formă pe care s-o putem folosi.",
+    "rezervația biosferei": "În Delta Dunării regulile depind de zonă: protecție strictă, tampon sau tranziție.",
+    "rezervație naturală": "Rezervațiile naturale și monumentele naturii au reguli proprii de protecție, scrise în regulamentul fiecăreia.",
+    "parc natural": "În parcurile naturale tăierile sunt permise cu restricțiile din planul de management, mai puțin în zonele de protecție integrală.",
+    "geoparc": "Geoparcurile au reguli proprii de protecție, scrise în regulamentul fiecăruia.",
+    "sit Natura 2000": "În siturile Natura 2000 tăierile sunt permise după amenajamentul silvic, dacă nu afectează speciile și habitatele pentru care a fost declarat situl."
+  };
+  function arieName(p) {
+    var t = p.tip || "", n = p.nume || "";
+    if (t.indexOf("sit Natura 2000") === 0) return ("situl Natura 2000 " + (p.cod || "") + " " + n).replace(/\s+/g, " ").trim();
+    var art = ARIE[t] || "aria protejată";
+    return /^((geo)?parcul|rezerva|monumentul|aria )/.test(n.toLowerCase()) ? n : (art + " " + n).trim();
+  }
+  function ariiBlock(a) {
+    var box = el("div", "owner arii"), ul = el("ul");
+    box.appendChild(el("p", "lbl", "Arie protejată"));
+    a.arii.forEach(function (p) {
+      var li = el("li", null, upFirst(arieName(p)) + (p.parte != null && p.parte < 0.9 ? ", doar o parte din zonă" : "") + " ");
+      if (p.cod && /^RO(SCI|SAC|SPA)\d/.test(p.cod)) {
+        var x = el("a", null, "fișa sitului"); x.href = "https://natura2000.eea.europa.eu/Natura2000/SDF.aspx?site=" + encodeURIComponent(p.cod);
+        x.target = "_blank"; x.rel = "noopener"; li.appendChild(x);
+      }
+      ul.appendChild(li);
+    });
+    box.appendChild(ul);
+    var seen = {}, notes = [];
+    a.arii.forEach(function (p) {
+      var k = p.tip === "monument al naturii" ? "rezervație naturală" : (p.tip || "").indexOf("sit Natura 2000") === 0 ? "sit Natura 2000" :
+        /^geoparc/i.test(p.nume || "") ? "geoparc" : p.tip;
+      if (ARIE_REG[k] && !seen[k]) { seen[k] = 1; notes.push(ARIE_REG[k]); }
+    });
+    notes.slice(0, 2).forEach(function (t) { box.appendChild(el("p", null, t)); });
+    box.appendChild(el("p", null, "Dacă tăierea era permisă aici pot spune administrația ariei protejate, ocolul silvic sau Garda Forestieră."));
+    return box;
+  }
+  function setOnlyArii(on, silent) {
+    state.arii = on; state.shown = 40;
+    var c = document.getElementById("only-arii"); if (c) c.checked = on;
+    if (!silent) renderAll();
+  }
+
+  /* ---------- stratul cu ariile protejate: se încarcă doar când e bifat ---------- */
+  function toggleArii(on) {
+    document.getElementById("lg-arii").hidden = !on;
+    if (!map || !map.getStyle) return;
+    if (map.getLayer("arii-fill")) { setVis("arii-fill", on); setVis("arii-line", on); return; }
+    if (!on) return;
+    getJSON("data/static/arii.geojson").then(function (fc) {
+      if (map.getSource("arii")) return;
+      map.addSource("arii", { type: "geojson", data: fc, attribution: 'Arii protejate: <a href="https://www.eea.europa.eu" target="_blank">EEA</a>' });
+      var col = tok("--color-protected").css, before = map.getLayer("cty-hit") ? "cty-hit" : map.getLayer("firms") ? "firms" : undefined;
+      map.addLayer({ id: "arii-fill", type: "fill", source: "arii", paint: { "fill-color": col, "fill-opacity": 0.12 } }, before);
+      map.addLayer({ id: "arii-line", type: "line", source: "arii", paint: { "line-color": col, "line-width": 1.1, "line-opacity": 0.9, "line-dasharray": [2, 1.5] } }, before);
+    }).catch(function () { document.getElementById("tg-arii").hidden = true; document.getElementById("lg-arii").hidden = true; });
   }
 
   /* ---------- cine deține terenul: nu publicăm nume; arătăm drumul legal, pas cu pas ---------- */
@@ -819,10 +893,16 @@
       map.getCanvas().style.cursor = "pointer";
       if (n !== hov) {
         hov = n; map.setFilter("cty-hover", ["==", ["get", "n"], n]);
-        var c = DATA.alerts.filter(function (a) { return inPeriod(a) && state.conf[a.incredere] && countyOf(a) === n; }).length;
+        var c = DATA.alerts.filter(function (a) { return inPeriod(a) && state.conf[a.incredere] && inArii(a) && countyOf(a) === n; }).length;
         txt = n + ": " + (c ? fmt(c) + " " + (c === 1 ? "zonă" : de(c) + "zone") : "nicio zonă") + (state.cty[n] ? " (ales)" : "");
       }
-      cpop.setLngLat(e.lngLat).setText(txt).addTo(map);
+      var extra = "";
+      if (map.getLayer("arii-fill") && map.getLayoutProperty("arii-fill", "visibility") !== "none") {
+        var seen = {}, nm = map.queryRenderedFeatures(e.point, { layers: ["arii-fill"] }).map(function (f) { return upFirst(arieName(f.properties)); })
+          .filter(function (x) { if (seen[x]) return false; seen[x] = 1; return true; });
+        if (nm.length) extra = " · " + nm.slice(0, 2).join("; ") + (nm.length > 2 ? " și încă " + (nm.length - 2) : "");
+      }
+      cpop.setLngLat(e.lngLat).setText(txt + extra).addTo(map);
     });
     map.on("mouseleave", "cty-hit", function () { map.getCanvas().style.cursor = ""; clear(); });
     map.on("click", function (e) {

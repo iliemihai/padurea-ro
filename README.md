@@ -62,6 +62,7 @@ python -m pipeline.eval_judge qwen3.5:4b                          # testează ju
 - [GeoNames](https://www.geonames.org/) (localități), [Open-Meteo](https://open-meteo.com/) (vânt)
 - Limitele comunelor, orașelor și municipiilor (UAT): [geo-spatial.org](https://www.geo-spatial.org/), simplificate în [akaleeroy/romania-uat](https://github.com/akaleeroy/romania-uat), adunate în `data/uat_ro.geojson`
 - Fundalul hărții: [Sentinel-2 cloudless](https://s2maps.eu) de EOX IT Services GmbH (CC BY-NC-SA 4.0), Esri World Imagery, © OpenStreetMap
+- Ariile protejate: [Agenția Europeană de Mediu](https://www.eea.europa.eu/), Natura 2000 și ariile protejate naționale (CDDA), CC BY 4.0; le aduce workflow-ul „Arii protejate” (`python -m pipeline.static_arii`) în `data/arii_ro.geojson` și `docs/data/static/arii.geojson`. La fiecare zonă scriem doar în ce arie cade; nivelul de încredere nu se schimbă după asta
 - Numele localităților de pe hartă: GeoNames, în `docs/data/static/places.json`, și conturul țării în `docs/data/static/romania.geojson`; le reface `python -m pipeline.static_map`
 
 ## Aspectul site-ului

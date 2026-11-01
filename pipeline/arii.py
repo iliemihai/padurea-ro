@@ -11,7 +11,7 @@ from . import config as C
 
 # de la regimul cel mai strict la cel mai larg; ordinea în care le arătăm
 ORDER = ["rezervație științifică", "parc național", "rezervația biosferei", "rezervație naturală", "monument al naturii",
-         "parc natural", "sit Natura 2000", "sit Natura 2000 pentru păsări", "arie protejată națională"]
+         "parc natural", "geoparc", "sit Natura 2000", "sit Natura 2000 pentru păsări", "arie protejată națională"]
 
 
 class Arii:

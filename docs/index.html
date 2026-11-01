@@ -51,6 +51,7 @@
       <select id="cty-pick" class="pick" aria-labelledby="h-cty"><option value="">Toată țara</option></select>
       <div class="chips ctys" id="ctys" hidden></div>
       <p class="hint" id="cty-hint">Sau dă clic pe un județ pe hartă. Poți alege mai multe.</p>
+      <label class="tg" id="tg-only-arii" hidden><input type="checkbox" id="only-arii"><span>Doar zonele din arii protejate</span></label>
     </section>
 
     <section class="block grow results" id="listbox" aria-labelledby="h-list">
@@ -79,6 +80,7 @@
           <li>NASA FIRMS (VIIRS, MODIS)</li>
           <li>GeoNames, Open-Meteo</li>
           <li>limitele comunelor: geo-spatial.org</li>
+          <li>arii protejate: Agenția Europeană de Mediu (Natura 2000 și ariile naționale), CC BY 4.0</li>
           <li>fundal: Sentinel-2 cloudless de EOX, Esri World Imagery, © OpenStreetMap; numele localităților: GeoNames</li>
         </ul>
         <p>Dacă vezi o greșeală, <a href="https://github.com/iliemihai/padurea-ro/issues" target="_blank" rel="noopener">spune-ne pe GitHub</a>.</p>
@@ -106,6 +108,7 @@
           <div class="seg small" id="years" role="group" aria-label="Anii pierderilor"></div>
           <div class="ramp"><i id="ramp" aria-hidden="true"></i><span>2001</span><span>2025</span></div>
           <label class="tg"><input type="checkbox" id="lyr-counties" checked><span>Județe</span></label>
+          <label class="tg" id="tg-arii"><input type="checkbox" id="lyr-arii"><span>Arii protejate (Natura 2000, parcuri, rezervații)</span></label>
         </section>
       </details>
       <button type="button" class="splitbtn" id="splitbtn" aria-pressed="false">Harta normală alături</button>
@@ -116,6 +119,7 @@
       <span><i class="key lo" aria-hidden="true"></i>scăzută</span>
       <span><i class="key un" aria-hidden="true"></i>de confirmat</span>
       <span id="lg-firms"><i class="key fire" aria-hidden="true"></i>foc văzut de NASA</span>
+      <span id="lg-arii" hidden><i class="key arie" aria-hidden="true"></i>arie protejată</span>
     </div>
   </main>
 </div>
