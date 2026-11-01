@@ -344,6 +344,28 @@ def sheet(locs, path, size=150):
     log(f"  planșa {path}: {len(rows)} rânduri")
 
 
+FEATS = ("n_dates", "neigh_drop", "edge_frac", "persist", "ndvi_ref", "nbr_ref", "confirmed")
+
+
+def zone_table(zones, rej, src, year):
+    """Toate zonele (publicate, neconfirmate) și candidații respinși, cu măsurătorile lor și cât din ele e pierdere
+    Hansen: un set etichetat pe care putem regla regulile fără să mai citim imagini."""
+    from shapely.geometry import shape
+    pseudo = [dict(r, id=f"r{i}", incredere="respinsă:" + r["motiv"]) for i, r in enumerate(rej)
+              if str(r["first_seen"]).startswith(str(year))]
+    rows = E.precision(zones + pseudo, src, year)
+    info = {z["id"]: z for z in zones + pseudo}
+    out = []
+    for r in rows:
+        z = info[r["id"]]
+        row = {"id": r["id"], "nivel": r["nivel"], "ha": r["ha"], "ai": r["ai"], "frac": r["frac"],
+               "first_seen": z["first_seen"], "f": z.get("f"), **{k: z.get(k) for k in FEATS},
+               "vis": (z.get("vis") or {}).get("verdict"), "lat": round(shape(z["geometry"]).centroid.y, 4),
+               "lon": round(shape(z["geometry"]).centroid.x, 4)}
+        out.append(row)
+    return out
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--year", type=int, default=2025)
@@ -351,6 +373,8 @@ def main():
     ap.add_argument("--raw", required=True)
     ap.add_argument("--out", default="diag")
     ap.add_argument("--seed", type=int, default=7)
+    ap.add_argument("--extra", nargs="*", default=[])
+    ap.add_argument("--series", type=int, default=1, help="0 = fără seriile de timp și planșe (mult mai repede)")
     a = ap.parse_args()
     out = Path(a.out)
     out.mkdir(parents=True, exist_ok=True)
@@ -360,13 +384,22 @@ def main():
 
     tiles = tiles_summary(a.raw)
     rej = rejected_candidates(a.raw)
-    zones = E.load_zones(Path(a.docs), a.year)
+    zones = E.load_zones(Path(a.docs), a.year, a.extra)
     log(f"{len(tiles)} plăci-ferestre, {len(rej)} candidați respinși, {len(zones)} zone publicate")
     src = rasterio.open(hansen_lossyear())
     prec = {r["id"]: r for r in E.precision(zones, src, a.year)}
+    table = zone_table(zones, rej, src, a.year)
+    (out / f"zone_{a.year}.json").write_text(json.dumps(table, ensure_ascii=False), encoding="utf-8")
+    log(f"Tabelul zonelor: {len(table)} rânduri")
     patches = hansen_patches(zones, rej, src, a.year)
     fun = funnel(patches)
     log(json.dumps(fun, ensure_ascii=False))
+    if not a.series:
+        report = {"an": a.year, "placi": tiles, "palnie": fun,
+                  "pete_hansen": [{k: p[k] for k in ("ha", "lat", "lon", "best", "rej")} for p in patches]}
+        (out / f"diag_{a.year}.json").write_text(json.dumps(report, ensure_ascii=False), encoding="utf-8")
+        log("Gata (fără serii)")
+        return
 
     # eșantionul
     rnd = random.Random(a.seed)
