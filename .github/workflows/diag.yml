@@ -1,0 +1,65 @@
+name: Diagnostic
+
+# De ce ratăm pete Hansen și ce sunt zonele care nu se potrivesc: pâlnia filtrelor, serii de timp și planșe cu poze
+# pentru un eșantion. Rezultatele merg pe ramura „diag” (nu ating site-ul).
+on:
+  workflow_dispatch:
+    inputs:
+      detect_run:
+        description: "Rularea „Test pe trecut” cu detecțiile (artefactele ev-*)"
+        default: "41318354210"
+      score_run:
+        description: "Rularea cu scorul (artefactul evaluare-<an>)"
+        default: "41324330416"
+      year:
+        default: "2025"
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  diag:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - uses: actions/cache@v4
+        with:
+          path: data/hansen
+          key: hansen-gfc-2025
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: ev-*
+          path: ev/raw
+          run-id: ${{ inputs.detect_run }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: evaluare-${{ inputs.year }}
+          path: ev/score
+          run-id: ${{ inputs.score_run }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - run: ls ev/raw | head; ls -R ev/score | head -20
+      - name: Diagnosticul
+        env:
+          PYTHONUNBUFFERED: "1"
+        run: python -m pipeline.diagnose --year "${{ inputs.year }}" --docs ev/score/docs --raw ev/raw --out diag
+      - name: Pe ramura diag
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          [ -d diag ] || exit 0
+          cd diag
+          git init -q -b diag
+          git config user.name "padurea-ro bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add .
+          git commit -qm "Diagnostic ${{ inputs.year }} (rularea ${{ github.run_id }})"
+          git push -qf "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git" HEAD:diag
