@@ -23,13 +23,17 @@ RECENT_DAYS = 75          # imaginile din cele N zile dinaintea ferestrei: era z
 LASTYEAR_PAD = 20         # (vechi) referința „anul trecut": aceeași perioadă de acum un an, ± N zile
 MAX_REF_SCENES = 4        # câte imagini folosim pentru fiecare referință
 MAX_RECENT_SCENES = 5     # câte imagini clare dinaintea ferestrei urmărim, de la cea mai nouă
-# Referința de sezon: fiecare imagine nouă se compară cu pădurea de acum un an, din aceeași perioadă a anului
-# (iarna cu iarna, toamna cu toamna). Altfel, din octombrie până în aprilie, frunzele căzute arată ca o tăiere,
-# iar pădurea de foioase iese din calcul (testul pe 2025: iarna și primăvara foloseam doar 17% din imagini).
+# Referința de sezon: fiecare imagine nouă se compară cu pădurea de acum un an, din aceeași perioadă a anului.
+# Înainte o comparam cu lunile dinainte: primăvara, referința era pădurea fără frunze și foioasele ieșeau din calcul
+# (testul pe 2025: în ianuarie–iunie foloseam doar 17% din imagini), iar toamna frunzele căzute arătau ca tăieri.
 SEASON_PAD = 30           # imaginile de acum un an, ± N zile față de data imaginii noi
 ANCHOR_DAYS = 15          # câte o referință de sezon la fiecare N zile
 SUMMER = ("06-15", "08-31")  # „pădure deasă” se verifică pe ultima vară încheiată dinaintea ferestrei
-LEAFON_NDVI = 0.70        # referința are frunze dacă verdele ei trece de atât; altfel folosim pragurile de iarnă
+LEAFON_NDVI = 0.70        # căutăm doar unde referința de sezon e pădure cu frunze (sau rășinoase verzi)
+# Iarna nu căutăm deloc: testul pe iarna 2024–2025 a dat 5% potriviri cu Hansen (zăpadă și sol ud sub foioasele
+# desfrunzite, diferite de la un an la altul). O tăiere de iarnă apare primăvara, când pădurea din jur înverzește,
+# cu intervalul în care s-a putut întâmpla.
+WINTER = ("12-01", "03-15")
 MAX_SCENE_CLOUD = 85      # sărim imaginile cu mai mult de atâția % nori (după metadate)
 MIN_SCENE_CLEAR = 0.05    # și pe cele în care se vede curat sub 5% din pădurea plăcii
 
@@ -46,11 +50,6 @@ NDVI_DROP = 0.25          # verdele a scăzut cu cel puțin atât mai mult decâ
 NDVI_NOW_MAX = 0.50       # acum: nu mai arată a pădure
 NBR_DROP = 0.25           # și indicele cu SWIR a scăzut cu atât mai mult decât în jur
 NBR_NOW_MAX = 0.35
-# Fără frunze (referința de sezon sub LEAFON_NDVI): verdele spune puțin, contează infraroșul de undă scurtă (NBR).
-# O tăiere de iarnă scoate la vedere solul și resturile de lemn: NBR scade față de pădurea desfrunzită din jur.
-NDVI_DROP_OFF = 0.08
-NBR_DROP_OFF = 0.15
-NBR_NOW_MAX_OFF = 0.20
 HAZE_BLUE = 0.09          # albastru mare ȘI aproape cât roșul = nor sau ceață (solul gol e mai roșu decât albastru)
 HAZE_BLUE_RED = 0.85
 CONFIRM_DATES = 2         # o zonă e confirmată când se vede schimbată în cel puțin atâtea zile diferite
@@ -61,8 +60,6 @@ THUMB_MAX_CONFIRMED = 150 # cel mult atâtea zone confirmate cu imagini, pe plac
 RULE_NBR_NOW_MAX = 0.25   # după: indicele SWIR al zonei arată sol gol, lemn tăiat sau ars
 RULE_ADJ_NBR_MIN = 0.30   # scăderea SWIR față de pădurea din jur
 RULE_EDGE_MAX = 0.85      # zona nu e doar o fâșie pe marginea pădurii
-RULE_NBR_NOW_MAX_OFF = 0.15   # aceleași două reguli când referința de sezon e pădure fără frunze
-RULE_ADJ_NBR_MIN_OFF = 0.18
 
 # NASA FIRMS (firms.py): focuri văzute în infraroșu de sateliți
 FIRMS_BUFFER_M = 750      # cât de departe de zonă poate fi un punct de foc (pixelul VIIRS are ~375 m)

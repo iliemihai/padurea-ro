@@ -1,7 +1,8 @@
 """Detectorul pe o placă inventată: pădure de foioase (verde vara, desfrunzită iarna) și o tăiere făcută iarna.
 
-Verifică ce a ratat testul pe 2025: o tăiere din ianuarie trebuie găsită în ianuarie–martie, cu data ei; căderea
-frunzelor singură, fără tăiere, nu trebuie să dea nicio zonă.
+Verifică ce a ratat testul pe 2025: o tăiere din ianuarie trebuie găsită primăvara, când pădurea din jur
+înverzește, cu intervalul în care s-a putut întâmpla; iarna nu căutăm (zăpada și solul ud dau alarme false);
+căderea frunzelor singură, fără tăiere, nu trebuie să dea nicio zonă.
 """
 import datetime as dt
 import types
@@ -73,34 +74,56 @@ def run(d0, d1, cut_day):
     return D.detect_tile(None, "35TLM", items, d0, d1, None, lambda *a: True)
 
 
-def test_winter_cut_found():
-    info, patches, rejected = run(dt.date(2025, 1, 1), dt.date(2025, 3, 31), CUT_DAY)
+def test_winter_is_quiet():
+    """Iarna nu căutăm: nicio zonă, nicio imagine folosită."""
+    info, patches, rejected = run(dt.date(2025, 1, 1), dt.date(2025, 3, 1), CUT_DAY)
+    assert info["status"] == "ok", info
+    assert not patches and not rejected and not info["window_scenes"], info
+    print("Iarna: nu căutăm")
+
+
+def test_winter_cut_found_in_spring():
+    """Tăierea din ianuarie apare primăvara, la prima imagine în care pădurea din jur are frunze."""
+    info, patches, rejected = run(dt.date(2025, 4, 2), dt.date(2025, 6, 30), CUT_DAY)
     assert info["status"] == "ok", info
     assert len(patches) == 1, (info, [(p["ha"], p.get("motiv")) for p in patches + rejected])
     p = patches[0]
     assert 55 <= p["ha"] <= 70 and p["confirmed"], p
-    assert dt.date.fromisoformat(p["first_seen"]) - CUT_DAY < dt.timedelta(days=6), p
-    assert p["before_date"] and p["before_date"] < p["first_seen"], p
-    print("Tăierea din iarnă: găsită", p["first_seen"], p["ha"], "ha")
+    assert "2025-05-01" <= p["first_seen"] <= "2025-05-20", p
+    # n-am văzut-o intactă de curând (iarna nu ne uităm): intervalul pornește din vara trecută
+    assert p["before_date"] is None and p["vara"] == 2024, p
+    print("Tăierea din iarnă: găsită primăvara,", p["first_seen"], p["ha"], "ha")
 
 
 def test_autumn_alone_is_quiet():
-    info, patches, rejected = run(dt.date(2025, 10, 3), dt.date(2025, 12, 31), None)
+    info, patches, rejected = run(dt.date(2025, 9, 1), dt.date(2025, 11, 30), None)
     assert info["status"] == "ok", info
     assert not patches and not rejected, [(p["ha"], p["first_seen"], p.get("motiv")) for p in patches + rejected]
-    assert len(info["window_scenes"]) >= 15, info
+    assert len(info["window_scenes"]) >= 10, info
     print("Toamna fără tăieri: liniște,", len(info["window_scenes"]), "imagini folosite")
 
 
-def test_spring_after_winter_cut_is_old():
-    """În aprilie–iunie, o tăiere din ianuarie nu e nouă: se vedea deja în imaginile dinaintea ferestrei."""
-    info, patches, rejected = run(dt.date(2025, 4, 2), dt.date(2025, 6, 30), CUT_DAY)
+def test_summer_after_spring_is_old():
+    """În iulie–septembrie, tăierea din iarnă nu mai e nouă: se vedea deja în imaginile din mai–iunie."""
+    info, patches, rejected = run(dt.date(2025, 7, 2), dt.date(2025, 9, 30), CUT_DAY)
     assert not patches, [(p["ha"], p["first_seen"]) for p in patches]
     assert rejected and "deja" in rejected[0]["motiv"], rejected
-    print("Primăvara: tăierea din iarnă e recunoscută ca veche")
+    print("Vara: tăierea din iarnă e recunoscută ca veche")
+
+
+def test_summer_cut_dated():
+    """O tăiere din iulie: găsită la prima imagine de după, cu ultima zi intactă dinainte."""
+    cut = dt.date(2025, 7, 20)
+    info, patches, rejected = run(dt.date(2025, 7, 2), dt.date(2025, 9, 30), cut)
+    assert len(patches) == 1, (info, [(p["ha"], p.get("motiv")) for p in patches + rejected])
+    p = patches[0]
+    assert dt.date.fromisoformat(p["first_seen"]) - cut < dt.timedelta(days=6) and p["before_date"] < p["first_seen"], p
+    print("Tăierea din vară: găsită", p["first_seen"], "după", p["before_date"])
 
 
 if __name__ == "__main__":
-    test_winter_cut_found()
+    test_winter_is_quiet()
+    test_winter_cut_found_in_spring()
     test_autumn_alone_is_quiet()
-    test_spring_after_winter_cut_is_old()
+    test_summer_after_spring_is_old()
+    test_summer_cut_dated()

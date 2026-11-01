@@ -145,7 +145,7 @@ class SeasonRef:
     Calculată pe „ancore” la ANCHOR_DAYS zile, în ordinea datelor; golurile (nori, zăpadă) se umplu din ancora dinainte."""
 
     def __init__(self, items, cache, start, gate):
-        self.items = sorted(items, key=lambda i: i.properties.get("eo:cloud_cover", 100))
+        self.items = items
         self.cache, self.start, self.gate = cache, start, gate
         self.refs, self.dates = {}, set()
 
@@ -161,7 +161,10 @@ class SeasonRef:
 
     def _build(self, a):
         target = a - dt.timedelta(days=365)
-        cands = [it for it in self.items if abs((item_date(it) - target).days) <= C.SEASON_PAD]
+        # întâi cele mai senine, iar dintre ele cele mai apropiate de ziua-țintă (primăvara și toamna contează zilele)
+        cands = sorted([it for it in self.items if abs((item_date(it) - target).days) <= C.SEASON_PAD],
+                       key=lambda it: (round(it.properties.get("eo:cloud_cover", 100) / 20),
+                                       abs((item_date(it) - target).days)))
         nd, nb = [], []
         seen = np.zeros(self.gate.shape, bool)
         n_gate = max(int(self.gate.sum()), 1)
@@ -191,25 +194,30 @@ class SeasonRef:
         return r_nd.astype(np.float16), r_nb.astype(np.float16)
 
 
+def winter(day):
+    """Iarna (C.WINTER): nu căutăm schimbări în imaginile de atunci."""
+    md = day.strftime("%m-%d")
+    a, b = C.WINTER
+    return (md >= a or md <= b) if a > b else (a <= md <= b)
+
+
 def change(ndvi, nbr, ref, ok):
     """Unde a dispărut pădurea în imaginea asta, față de referința de sezon și față de pădurea din jur.
-    Întoarce (schimbat, scăderea NDVI, scăderea NBR, scăderea din jur NDVI, scăderea din jur NBR)."""
+    Doar unde referința are frunze (sau e de rășinoase). Întoarce (unde ne-am uitat, schimbat, scăderea NDVI,
+    scăderea NBR, scăderea din jur NDVI, scăderea din jur NBR)."""
     b_nd, b_nb = ref
     with np.errstate(invalid="ignore"):
-        ok = ok & ~np.isnan(b_nd) & ~np.isnan(b_nb)
+        ok = ok & ~np.isnan(b_nd) & ~np.isnan(b_nb) & (b_nd >= C.LEAFON_NDVI)
         drop = b_nd - ndvi
         drop_nb = b_nb - nbr
-        leaf = b_nd >= C.LEAFON_NDVI
-        t_nd = np.where(leaf, C.NDVI_DROP, C.NDVI_DROP_OFF).astype(np.float32)
-        t_nb = np.where(leaf, C.NBR_DROP, C.NBR_DROP_OFF).astype(np.float32)
-        now = np.where(leaf, (ndvi < C.NDVI_NOW_MAX) & (nbr < C.NBR_NOW_MAX), nbr < C.NBR_NOW_MAX_OFF)
-        # 1. candidații: pixeli care arată ca sol gol, lemn tăiat sau ars, mai mult decât acum un an în aceeași perioadă
-        chg0 = ok & (drop > t_nd) & (drop_nb > t_nb) & now
+        # 1. candidații: pixeli care arată ca sol gol, lemn tăiat sau ars, nu ca pădurea de acum un an din aceeași perioadă
+        chg0 = (ok & (drop > C.NDVI_DROP) & (drop_nb > C.NBR_DROP)
+                & (ndvi < C.NDVI_NOW_MAX) & (nbr < C.NBR_NOW_MAX))
         # 2. cât s-a schimbat restul pădurii din jur (anul ăsta frunzele cad mai devreme, ceață) se scade
         base = ok & ~chg0
         loc_nd = np.maximum(neighbor_drop(drop, base), 0)
         loc_nb = np.maximum(neighbor_drop(drop_nb, base), 0)
-        chg = chg0 & ((drop - loc_nd) > t_nd) & ((drop_nb - loc_nb) > t_nb)
+        chg = chg0 & ((drop - loc_nd) > C.NDVI_DROP) & ((drop_nb - loc_nb) > C.NBR_DROP)
     return ok, chg, drop, drop_nb, loc_nd, loc_nb
 
 
@@ -271,8 +279,8 @@ def detect_tile(cat, tile, items, d0, d1, lossyear_path, ro_check):
 
         # imaginile clare dinaintea ferestrei, de la cea mai nouă: era zona deja schimbată? când a fost văzută intactă?
         recent = []
-        for it in sorted([i for i in items["recent"] if i.properties.get("eo:cloud_cover", 100) < 80],
-                         key=item_date, reverse=True):
+        for it in sorted([i for i in items["recent"] if i.properties.get("eo:cloud_cover", 100) < 80
+                          and not winter(item_date(i))], key=item_date, reverse=True):
             if len(recent) >= C.MAX_RECENT_SCENES:
                 break
             try:
@@ -304,6 +312,9 @@ def detect_tile(cat, tile, items, d0, d1, lossyear_path, ro_check):
         used, skipped = [], []
         for it in sorted(items["window"], key=item_date):
             day = item_date(it)
+            if winter(day):
+                skipped.append((day.isoformat(), "iarnă"))
+                continue
             try:
                 clear, ndvi, nbr, blue, red = read_scene(it, grid, pool, full=True)
             except Exception as exc:
