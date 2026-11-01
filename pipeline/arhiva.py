@@ -9,6 +9,7 @@ data/neconfirmate.json            zonele „de confirmat” (văzute într-o sin
                                   (la testul pe trecut, PADUREA_EXPIRED le păstrează ca să le putem număra).
 
 python -m pipeline.arhiva         reîmparte datele de acum (după data imaginilor din alerts.json)
+python -m pipeline.arhiva --rescore   și refă înainte nivelurile și textele (după o schimbare a regulilor)
 """
 import datetime as dt
 import json
@@ -117,6 +118,7 @@ def write_recent(path, doc, recent, until, window, generated):
 
 
 def main():
+    import sys
     path = C.DOCS / "data" / "alerts.json"
     doc = json.loads(path.read_text(encoding="utf-8"))
     months = load()
@@ -126,6 +128,13 @@ def main():
         if a["id"] not in seen:
             seen.add(a["id"])
             unique.append(a)
+    if "--rescore" in sys.argv:
+        from . import critic, writer
+        before = {a["id"]: a.get("incredere") for a in unique}
+        critic.apply(unique)
+        writer.apply(unique)
+        moved = sum(1 for a in unique if a.get("incredere") != before[a["id"]])
+        print(f"Niveluri refăcute: {moved} zone și-au schimbat nivelul")
     recent, old, pending, expired = split(unique, doc["data_until"])
     by_month = {m: [] for m in months}
     for a in old:

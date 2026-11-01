@@ -25,8 +25,13 @@ def _autumn_only(a):
 
 
 def score(a):
-    if not a.get("confirmed"):
-        return "de confirmat", 0, ["văzută schimbată într-o singură imagine; așteptăm a doua"]
+    from . import config as C
+    n = a.get("n_dates", 0) or 0
+    if n < C.CONFIRM_DATES:   # și pentru zonele vechi, confirmate pe vremea când ajungeau 2 imagini
+        a["confirmed"] = False
+        return "de confirmat", 0, [("văzută schimbată într-o singură imagine" if n <= 1 else f"văzută schimbată în {n} imagini")
+                                   + f"; o confirmăm de la {C.CONFIRM_DATES}"]
+    a["confirmed"] = True
     if not a.get("img_before"):
         return "de confirmat", 0, [f"văzută schimbată în {a['n_dates']} imagini diferite",
                                    "nu avem încă o imagine clară cu zona dinainte, deci nu o putem arăta"]
