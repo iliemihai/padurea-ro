@@ -26,14 +26,21 @@ def leafy(day):
     return 1.0
 
 
+LATE = {"days": 0, "partial": False}     # primăvara întârziată anul ăsta; tăiere parțială (rămân arbori)
+
+
 def fake_scene(day, cut_day):
     rng = np.random.default_rng(day.toordinal())
-    f = leafy(day)
+    f = leafy(day - dt.timedelta(days=LATE["days"]) if day.year == 2025 else day)
     ndvi = np.full((H, W), 0.42 + 0.43 * f, np.float32) + rng.normal(0, 0.02, (H, W)).astype(np.float32)
     nbr = np.full((H, W), 0.22 + 0.38 * f, np.float32) + rng.normal(0, 0.02, (H, W)).astype(np.float32)
     if cut_day and day >= cut_day:
-        ndvi[CUT] = 0.22 + 0.2 * f
-        nbr[CUT] = -0.02 + 0.08 * f
+        if LATE["partial"]:   # rărire puternică: verdele scade puțin, NBR mai mult (ca în diagnostic)
+            ndvi[CUT] -= 0.18 * f + 0.05
+            nbr[CUT] -= 0.27 * f + 0.05
+        else:
+            ndvi[CUT] = 0.22 + 0.2 * f
+            nbr[CUT] = -0.02 + 0.08 * f
     clear = np.ones((H, W), bool)
     return clear, ndvi, nbr
 
@@ -121,9 +128,33 @@ def test_summer_cut_dated():
     print("Tăierea din vară: găsită", p["first_seen"], "după", p["before_date"])
 
 
+def test_partial_cut_found():
+    """O rărire puternică vara (rămân arbori, crește iarbă): verdele scade cu ~0,2, NBR cu ~0,3. Trebuie găsită."""
+    LATE["partial"] = True
+    try:
+        info, patches, rejected = run(dt.date(2025, 7, 2), dt.date(2025, 9, 30), dt.date(2025, 7, 20))
+    finally:
+        LATE["partial"] = False
+    assert len(patches) == 1 and patches[0]["confirmed"], (info, [(p["ha"], p.get("motiv")) for p in patches + rejected])
+    print("Rărirea din vară: găsită", patches[0]["first_seen"], patches[0]["ha"], "ha")
+
+
+def test_late_spring_is_quiet():
+    """Anul ăsta frunzele vin cu 12 zile mai târziu, peste tot: nu e nicio tăiere."""
+    LATE["days"] = 12
+    try:
+        info, patches, rejected = run(dt.date(2025, 3, 20), dt.date(2025, 6, 17), None)
+    finally:
+        LATE["days"] = 0
+    assert not patches, [(p["ha"], p["first_seen"]) for p in patches]
+    print("Primăvara întârziată: liniște")
+
+
 if __name__ == "__main__":
     test_winter_is_quiet()
     test_winter_cut_found_in_spring()
     test_autumn_alone_is_quiet()
     test_summer_after_spring_is_old()
     test_summer_cut_dated()
+    test_partial_cut_found()
+    test_late_spring_is_quiet()

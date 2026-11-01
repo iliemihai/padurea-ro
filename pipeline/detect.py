@@ -194,30 +194,45 @@ class SeasonRef:
         return r_nd.astype(np.float16), r_nb.astype(np.float16)
 
 
-def winter(day):
-    """Iarna (C.WINTER): nu căutăm schimbări în imaginile de atunci."""
-    md = day.strftime("%m-%d")
-    a, b = C.WINTER
+def _in(day, span):
+    md = (day if isinstance(day, str) else day.isoformat())[5:10]
+    a, b = span
     return (md >= a or md <= b) if a > b else (a <= md <= b)
 
 
-def change(ndvi, nbr, ref, ok):
+def winter(day):
+    """Iarna (C.WINTER): nu căutăm schimbări în imaginile de atunci."""
+    return _in(day, C.WINTER)
+
+
+def autumn(day):
+    """Toamna (C.AUTUMN): pragurile stricte."""
+    return _in(day, C.AUTUMN)
+
+
+def thresholds(day):
+    if autumn(day):
+        return C.NDVI_DROP_AUTUMN, C.NBR_DROP_AUTUMN, C.NDVI_NOW_MAX_AUTUMN, C.NBR_NOW_MAX_AUTUMN
+    return C.NDVI_DROP, C.NBR_DROP, C.NDVI_NOW_MAX, C.NBR_NOW_MAX
+
+
+def change(ndvi, nbr, ref, ok, day):
     """Unde a dispărut pădurea în imaginea asta, față de referința de sezon și față de pădurea din jur.
     Doar unde referința are frunze (sau e de rășinoase). Întoarce (unde ne-am uitat, schimbat, scăderea NDVI,
     scăderea NBR, scăderea din jur NDVI, scăderea din jur NBR)."""
     b_nd, b_nb = ref
+    t_nd, t_nb, nd_max, nb_max = thresholds(day)
     with np.errstate(invalid="ignore"):
         ok = ok & ~np.isnan(b_nd) & ~np.isnan(b_nb) & (b_nd >= C.LEAFON_NDVI)
         drop = b_nd - ndvi
         drop_nb = b_nb - nbr
-        # 1. candidații: pixeli care arată ca sol gol, lemn tăiat sau ars, nu ca pădurea de acum un an din aceeași perioadă
-        chg0 = (ok & (drop > C.NDVI_DROP) & (drop_nb > C.NBR_DROP)
-                & (ndvi < C.NDVI_NOW_MAX) & (nbr < C.NBR_NOW_MAX))
-        # 2. cât s-a schimbat restul pădurii din jur (anul ăsta frunzele cad mai devreme, ceață) se scade
+        # 1. candidații: pixeli care nu mai arată ca pădurea de acum un an din aceeași perioadă
+        chg0 = ok & (drop > t_nd) & (drop_nb > t_nb) & (ndvi < nd_max) & (nbr < nb_max)
+        # 2. cât s-a schimbat restul pădurii din jur (anul ăsta frunzele vin sau cad la altă dată, ceață) se scade
         base = ok & ~chg0
         loc_nd = np.maximum(neighbor_drop(drop, base), 0)
         loc_nb = np.maximum(neighbor_drop(drop_nb, base), 0)
-        chg = chg0 & ((drop - loc_nd) > C.NDVI_DROP) & ((drop_nb - loc_nb) > C.NBR_DROP)
+        chg = chg0 & ((drop - loc_nd) > t_nd) & ((drop_nb - loc_nb) > t_nb)
     return ok, chg, drop, drop_nb, loc_nd, loc_nb
 
 
@@ -296,7 +311,7 @@ def detect_tile(cat, tile, items, d0, d1, lossyear_path, ro_check):
             ref = season.get(day)
             if ref is None:
                 continue
-            s_ok, s_chg = change(ndvi, nbr, ref, clear & gate)[:2]
+            s_ok, s_chg = change(ndvi, nbr, ref, clear & gate, day)[:2]
             ref_scenes.append((day, s_ok, s_chg))
             r_dates.append(day)
         del recent
@@ -327,7 +342,7 @@ def detect_tile(cat, tile, items, d0, d1, lossyear_path, ro_check):
             if ref is None:
                 skipped.append((day.isoformat(), "fără imagine clară acum un an"))
                 continue
-            ok, chg, drop, drop_nb, loc_nd, loc_nb = change(ndvi, nbr, ref, clear & gate)
+            ok, chg, drop, drop_nb, loc_nd, loc_nb = change(ndvi, nbr, ref, clear & gate, day)
             frac = float(chg.sum()) / max(float(ok.sum()), 1.0)
             if frac > C.SCENE_MAX_CHANGED:
                 skipped.append((day.isoformat(), f"schimbare pe {round(100 * frac, 1)}% din pădure (ceață sau toamnă)"))

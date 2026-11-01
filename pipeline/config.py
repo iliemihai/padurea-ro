@@ -46,20 +46,34 @@ BAD_DILATE_PX = 3         # 3 × 40 m = 120 m în jurul norilor
 # ar putea fi o tăiere. Ce se publică decid apoi regulile (rules.py), analistul AI și criticul.
 NDVI_REF_MIN = 0.60       # înainte: pădure verde
 NBR_REF_MIN = 0.30        # și deasă (indicele cu SWIR)
-NDVI_DROP = 0.25          # verdele a scăzut cu cel puțin atât mai mult decât în pădurea din jur
-NDVI_NOW_MAX = 0.50       # acum: nu mai arată a pădure
-NBR_DROP = 0.25           # și indicele cu SWIR a scăzut cu atât mai mult decât în jur
-NBR_NOW_MAX = 0.35
+# Primăvara și vara: pe locul tăiat cresc repede iarbă și lăstari, așa că verdele scade puțin, iar infraroșul de undă
+# scurtă (NBR) mult. Diagnosticul pe 55 de tăieri ratate în 2025: după tăiere, NBR-ul zonei e cu 0,14–0,44 sub pădurea
+# din jur (mediana 0,26), verdele doar cu 0,08–0,34, iar NDVI-ul zonei rămâne des peste 0,5; o zonă intactă diferă
+# de pădurea din jur cu cel mult 0,09 (în 95% din imagini).
+NDVI_DROP = 0.10          # verdele a scăzut cu cel puțin atât mai mult decât în pădurea din jur
+NDVI_NOW_MAX = 0.75       # acum: nu mai arată a pădure deasă
+NBR_DROP = 0.15           # și indicele cu SWIR a scăzut cu atât mai mult decât în jur
+NBR_NOW_MAX = 0.45
+# Toamna (frunze care se îngălbenesc la date diferite de la un an la altul) păstrăm pragurile vechi, stricte:
+# o tăiere rasă tot trece de ele, iar una parțială apare primăvara.
+AUTUMN = ("09-15", "11-30")
+NDVI_DROP_AUTUMN = 0.25
+NDVI_NOW_MAX_AUTUMN = 0.50
+NBR_DROP_AUTUMN = 0.25
+NBR_NOW_MAX_AUTUMN = 0.35
 HAZE_BLUE = 0.09          # albastru mare ȘI aproape cât roșul = nor sau ceață (solul gol e mai roșu decât albastru)
 HAZE_BLUE_RED = 0.85
 CONFIRM_DATES = 2         # o zonă e confirmată când se vede schimbată în cel puțin atâtea zile diferite
 THUMB_SINGLES = 20        # imagini și pentru cele mai mari zone încă neconfirmate
 THUMB_MAX_CONFIRMED = 150 # cel mult atâtea zone confirmate cu imagini, pe placă
 
-# Regulile de publicare (rules.py), aplicate pe măsurătorile salvate pentru fiecare zonă
-RULE_NBR_NOW_MAX = 0.25   # după: indicele SWIR al zonei arată sol gol, lemn tăiat sau ars
-RULE_ADJ_NBR_MIN = 0.30   # scăderea SWIR față de pădurea din jur
+# Regulile de publicare (rules.py), aplicate pe măsurătorile salvate pentru fiecare zonă (pe medii, pe toată zona)
+RULE_NBR_NOW_MAX = 0.42   # după: indicele SWIR al zonei arată sol, lemn tăiat, ars sau vegetație rară, nu pădure
+RULE_ADJ_NBR_MIN = 0.18   # scăderea SWIR față de pădurea din jur
+RULE_NBR_NOW_MAX_AUTUMN = 0.25   # toamna, ca înainte
+RULE_ADJ_NBR_MIN_AUTUMN = 0.30
 RULE_EDGE_MAX = 0.85      # zona nu e doar o fâșie pe marginea pădurii
+RULE_BLUE_MAX = 0.12      # albastru atât de mare = nor sau ceață scăpate de masca de nori
 
 # NASA FIRMS (firms.py): focuri văzute în infraroșu de sateliți
 FIRMS_BUFFER_M = 750      # cât de departe de zonă poate fi un punct de foc (pixelul VIIRS are ~375 m)
