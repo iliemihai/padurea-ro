@@ -9,6 +9,7 @@ import io
 import json
 import math
 import subprocess
+import time
 import urllib.parse
 import urllib.request
 import zipfile
@@ -74,11 +75,16 @@ def winds(alerts):
             "daily": "wind_gusts_10m_max", "past_days": 92, "forecast_days": 1, "timezone": "Europe/Bucharest",
         }
         url = "https://api.open-meteo.com/v1/forecast?" + urllib.parse.urlencode(q)
-        try:
-            with urllib.request.urlopen(url, timeout=60) as r:
-                data = json.load(r)
-        except Exception as exc:
-            log("  vântul n-a mers:", repr(exc)[:120])
+        data = None
+        for attempt in range(3):     # Open-Meteo mai pică din când în când la conectare: încă două încercări, cu pauză
+            try:
+                with urllib.request.urlopen(url, timeout=30) as r:
+                    data = json.load(r)
+                break
+            except Exception as exc:
+                log(f"  vântul n-a mers (încercarea {attempt + 1}):", repr(exc)[:120])
+                time.sleep(5 * (attempt + 1))
+        if data is None:
             continue
         if isinstance(data, dict):
             data = [data]
