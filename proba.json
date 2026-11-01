@@ -1,0 +1,304 @@
+{
+ "label": "Podișul Hârtibaciului, lângă Viscri",
+ "lat": 46.0389,
+ "lon": 25.0682,
+ "km": 3.0,
+ "zone": [
+  {
+   "id": "20250522_46039_25068",
+   "incredere": "ridicată",
+   "ha": 13.0,
+   "lat": 46.03889,
+   "lon": 25.06816,
+   "dist_km": 0.0,
+   "first_seen": "2025-05-22",
+   "before_date": null,
+   "after_date": "2025-07-01",
+   "vara": 2024,
+   "n_dates": 7,
+   "uat": {
+    "siruta": "41284",
+    "nume": "Jibert",
+    "tip": "comuna",
+    "judet": "Brașov"
+   },
+   "localitate": "Viscri",
+   "arii": [
+    {
+     "cod": "ROSAC0227",
+     "nume": "Sighișoara - Târnava Mare",
+     "tip": "sit Natura 2000",
+     "parte": 1.0
+    },
+    {
+     "cod": "ROSPA0099",
+     "nume": "Podișul Hârtibaciului",
+     "tip": "sit Natura 2000 pentru păsări",
+     "parte": 1.0
+    }
+   ],
+   "ai": {
+    "categorie": "taiere",
+    "incredere": 0.9,
+    "motiv": "În imaginea «după» zona marcată apare ca o suprafață deschisă, cu sol gol și resturi de exploatare cu margini drepte, spre deosebire de pădurea densă din jur, care păstrează coroanele și umbrele arborilor; în imaginea «înainte» aceeași zonă era acoperită de vegetație forestieră continuă, deci este o",
+    "model": "claude-haiku-5-5",
+    "secunde": 1.5
+   },
+   "dovezi": [
+    "văzută schimbată în 7 imagini diferite",
+    "peste 3 ha",
+    "pădurea din jur e neschimbată",
+    "ultima dată am văzut-o intactă în vara lui 2024 (de atunci, nori sau zăpadă)",
+    "AI-ul vede pădure dispărută"
+   ],
+   "text": "Între vara lui 2024 și 22 mai 2025, pe aproximativ 13,0 ha de pădure din comuna Jibert, lângă Viscri, județul Brașov, imaginile Sentinel-2 arată că vegetația a dispărut sau s-a schimbat puternic. Schimbarea se vede în 7 imagini diferite. Zona se află în situl Natura 2000 ROSAC0227 Sighișoara - Târnava Mare și în situl Natura 2000 ROSPA0099 Podișul Hârtibaciului. În jur s-a mai pierdut pădure în 2009, 2010, 2022, 2025 (Hansen). Nu am verificat dacă există o autorizație de exploatare (unele se pot căuta în aplicația Inspectorul Pădurii). E o schimbare care merită verificată.",
+   "img_before": {
+    "file": "20250522_46039_25068_b.webp",
+    "date": "2024-08-25"
+   },
+   "img_after": {
+    "file": "20250522_46039_25068_a.webp",
+    "date": "2025-07-01"
+   },
+   "geometry": {
+    "type": "MultiPolygon",
+    "coordinates": [
+     [
+      [
+       [
+        25.06404,
+        46.0388
+       ],
+       [
+        25.06402,
+        46.03952
+       ],
+       [
+        25.06453,
+        46.03952
+       ],
+       [
+        25.06452,
+        46.03988
+       ],
+       [
+        25.06607,
+        46.03991
+       ],
+       [
+        25.06606,
+        46.04027
+       ],
+       [
+        25.06967,
+        46.04033
+       ],
+       [
+        25.06969,
+        46.03997
+       ],
+       [
+        25.06917,
+        46.03996
+       ],
+       [
+        25.06918,
+        46.0396
+       ],
+       [
+        25.0697,
+        46.03961
+       ],
+       [
+        25.06971,
+        46.03925
+       ],
+       [
+        25.07023,
+        46.03926
+       ],
+       [
+        25.07022,
+        46.03962
+       ],
+       [
+        25.07073,
+        46.03963
+       ],
+       [
+        25.07071,
+        46.04035
+       ],
+       [
+        25.07122,
+        46.04036
+       ],
+       [
+        25.07124,
+        46.04
+       ],
+       [
+        25.07175,
+        46.04001
+       ],
+       [
+        25.07177,
+        46.03965
+       ],
+       [
+        25.07125,
+        46.03964
+       ],
+       [
+        25.07127,
+        46.03892
+       ],
+       [
+        25.07076,
+        46.03891
+       ],
+       [
+        25.07077,
+        46.03855
+       ],
+       [
+        25.07025,
+        46.03854
+       ],
+       [
+        25.07027,
+        46.03818
+       ],
+       [
+        25.07078,
+        46.03819
+       ],
+       [
+        25.07082,
+        46.03711
+       ],
+       [
+        25.06772,
+        46.03706
+       ],
+       [
+        25.06768,
+        46.03814
+       ],
+       [
+        25.06665,
+        46.03812
+       ],
+       [
+        25.06664,
+        46.03848
+       ],
+       [
+        25.06457,
+        46.03844
+       ],
+       [
+        25.06456,
+        46.0388
+       ],
+       [
+        25.06404,
+        46.0388
+       ]
+      ],
+      [
+       [
+        25.06507,
+        46.03881
+       ],
+       [
+        25.06506,
+        46.03917
+       ],
+       [
+        25.06454,
+        46.03916
+       ],
+       [
+        25.06456,
+        46.0388
+       ],
+       [
+        25.06507,
+        46.03881
+       ]
+      ],
+      [
+       [
+        25.06714,
+        46.03885
+       ],
+       [
+        25.06766,
+        46.03886
+       ],
+       [
+        25.06764,
+        46.03922
+       ],
+       [
+        25.06713,
+        46.03921
+       ],
+       [
+        25.06714,
+        46.03885
+       ]
+      ],
+      [
+       [
+        25.06872,
+        46.03815
+       ],
+       [
+        25.06923,
+        46.03816
+       ],
+       [
+        25.06922,
+        46.03852
+       ],
+       [
+        25.0687,
+        46.03851
+       ],
+       [
+        25.06872,
+        46.03815
+       ]
+      ]
+     ],
+     [
+      [
+       [
+        25.06969,
+        46.03997
+       ],
+       [
+        25.0702,
+        46.03998
+       ],
+       [
+        25.07022,
+        46.03962
+       ],
+       [
+        25.0697,
+        46.03961
+       ],
+       [
+        25.06969,
+        46.03997
+       ]
+      ]
+     ]
+    ]
+   }
+  }
+ ]
+}
