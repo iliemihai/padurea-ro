@@ -10,7 +10,7 @@
   var LUNI = ["ian.", "feb.", "mar.", "apr.", "mai", "iun.", "iul.", "aug.", "sept.", "oct.", "nov.", "dec."];
   var LUNI_L = ["ianuarie", "februarie", "martie", "aprilie", "mai", "iunie", "iulie", "august", "septembrie", "octombrie", "noiembrie", "decembrie"];
 
-  var state = { days: 30, conf: { "ridicată": true, "medie": false, "scăzută": false }, shown: 40, sel: null, years: [21, 25], cty: {}, arii: false, ariiMode: false };
+  var state = { days: 30, conf: { "ridicată": true, "medie": true, "scăzută": false }, shown: 40, sel: null, years: [21, 25], cty: {}, arii: false, ariiMode: false };
   var DATA = { alerts: [], data_until: null, generated: null }, RUNS = [], VERIF = {}, FIRMS_FC = null, map, hansen = null;
   var ARH = null, ARH_LOADED = {}; /* arhiva pe luni: indexul și lunile deja aduse */
   var COUNTY_BB = {}, RO_FC = null, PLACE_LAYERS = ["pl-5", "pl-4", "pl-3", "pl-2", "pl-01"];
@@ -146,6 +146,18 @@
   }
   function coverageDays() { var s = coverageStart(); return s && DATA.data_until ? Math.round((pd(DATA.data_until) - pd(s)) / 864e5) + 1 : 0; }
 
+  /* perioada de la început: 30 de zile, sau mai mult dacă în ultimele 30 nu e nicio zonă cu nivelurile arătate din start
+     (iarna nu căutăm, iar toamna zonele rămân „scăzută”: fără asta harta ar porni goală) */
+  function defaultDays() {
+    var u = DATA.data_until; if (!u) return state.days;
+    var lv = Object.keys(state.conf).filter(function (k) { return state.conf[k]; }), last = null;
+    DATA.alerts.forEach(function (a) { if (lv.indexOf(a.incredere) >= 0 && (!last || a.first_seen > last)) last = a.first_seen; });
+    if (!last && ARH) ARH.luni.forEach(function (m) { if (lv.some(function (l) { return (m.niveluri || {})[l]; }) && (!last || m.pana_la > last)) last = m.pana_la; });
+    if (!last) return state.days;
+    var need = Math.round((pd(u) - pd(last)) / 864e5) + 1;
+    return need <= state.days ? state.days : need <= 90 ? 90 : Math.min(3650, need);
+  }
+
   /* perioada: butoanele și glisorul arată mereu același număr de zile */
   function setPeriod(n, silent) {
     state.days = Math.max(1, Math.min(3650, n | 0));
@@ -190,7 +202,7 @@
     nd.addEventListener("input", function () { setPeriod(+nd.value); });
     var cov = coverageDays();
     if (cov) nd.max = String(Math.max(7, cov));
-    setPeriod(state.days, true);
+    setPeriod(defaultDays(), true);
 
     var cb = document.getElementById("conf");
     CONF.forEach(function (c) {

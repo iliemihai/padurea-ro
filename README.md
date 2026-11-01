@@ -79,6 +79,28 @@ Designul vine din [Hallmark](https://github.com/Nutlope/hallmark), tema Rim: hâ
 
 Literele sunt incluse în `docs/fonts.css`, ca site-ul să nu depindă de alt server: Switzer (Indian Type Foundry, licența ITF Free Font License, de pe [Fontshare](https://www.fontshare.com/fonts/switzer)) și Geist Mono (Vercel, SIL Open Font License 1.1). Numele de pe hartă folosesc Noto Sans (SIL Open Font License 1.1), în formatul pentru MapLibre, din [protomaps/basemaps-assets](https://github.com/protomaps/basemaps-assets), puse în `docs/fonts/`.
 
+## Cât de bine merge
+
+Testul pe 2025 (`.github/workflows/evaluare.yml`, `pipeline/evaluate.py`): detectorul rulat pe tot anul 2025, în ferestre de 90 de zile care se suprapun, ca în rulările zilnice, cu AI-ul și criticul, apoi comparat cu pierderile de pădure Hansen din 2025 (Universitatea Maryland, Landsat 30 m). O zonă „se potrivește” dacă măcar 20% din ea e pierdere Hansen în 2024–2025.
+
+| Nivel | Zone în 2025 | Se potrivesc cu Hansen |
+|---|---|---|
+| ridicată | 413 | 78,5% |
+| medie | 984 | 76,8% |
+| scăzută | 1.784 | 65,4% |
+
+Câte pete de pierdere Hansen din 2025 ating o zonă de pe site (orice nivel public; între paranteze, doar „ridicată”):
+
+| Mărime | Pete | Găsite |
+|---|---|---|
+| 0,5–1 ha | 4.779 | 7,8% (0,9%) |
+| 1–5 ha | 5.664 | 31,3% (3,4%) |
+| peste 5 ha | 636 | 74,1% (25,0%) |
+
+Suprafața: 38,7% din cele 20.557 ha pierdute în 2025 (doar „ridicată”: 9,4%).
+
+Hansen e o referință independentă, dar nu perfectă: ratează tăierile parțiale (rărituri, tăieri progresive), iar o tăiere din toamnă o trece uneori la anul următor. Când ne-am uitat pe poze la zonele care nu se potrivesc, multe erau tot schimbări reale (incendii, tăieri parțiale), deci precizia adevărată e probabil mai mare. Zonele sub 1 ha nu le căutăm. Tăierile din iarnă apar abia primăvara.
+
 ## Limite
 
 Norii ascund pădurea uneori zile întregi. Între noiembrie și mijlocul lui martie nu căutăm deloc: o tăiere făcută atunci apare primăvara, cu intervalul în care s-a putut întâmpla. Nu vedem zone mai mici de 1 ha și nici tăierile de sub coronament. Și AI-ul greșește. Dacă vezi o alertă greșită, deschide un issue.
