@@ -13,6 +13,7 @@ python -m pipeline.arhiva --rescore   și refă înainte nivelurile și textele 
 """
 import datetime as dt
 import json
+import math
 
 from . import config as C
 
@@ -20,6 +21,21 @@ RECENT_DAYS = 90
 CONFIRM_DAYS = 30
 DIR = C.DOCS / "data" / "arhiva"
 PENDING = "de confirmat"
+
+
+def safe(o):
+    """NaN și infinit nu sunt JSON valid: browserul refuză tot fișierul. Le facem null."""
+    if isinstance(o, float):
+        return o if math.isfinite(o) else None
+    if isinstance(o, dict):
+        return {k: safe(v) for k, v in o.items()}
+    if isinstance(o, list):
+        return [safe(v) for v in o]
+    return o
+
+
+def dumps(o):
+    return json.dumps(safe(o), ensure_ascii=False, separators=(",", ":"), allow_nan=False)
 
 
 def last_activity(a):
@@ -73,7 +89,7 @@ def save(months, generated):
             if f.exists():
                 f.unlink()
             continue
-        text = json.dumps({"luna": m, "alerts": zone}, ensure_ascii=False, separators=(",", ":"))
+        text = dumps({"luna": m, "alerts": zone})
         if not f.exists() or f.read_text(encoding="utf-8") != text:
             f.write_text(text, encoding="utf-8")
         lv = {}
@@ -81,8 +97,7 @@ def save(months, generated):
             lv[a["incredere"]] = lv.get(a["incredere"], 0) + 1
         index.append({"luna": m, "n": len(zone), "niveluri": lv,
                       "de_la": min(a["first_seen"] for a in zone), "pana_la": max(a["first_seen"] for a in zone)})
-    (DIR / "index.json").write_text(json.dumps({"generated": generated, "luni": index}, ensure_ascii=False, separators=(",", ":")),
-                                    encoding="utf-8")
+    (DIR / "index.json").write_text(dumps({"generated": generated, "luni": index}), encoding="utf-8")
     return index
 
 
@@ -97,11 +112,10 @@ def save_pending(pending, expired, generated):
         for k in ("vis", "text", "dovezi"):   # textul și dovezile se refac la fiecare rulare
             a.pop(k, None)
     C.PENDING.parent.mkdir(parents=True, exist_ok=True)
-    C.PENDING.write_text(json.dumps({"generated": generated, "alerts": order(pending)}, ensure_ascii=False,
-                                    separators=(",", ":")), encoding="utf-8")
+    C.PENDING.write_text(dumps({"generated": generated, "alerts": order(pending)}), encoding="utf-8")
     if C.EXPIRED and expired:
         old = json.loads(C.EXPIRED.read_text(encoding="utf-8")).get("alerts", []) if C.EXPIRED.exists() else []
-        C.EXPIRED.write_text(json.dumps({"alerts": old + expired}, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+        C.EXPIRED.write_text(dumps({"alerts": old + expired}), encoding="utf-8")
     img = C.DOCS / "img"
     for f in drop:
         (img / f).unlink(missing_ok=True)
@@ -114,7 +128,7 @@ def write_recent(path, doc, recent, until, window, generated):
                 "istoric_de_la": min(doc.get("istoric_de_la") or window[0], window[0]),
                 "recent_de_la": (dt.date.fromisoformat(until) - dt.timedelta(days=RECENT_DAYS - 1)).isoformat(),
                 "alerts": order(recent)})
-    path.write_text(json.dumps(doc, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+    path.write_text(dumps(doc), encoding="utf-8")
 
 
 def main():

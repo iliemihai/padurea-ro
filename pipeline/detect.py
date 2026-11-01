@@ -428,11 +428,11 @@ def detect_tile(cat, tile, items, d0, d1, lossyear_path, ro_check):
             "after_date": (after or first_seen).isoformat(),
             "n_dates": n_dates,
             "confirmed": n_dates >= C.CONFIRM_DATES,
-            "ndvi_ref": round(float(np.nanmean(ref_nd[s][m])), 2),
-            "nbr_ref": round(float(np.nanmean(ref_nb[s][m])), 2),
+            "ndvi_ref": _num(ref_nd[s][m], 2),
+            "nbr_ref": _num(ref_nb[s][m], 2),
             "neigh_drop": round(neigh, 2),
             "persist": round(float(np.mean(persist[s][m])), 2),
-            "f": {k: round(float(np.nanmean(v[s][m])), 3) for k, v in feat.items()},
+            "f": {k: _num(v[s][m], 3) for k, v in feat.items()},
             "edge_frac": round(float(edge[s][m].mean()), 2),
             "geometry": polygon(m, s, transform, to_ll),
         }
@@ -453,6 +453,13 @@ def detect_tile(cat, tile, items, d0, d1, lossyear_path, ro_check):
     info["patches"] = len(patches)
     info["rejected"] = len(rejected)
     return info, patches, rejected
+
+
+def _num(arr, nd):
+    """Media valorilor cunoscute, rotunjită; None dacă nu e nicio valoare (NaN nu e JSON valid pentru site)."""
+    with np.errstate(all="ignore"):
+        v = float(np.nanmean(arr)) if np.size(arr) else float("nan")
+    return round(v, nd) if np.isfinite(v) else None
 
 
 def polygon(mask, s, transform, to_ll):
