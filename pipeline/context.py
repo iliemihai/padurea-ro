@@ -8,6 +8,7 @@ import datetime as dt
 import io
 import json
 import math
+import os
 import subprocess
 import time
 import urllib.parse
@@ -67,6 +68,9 @@ class Places:
 def winds(alerts):
     """Rafala maximă (km/h) între data „înainte" și data „după", pentru fiecare alertă."""
     out = {}
+    if os.environ.get("PADUREA_NO_WIND"):   # testul pe trecut: Open-Meteo dă doar ultimele 92 de zile, deci nu ajută
+        log("Vântul: sărit")
+        return out
     for i in range(0, len(alerts), 40):
         chunk = alerts[i:i + 40]
         q = {

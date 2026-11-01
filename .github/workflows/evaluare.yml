@@ -11,9 +11,13 @@ on:
       ends:
         description: "Sfârșitul fiecărei ferestre de 90 de zile (JSON)"
         default: '["2025-03-31", "2025-06-30", "2025-09-30", "2025-12-31"]'
+      from_run:
+        description: "Refă doar scorul, cu detecțiile unei rulări anterioare (id-ul ei); gol = rulează tot"
+        default: ""
 
 permissions:
   contents: write
+  actions: read
 
 concurrency:
   group: evaluare
@@ -25,6 +29,7 @@ env:
 
 jobs:
   detect:
+    if: inputs.from_run == ''
     runs-on: ubuntu-latest
     timeout-minutes: 300
     strategy:
@@ -73,7 +78,11 @@ jobs:
         with:
           pattern: ev-*
           path: ev/raw
+          run-id: ${{ inputs.from_run || github.run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Agenții, fereastră cu fereastră, ca în rulările zilnice
+        env:
+          PADUREA_NO_WIND: "1"
         run: |
           mkdir -p ev/docs/data && cp -r docs/data/static ev/docs/data/
           for end in $(echo '${{ inputs.ends }}' | python -c "import json,sys; print(' '.join(json.load(sys.stdin)))"); do
