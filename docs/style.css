@@ -175,13 +175,6 @@ div.empty { display: flex; flex-direction: column; align-items: flex-start; gap:
 .mini[aria-pressed="false"] { color: var(--color-muted); }
 .mini[aria-pressed="true"]::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; background: var(--color-accent); }
 .back, .more { align-self: flex-start; }
-.copy {
-  align-self: flex-start; min-height: 40px; padding: 0 var(--space-md); border: var(--rule-hair) solid var(--color-accent);
-  background: var(--color-accent); color: var(--color-accent-ink); font-weight: 500; white-space: nowrap; cursor: pointer;
-  transition: background-color var(--dur-micro) var(--ease-out), border-color var(--dur-micro) var(--ease-out);
-}
-.copy:hover { background: var(--color-focus); border-color: var(--color-focus); }
-.copy:active { transform: translateY(1px); }
 
 /* ---------- one zone ---------- */
 .detail { gap: var(--space-md); padding-top: var(--space-lg); }
@@ -234,8 +227,6 @@ div.empty { display: flex; flex-direction: column; align-items: flex-start; gap:
 .maprow { display: flex; flex-direction: column; gap: var(--space-xs); font-size: var(--text-sm); color: var(--color-muted); }
 .map-missing { position: absolute; inset: 0; display: grid; place-content: center; padding: var(--space-lg); text-align: center; color: var(--color-muted); }
 
-.copywrap { display: flex; flex-direction: column; gap: var(--space-xs); }
-.copybox { width: 100%; padding: var(--space-xs); border: var(--rule-hair) solid var(--color-muted-2); background: var(--color-paper-3); color: var(--color-ink-2); font-family: var(--font-outlier); font-size: var(--text-xs); line-height: 1.5; resize: vertical; }
 .actions { display: flex; flex-wrap: wrap; gap: var(--space-xs) var(--space-md); font-size: var(--text-sm); }
 .actions a { color: var(--color-ink); text-decoration: underline; text-decoration-color: var(--color-muted-2); }
 .actions a:hover { text-decoration-color: var(--color-ink); }

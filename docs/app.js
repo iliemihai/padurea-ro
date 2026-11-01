@@ -348,7 +348,6 @@
     d.appendChild(compare(a, false));
     if (a.img_after) d.appendChild(chipControl(a));
     if (a.text) d.appendChild(el("p", "sum", a.text));
-    d.appendChild(copyButton(a));
     var act = el("div", "actions");
     function link(t, h) { var x = el("a", null, t); x.href = h; x.target = "_blank"; x.rel = "noopener"; act.appendChild(x); }
     link("Google Maps (satelit)", "https://www.google.com/maps/@?api=1&map_action=map&center=" + a.lat + "," + a.lon + "&zoom=16&basemap=satellite");
@@ -367,7 +366,6 @@
     row("Ultima imagine", zi(a.after_date, true), true);
     if (a.rafala_kmh != null) { var w = el("span"); w.appendChild(el("span", "num", fmt(a.rafala_kmh) + " km/h")); w.appendChild(document.createTextNode(" în acel interval")); row("Vânt maxim", w); }
     if (a.hansen_jur && a.hansen_jur.ani && a.hansen_jur.ani.length) row("Pierderi în jur", a.hansen_jur.ani.join(", ") + " (Hansen)");
-    if (a.ai) row("Model AI", a.ai.model || "", true);
     row("Coordonate", coord(a.lat, "N", "S") + ", " + coord(a.lon, "E", "V"), true);
     d.appendChild(kv);
     d.appendChild(el("p", "mono", a.id));
@@ -503,39 +501,6 @@
     });
     box.appendChild(ol);
     return box;
-  }
-
-  /* ---------- fișa pentru jurnaliști ---------- */
-  function sheet(a) {
-    var h = headline(a), abs = function (f) { return new URL("img/" + f, location.href).href; }, L = [];
-    L.push("Pădurea RO: schimbare în pădure, de verificat");
-    L.push("Loc:" + whereText(a) + " (" + a.lat + ", " + a.lon + ")");
-    if (a.uat) L.push("Cod SIRUTA: " + a.uat.siruta);
-    L.push("Suprafață: aproximativ " + fmt(a.ha, 1) + " ha");
-    L.push("Când: intactă pe " + zi(a.before_date, true) + ", văzută schimbată pe " + zi(a.first_seen, true) + ", ultima imagine pe " + zi(a.after_date, true));
-    L.push("Ce pare: " + h.t + (h.src ? " (" + h.src + ")" : ""));
-    if (a.ai && a.ai.motiv) L.push("Analistul AI: " + a.ai.motiv);
-    L.push("Încredere: " + a.incredere + (a.dovezi && a.dovezi.length ? " (" + a.dovezi.join("; ") + ")" : ""));
-    if (a.img_before) L.push("Imagine înainte, " + zi(a.img_before.date, true) + ": " + abs(a.img_before.file));
-    if (a.img_after) L.push("Imagine după, " + zi(a.img_after.date, true) + ": " + abs(a.img_after.file));
-    L.push("Google Maps, satelit: https://www.google.com/maps/@?api=1&map_action=map&center=" + a.lat + "," + a.lon + "&zoom=16&basemap=satellite");
-    verifItems(a).forEach(function (v) { L.push("Verificare, " + v.sursa + ": " + v.text + (v.url ? " " + v.url : "")); });
-    L.push("Fișa pe hartă: " + location.href.split("#")[0] + "#a=" + a.id);
-    L.push("Autorizații și transporturi de lemn: se pot căuta în aplicația Inspectorul Pădurii.");
-    L.push("Proprietarul terenului: numărul cadastral din geoportal.ancpi.ro, apoi un extras de carte funciară pentru informare pe epay.ancpi.ro.");
-    L.push("Notă: imagini Copernicus Sentinel-2. Nu spunem că e ilegal. E o schimbare văzută din satelit care merită verificată.");
-    return L.join("\n");
-  }
-  function copyButton(a) {
-    var wrap = el("div", "copywrap"), cp = el("button", "copy", "Copiază fișa pentru jurnaliști"); cp.type = "button";
-    wrap.appendChild(cp);
-    cp.addEventListener("click", function () {
-      var txt = sheet(a);
-      function ok() { cp.textContent = "Copiată. Lipește-o într-un e-mail."; setTimeout(function () { cp.textContent = "Copiază fișa pentru jurnaliști"; }, 2500); }
-      function fallback() { var old = wrap.querySelector("textarea"); if (old) old.remove(); var ta = el("textarea", "copybox"); ta.value = txt; ta.readOnly = true; ta.rows = 8; ta.setAttribute("aria-label", "Fișa pentru jurnaliști"); wrap.appendChild(ta); ta.select(); }
-      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(ok, fallback); else fallback();
-    });
-    return wrap;
   }
 
   /* ---------- înainte și după: clipește, glisează sau una lângă alta ---------- */

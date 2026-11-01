@@ -42,7 +42,7 @@
       <div class="chips" id="conf"></div>
       <details class="explain">
         <summary>Ce înseamnă „scăzută” și „de confirmat”</summary>
-        <p class="hint">„Scăzută”: dovezi slabe. Analistul AI crede că e o alarmă falsă sau, în poze, nu se vede pădure care dispare. „De confirmat”: nu avem încă destule imagini (doar o zi sau nicio imagine clară de dinainte).</p>
+        <p class="hint">„Scăzută”: dovezi slabe; poate fi o alarmă falsă sau, în poze, nu se vede pădure care dispare. „De confirmat”: nu avem încă destule imagini (doar o zi sau nicio imagine clară de dinainte).</p>
       </details>
     </section>
 
@@ -62,20 +62,9 @@
     <section class="block detail" id="detail" hidden aria-live="polite"></section>
 
     <details class="block about">
-      <summary>Cum funcționează și ce nu știm</summary>
+      <summary>Sursele datelor</summary>
       <div class="prose">
-        <p><strong>În fiecare zi</strong>, un program descarcă imaginile Sentinel-2 noi pentru România și caută locurile din pădure unde verdele a dispărut brusc.</p>
-        <ol>
-          <li><strong>Detectorul</strong> (cod, fără AI) compară fiecare imagine nouă cu pădurea de acum una până la trei luni și cu aceeași lună de anul trecut, nu cu ziua de ieri. Păstrează doar ce rămâne schimbat în imaginile următoare și ignoră schimbările care cuprind tot dealul (toamna, ceața).</li>
-          <li><strong>Analistul AI</strong> se uită la perechea de imagini înainte/după și spune ce crede că vede: pădure dispărută, nori, frunze de toamnă sau câmp.</li>
-          <li><strong>Verificarea pe poze</strong> (cod, fără AI): în poza de dinainte zona trebuie să arate ca pădurea din jur, nu ca un luminiș, și până la poza de după trebuie să se schimbe vizibil mai mult decât împrejurimile.</li>
-          <li><strong>Contextul</strong>: cea mai apropiată localitate, vântul din acele zile, pierderile din anii trecuți și focurile văzute de sateliții NASA (FIRMS) lângă zonă.</li>
-          <li><strong>Criticul</strong> pune dovezile cap la cap și dă un nivel de încredere.</li>
-          <li><strong>Redactorul</strong> scrie fișa, în cuvinte neutre.</li>
-        </ol>
-        <p><strong>Ce nu verificăm:</strong> dacă o tăiere e autorizată. Unele informații despre exploatări și transporturi de lemn se pot căuta în aplicația Inspectorul Pădurii. Noi nu spunem niciodată „ilegal”: arătăm doar ce s-a schimbat și când, cu imaginile, ca oricine să poată verifica. Pe fiecare zonă e un buton care copiază fișa pentru jurnaliști.</p>
-        <p><strong>Limite:</strong> norii ascund pădurea uneori zile întregi. Iarna, fără frunze, vedem mai ales pădurile de rășinoase. Nu vedem zone mai mici de 1 ha și nici tăierile de sub coronament. AI-ul greșește și el.</p>
-        <p><strong>Date:</strong></p>
+        <p>Arătăm ce s-a schimbat în pădure și când, cu imaginile din satelit. Nu spunem dacă o tăiere e legală: autorizațiile și transporturile de lemn se pot verifica în aplicația Inspectorul Pădurii.</p>
         <ul class="credits">
           <li>imagini Copernicus Sentinel-2 (ESA), prin Microsoft Planetary Computer</li>
           <li>ESA WorldCover 2021</li>
@@ -85,7 +74,7 @@
           <li>limitele comunelor: geo-spatial.org</li>
           <li>fundal: Sentinel-2 cloudless de EOX, © OpenStreetMap, CARTO</li>
         </ul>
-        <p><a href="https://github.com/iliemihai/padurea-ro" target="_blank" rel="noopener">Codul e public pe GitHub</a>. Dacă vezi o greșeală, deschide un issue.</p>
+        <p>Dacă vezi o greșeală, <a href="https://github.com/iliemihai/padurea-ro/issues" target="_blank" rel="noopener">spune-ne pe GitHub</a>.</p>
       </div>
     </details>
   </aside>

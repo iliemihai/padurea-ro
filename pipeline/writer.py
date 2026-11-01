@@ -46,8 +46,6 @@ def text(a):
     else:
         s.append("Deocamdată schimbarea se vede într-o singură imagine.")
     ai = a.get("ai")
-    if ai and ai.get("motiv"):
-        s.append(f"Analistul AI: „{ai['motiv'].strip().rstrip('.')}.”")
     fi = a.get("firms") or {}
     if fi.get("n"):
         cand = zi(fi["prima"]) if fi["prima"] == fi["ultima"] else f"între {zi(fi['prima'])} și {zi(fi['ultima'])}"
