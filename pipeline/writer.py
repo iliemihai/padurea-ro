@@ -70,6 +70,10 @@ def text(a):
         s.append(f"Schimbarea se vede în {a['n_dates']} imagini diferite.")
     else:
         s.append("Deocamdată schimbarea se vede într-o singură imagine.")
+    if a.get("extinsa"):
+        s.append(f"Zona s-a lărgit după prima observație, ultima dată pe {zi(a['extinsa'])}.")
+    if a.get("langa"):
+        s.append(f"Chiar lângă, o altă schimbare fusese văzută pe {zi(a['langa']['first_seen'])}.")
     ai = a.get("ai")
     fi = a.get("firms") or {}
     if fi.get("n"):

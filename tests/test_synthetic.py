@@ -229,6 +229,47 @@ def test_uat():
     print("Comuna: OK")
 
 
+def _sq(x, y, d=0.002, **kw):
+    from shapely.geometry import box, mapping
+    g = box(x, y, x + d, y + d)
+    p = {"tile": "T", "ha": 4.0, "lat": y + d / 2, "lon": x + d / 2, "first_seen": "2026-08-01", "after_date": "2026-08-10",
+         "n_dates": 2, "geometry": json.loads(json.dumps(mapping(g))), "bbox": list(g.bounds), "_g": g}
+    p.update(kw)
+    return p
+
+
+def test_merge_rules():
+    """Aceeași tăiere văzută iar se actualizează; o lărgire la scurt timp se unește; o tăiere nouă lângă una veche e zonă nouă."""
+    from pipeline import run_finish as R
+    old = _sq(25.0, 46.0, id="A")
+    old.pop("_g")
+    hist = [old]
+    again = _sq(25.0003, 46.0, first_seen="2026-08-05", after_date="2026-08-12", n_dates=4)
+    grow = _sq(25.002, 46.0, d=0.001, first_seen="2026-08-20", after_date="2026-08-22", ha=1.0)
+    later = _sq(25.0, 46.002, d=0.001, first_seen="2026-10-20", after_date="2026-10-25", ha=1.0)
+    n, touched = R.merge_history([again, grow, later], hist)
+    assert n == {"noi": 1, "actualizate": 1, "largite": 1, "langa_altele": 1}, n
+    a = next(h for h in hist if h["id"] == "A")
+    assert a["n_dates"] == 4 and a["extinsa"] == "2026-08-20" and a["ha"] > 4.0, a
+    new = next(h for h in hist if h.get("_src") == "n")
+    assert new["langa"]["id"] == "A" and new["first_seen"] == "2026-10-20"
+    print("Potrivirea cu istoricul: OK")
+
+
+def test_arhiva_split():
+    """Pe site din start: ultimele 90 de zile; „de confirmat” mai vechi de 30 de zile trec în arhivă, marcate."""
+    from pipeline import arhiva
+    z = [{"id": "a", "incredere": "de confirmat", "first_seen": "2026-10-20"},
+         {"id": "b", "incredere": "de confirmat", "first_seen": "2026-09-15"},
+         {"id": "c", "incredere": "ridicată", "first_seen": "2026-09-15"},
+         {"id": "d", "incredere": "ridicată", "first_seen": "2026-07-01"},
+         {"id": "e", "incredere": "ridicată", "first_seen": "2026-07-01", "extinsa": "2026-10-25"}]
+    recent, old = arhiva.split(z, "2026-11-01")
+    assert sorted(a["id"] for a in recent) == ["a", "c", "e"] and sorted(a["id"] for a in old) == ["b", "d"]
+    assert z[1].get("expirata") and not z[3].get("expirata")
+    print("Arhiva: OK")
+
+
 def test_romania():
     """Conturul țării: punctele din țară da, cele de peste graniță nu (pentru focuri și nume pe hartă)."""
     from pipeline import romania
@@ -243,4 +284,6 @@ if __name__ == "__main__":
     test_firms()
     test_uat()
     test_romania()
+    test_merge_rules()
+    test_arhiva_split()
     main()

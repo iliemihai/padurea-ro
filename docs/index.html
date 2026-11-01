@@ -34,6 +34,7 @@
       </label>
       <p class="range" id="range"></p>
       <p class="hint" id="coverage"></p>
+      <p class="hint" id="arh-note" hidden>Se încarcă zonele mai vechi din arhivă…</p>
       <p class="hint" id="period-hint">Satelitul trece peste fiecare loc cam la 3 zile și norii ascund multe dintre ele, așa că „Ultima zi” e des goală.</p>
     </section>
 
@@ -42,8 +43,9 @@
       <div class="chips" id="conf"></div>
       <details class="explain">
         <summary>Ce înseamnă „scăzută” și „de confirmat”</summary>
-        <p class="hint">„Scăzută”: dovezi slabe; poate fi o alarmă falsă sau, în poze, nu se vede pădure care dispare. „De confirmat”: nu avem încă destule imagini (doar o zi sau nicio imagine clară de dinainte).</p>
+        <p class="hint">„Scăzută”: dovezi slabe; poate fi o alarmă falsă sau, în poze, nu se vede pădure care dispare. „De confirmat”: nu avem încă destule imagini (doar o zi sau nicio imagine clară de dinainte). Dacă în 30 de zile nu vine a doua imagine clară, zona trece în arhivă.</p>
       </details>
+      <label class="tg" id="tg-arhiva" hidden><input type="checkbox" id="arhiva"><span>Arată și zonele rămase neconfirmate după 30 de zile (<b id="arhiva-n" class="num"></b>, în arhivă)</span></label>
     </section>
 
     <section class="block" id="cty-block" aria-labelledby="h-cty">

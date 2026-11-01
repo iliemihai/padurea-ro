@@ -8,8 +8,9 @@
   var LUNI = ["ian.", "feb.", "mar.", "apr.", "mai", "iun.", "iul.", "aug.", "sept.", "oct.", "nov.", "dec."];
   var LUNI_L = ["ianuarie", "februarie", "martie", "aprilie", "mai", "iunie", "iulie", "august", "septembrie", "octombrie", "noiembrie", "decembrie"];
 
-  var state = { days: 30, conf: { "ridicată": true, "medie": false, "scăzută": false, "de confirmat": false }, shown: 40, sel: null, years: [21, 25], cty: {}, arii: false, ariiMode: false };
+  var state = { days: 30, conf: { "ridicată": true, "medie": false, "scăzută": false, "de confirmat": false }, shown: 40, sel: null, years: [21, 25], cty: {}, arii: false, ariiMode: false, arhiva: false };
   var DATA = { alerts: [], data_until: null, generated: null }, RUNS = [], VERIF = {}, FIRMS_FC = null, map, hansen = null;
+  var ARH = null, ARH_LOADED = {}; /* arhiva pe luni: indexul și lunile deja aduse */
   var COUNTY_BB = {}, RO_FC = null, PLACE_LAYERS = ["pl-5", "pl-4", "pl-3", "pl-2", "pl-01"];
   /* literele pentru numele de pe hartă (Noto Sans) stau lângă pagină, în fonts/; harta nu iese din jurul României */
   var GLYPHS = document.baseURI.replace(/[#?].*$/, "").replace(/[^/]*$/, "") + "fonts/{fontstack}/{range}.pbf";
@@ -79,8 +80,10 @@
     getJSON("data/static/hansen.json").catch(function () { return null; }),
     getJSON("data/static/counties.geojson").catch(function () { return null; }),
     getJSON("data/verificari.json").catch(function () { return null; }),
-    getJSON("data/firms.geojson").catch(function () { return null; })
+    getJSON("data/firms.geojson").catch(function () { return null; }),
+    getJSON("data/arhiva/index.json").catch(function () { return null; })
   ]).then(function (res) {
+    ARH = res[6] && res[6].luni && res[6].luni.length ? res[6] : null;
     FIRMS_FC = res[5] || { type: "FeatureCollection", features: [] };
     if (res[0]) DATA = res[0];
     VERIF = (res[4] && res[4].zone) || {};
@@ -107,8 +110,12 @@
 
   /* ---------- perioada și filtrele ---------- */
   function periodStart() { return DATA.data_until ? addDays(DATA.data_until, -(state.days - 1)) : null; }
-  function inPeriod(a) { var s = periodStart(); return s && a.first_seen >= s && a.first_seen <= DATA.data_until; }
-  function visible() { return DATA.alerts.filter(function (a) { return inPeriod(a) && state.conf[a.incredere] && inCounty(a) && inArii(a); }); }
+  function inPeriod(a) {
+    var s = periodStart(), u = DATA.data_until;
+    return !!s && ((a.first_seen >= s && a.first_seen <= u) || (!!a.extinsa && a.extinsa >= s && a.extinsa <= u));
+  }
+  function shownArh(a) { return !a.expirata || state.arhiva; }
+  function visible() { return DATA.alerts.filter(function (a) { return inPeriod(a) && state.conf[a.incredere] && inCounty(a) && inArii(a) && shownArh(a); }); }
   function inArii(a) { return !state.arii || !!(a.arii && a.arii.length); }
 
   /* județele alese, pe hartă sau din listă; niciunul = toată țara */
@@ -127,6 +134,7 @@
   function daysLabel(n) { return n === 1 ? "ultima zi" : "ultimele " + n + " " + de(n) + "zile"; }
   /* de când avem date: cea mai veche fereastră analizată (istoricul crește cu fiecare rulare) */
   function coverageStart() {
+    if (DATA.istoric_de_la) return DATA.istoric_de_la;
     var s = null;
     (RUNS || []).forEach(function (r) { if (r && r.window && (!s || r.window[0] < s)) s = r.window[0]; });
     if (!s && DATA.window) s = DATA.window[0];
@@ -143,7 +151,42 @@
     document.getElementById("ndays-v").textContent = daysLabel(state.days);
     document.getElementById("period-hint").hidden = state.days > 3;
     state.shown = 40;
-    if (!silent) renderAll();
+    if (!silent) { renderAll(); ensureArchive(); }
+  }
+
+  /* ---------- arhiva: lunile vechi se aduc doar când perioada le cere sau când e bifată arhiva ---------- */
+  function loadMonth(m) {
+    if (ARH_LOADED[m]) return ARH_LOADED[m];
+    ARH_LOADED[m] = getJSON("data/arhiva/" + m + ".json").then(function (d) {
+      var have = {};
+      DATA.alerts.forEach(function (a) { have[a.id] = 1; });
+      (d.alerts || []).forEach(function (a) { if (!have[a.id]) { a._arh = true; DATA.alerts.push(a); } });
+    }).catch(function () { ARH_LOADED[m] = null; });
+    return ARH_LOADED[m];
+  }
+  function ensureArchive() {
+    if (!ARH || !DATA.data_until) return Promise.resolve();
+    var s = periodStart(), rec = DATA.recent_de_la || s;
+    var need = ARH.luni.filter(function (m) {
+      if (ARH_LOADED[m.luna]) return false;
+      if (m.pana_la < s || m.de_la > DATA.data_until) return false;
+      return state.arhiva || m.de_la < rec;
+    });
+    if (!need.length) return Promise.resolve();
+    var note = document.getElementById("arh-note"); if (note) note.hidden = false;
+    return Promise.all(need.map(function (m) { return loadMonth(m.luna); })).then(function () {
+      if (note) note.hidden = true;
+      renderAll();
+    });
+  }
+  function setArhiva(on, silent) {
+    state.arhiva = on; state.shown = 40;
+    var c = document.getElementById("arhiva"); if (c) c.checked = on;
+    if (on && !state.conf["de confirmat"]) {
+      state.conf["de confirmat"] = true;
+      var ch = document.querySelector('#conf .chip[data-conf="de confirmat"]'); if (ch) ch.setAttribute("aria-pressed", "true");
+    }
+    if (!silent) { renderAll(); ensureArchive(); }
   }
 
   function initControls() {
@@ -178,6 +221,12 @@
     document.getElementById("lyr-loss").addEventListener("change", function (e) { setVis("hansen", e.target.checked); });
     document.getElementById("lyr-counties").addEventListener("change", function (e) { setVis("counties", e.target.checked); });
     document.getElementById("lyr-arii").addEventListener("change", function (e) { setAriiMode(e.target.checked); });
+    var exp = ARH ? ARH.luni.reduce(function (t, m) { return t + (m.expirate || 0); }, 0) : 0;
+    if (exp) {
+      document.getElementById("tg-arhiva").hidden = false;
+      document.getElementById("arhiva-n").textContent = fmt(exp);
+      document.getElementById("arhiva").addEventListener("change", function (e) { setArhiva(e.target.checked); });
+    }
     var anyProt = DATA.alerts.some(isProt);
     document.getElementById("ariibtn").hidden = !anyProt;
     document.getElementById("lg-p").hidden = !anyProt;
@@ -283,7 +332,7 @@
     var np = v.filter(isProt).length, bn = document.getElementById("ariibtn-n"), ab = document.getElementById("ariibtn");
     if (bn) bn.replaceChildren(el("b", null, fmt(np)), document.createTextNode(" " + (np === 1 ? "zonă" : de(np) + "zone")));
     if (ab) ab.title = np === 1 ? "O zonă din cele afișate e într-o arie protejată" : fmt(np) + " " + de(np) + "zone din cele afișate sunt în arii protejate";
-    var all = DATA.alerts.filter(function (a) { return inPeriod(a) && inCounty(a) && inArii(a); });
+    var all = DATA.alerts.filter(function (a) { return inPeriod(a) && inCounty(a) && inArii(a) && shownArh(a); });
     Array.prototype.forEach.call(document.querySelectorAll("#conf .chip"), function (b) {
       var n = all.filter(function (a) { return a.incredere === b.dataset.conf; }).length;
       b.querySelector(".n").textContent = fmt(n);
@@ -332,7 +381,7 @@
         em.appendChild(go); box.appendChild(em);
         return;
       }
-      var hidden = DATA.alerts.filter(function (a) { return inPeriod(a) && inCounty(a) && inArii(a); }).length;
+      var hidden = DATA.alerts.filter(function (a) { return inPeriod(a) && inCounty(a) && inArii(a) && shownArh(a); }).length;
       var msg = hidden ? "Nicio schimbare cu acest nivel de încredere" + ctxText() + " în perioada aleasă. Bifează și „scăzută” ca să le vezi pe toate." :
         "Nicio schimbare nouă" + ctxText() + " în perioada aleasă. Poate fi și din cauza norilor: pădurea acoperită de nori nu se vede. Încearcă o perioadă mai lungă.";
       if (!ctyList().length && !state.arii) { box.appendChild(el("p", "empty", msg)); return; }
@@ -353,6 +402,8 @@
       b.appendChild(el("span", "a", fmt(a.ha, 1) + " ha"));
       if (isVerified(a)) meta.push("verificat și din alte surse");
       if (a.arii && a.arii.length) meta.push("în arie protejată");
+      if (a.extinsa) meta.push("s-a lărgit pe " + ziScurt(a.extinsa));
+      if (a.langa) meta.push("lângă o zonă din " + ziScurt(a.langa.first_seen));
       meta.push(a.n_dates >= 2 ? "văzută în " + a.n_dates + " imagini" : "o singură imagine");
       b.appendChild(el("span", "s", upFirst(meta.join(", "))));
       b.addEventListener("click", function () { select(a, true); });
@@ -366,9 +417,15 @@
   }
 
   /* ---------- fișa unei alerte ---------- */
-  function selectById(id, fly) {
+  function selectById(id, fly, retried) {
     var a = DATA.alerts.find(function (x) { return x.id === id; });
-    if (!a) return;
+    if (!a) {
+      /* zona poate fi în arhivă: id-ul începe cu data primei observații (AAAALLZZ) */
+      var m = String(id).slice(0, 4) + "-" + String(id).slice(4, 6);
+      if (!retried && ARH && ARH.luni.some(function (x) { return x.luna === m; })) loadMonth(m).then(function () { selectById(id, fly, true); });
+      return;
+    }
+    if (a.expirata && !state.arhiva) setArhiva(true, true);
     if (!inPeriod(a)) setPeriod(Math.max(1, Math.round((pd(DATA.data_until) - pd(a.first_seen)) / 864e5) + 1), true);
     if (!state.conf[a.incredere]) { state.conf[a.incredere] = true; var c = document.querySelector('#conf .chip[data-conf="' + a.incredere + '"]'); if (c) c.setAttribute("aria-pressed", "true"); }
     if (!inCounty(a)) { state.cty = {}; renderCounties(); updateCountyLayers(); }
@@ -395,10 +452,18 @@
     if (isVerified(a)) bd.appendChild(el("span", "badge ok", "verificat și din alte surse"));
     if (a.vant) bd.appendChild(el("span", "badge", "vânt puternic"));
     if (a.arii && a.arii.length) bd.appendChild(el("span", "badge arie", "în arie protejată"));
+    if (a.extinsa) bd.appendChild(el("span", "badge", "s-a lărgit pe " + ziScurt(a.extinsa)));
+    if (a.expirata) bd.appendChild(el("span", "badge", "rămasă neconfirmată, în arhivă"));
     d.appendChild(bd);
     d.appendChild(compare(a, false));
     if (a.img_after) d.appendChild(chipControl(a));
     if (a.text) d.appendChild(el("p", "sum", a.text));
+    if (a.langa) {
+      var nb = el("p", "near"), go = el("button", "mini", "Vezi zona de atunci"); go.type = "button";
+      nb.appendChild(document.createTextNode("Chiar lângă, o altă schimbare fusese văzută pe " + zi(a.langa.first_seen, true) + ". "));
+      go.addEventListener("click", function () { selectById(a.langa.id, true); });
+      nb.appendChild(go); d.appendChild(nb);
+    }
     var act = el("div", "actions");
     function link(t, h) { var x = el("a", null, t); x.href = h; x.target = "_blank"; x.rel = "noopener"; act.appendChild(x); }
     link("Google Maps (satelit)", "https://www.google.com/maps/@?api=1&map_action=map&center=" + a.lat + "," + a.lon + "&zoom=16&basemap=satellite");
