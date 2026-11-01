@@ -1,0 +1,106 @@
+name: Refă istoricul
+
+# Rulează detectorul de azi pe ferestre trecute (ca în rulările zilnice, cu AI-ul) și construiește de la zero datele
+# site-ului într-un folder separat. Rezultatul (alerts.json, arhiva, pozele, zonele neconfirmate) merge pe ramura
+# „istoric-<rulare>”; site-ul public nu se schimbă până nu le copiem pe main.
+on:
+  workflow_dispatch:
+    inputs:
+      ends:
+        description: "Sfârșitul fiecărei ferestre de 90 de zile (JSON), în ordine; se suprapun 30 de zile"
+        default: '["2025-12-31", "2026-05-01", "2026-07-01", "2026-09-01", "2026-11-02"]'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: istoric
+  cancel-in-progress: false
+
+env:
+  JUDGE_MAX_PER_GROUP: "60"
+  PYTHONUNBUFFERED: "1"
+
+jobs:
+  detect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    strategy:
+      fail-fast: false
+      matrix:
+        end: ${{ fromJSON(inputs.ends) }}
+        group: [0, 1, 2, 3, 4, 5, 6, 7]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - uses: actions/cache@v4
+        with:
+          path: data/hansen
+          key: hansen-gfc-2025
+      - name: Detectorul și AI-ul, pe fereastra care se termină pe ${{ matrix.end }}
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          PADUREA_AI_REUSE: "0"
+        run: python -m pipeline.run_tiles --group ${{ matrix.group }} --groups 8 --days 90 --end "${{ matrix.end }}" --judge
+      - uses: actions/upload-artifact@v4
+        with:
+          name: is-${{ matrix.end }}-g${{ matrix.group }}
+          path: out/
+          retention-days: 7
+
+  build:
+    needs: detect
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - uses: actions/cache@v4
+        with:
+          path: data/hansen
+          key: hansen-gfc-2025
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: is-*
+          path: is/raw
+      - name: Agenții, fereastră cu fereastră, într-un site nou
+        env:
+          PADUREA_NO_WIND: "1"
+          PADUREA_PENDING: is/neconfirmate.json
+        run: |
+          mkdir -p is/docs/data && cp -r docs/data/static is/docs/data/ && cp docs/data/firms.geojson is/docs/data/ 2>/dev/null || true
+          for end in $(echo '${{ inputs.ends }}' | python -c "import json,sys; print(' '.join(json.load(sys.stdin)))"); do
+            mkdir -p "is/out_$end"
+            for d in is/raw/is-$end-g*; do [ -d "$d" ] && cp -r "$d/." "is/out_$end/"; done
+            PADUREA_OUT="$PWD/is/out_$end" PADUREA_DOCS="$PWD/is/docs" python -m pipeline.run_finish
+          done
+          python - <<'PY'
+          import json, collections
+          d = json.load(open("is/docs/data/alerts.json"))
+          print("Pe site:", len(d["alerts"]), collections.Counter(a["incredere"] for a in d["alerts"]))
+          print(open("is/docs/data/arhiva/index.json").read()[:500])
+          PY
+      - name: Pe ramura istoric
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p pub/docs/data pub/data
+          cp -r is/docs/data/alerts.json is/docs/data/arhiva is/docs/data/runs.json pub/docs/data/
+          cp -r is/docs/img pub/docs/
+          cp is/neconfirmate.json pub/data/
+          cd pub
+          git init -q -b istoric
+          git config user.name "padurea-ro bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add .
+          git commit -qm "Istoricul refăcut cu detectorul de azi (rularea ${{ github.run_id }})"
+          git push -qf "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git" "HEAD:istoric-${{ github.run_id }}"
