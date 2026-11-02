@@ -10,8 +10,9 @@
   var LUNI = ["ian.", "feb.", "mar.", "apr.", "mai", "iun.", "iul.", "aug.", "sept.", "oct.", "nov.", "dec."];
   var LUNI_L = ["ianuarie", "februarie", "martie", "aprilie", "mai", "iunie", "iulie", "august", "septembrie", "octombrie", "noiembrie", "decembrie"];
 
-  var state = { days: 30, conf: { "ridicată": true, "medie": true, "scăzută": false }, shown: 40, sel: null, years: [21, 25], cty: {}, arii: false, ariiMode: false };
+  var state = { days: 30, conf: { "ridicată": true, "medie": true, "scăzută": false }, shown: 40, sel: null, years: [21, 25], cty: {}, arii: false, ariiMode: false, faraAut: false };
   var DATA = { alerts: [], data_until: null, generated: null }, RUNS = [], VERIF = {}, FIRMS_FC = null, map, hansen = null;
+  var AUT = {}, AUT_META = null; /* autorizațiile de tăiere (APV) din Inspectorul Pădurii, potrivite cu zonele */
   var ARH = null, ARH_LOADED = {}; /* arhiva pe luni: indexul și lunile deja aduse */
   var COUNTY_BB = {}, RO_FC = null, PLACE_LAYERS = ["pl-5", "pl-4", "pl-3", "pl-2", "pl-01"];
   /* literele pentru numele de pe hartă (Noto Sans) stau lângă pagină, în fonts/; harta nu iese din jurul României */
@@ -83,8 +84,10 @@
     getJSON("data/static/counties.geojson").catch(function () { return null; }),
     getJSON("data/verificari.json").catch(function () { return null; }),
     getJSON("data/firms.geojson").catch(function () { return null; }),
-    getJSON("data/arhiva/index.json").catch(function () { return null; })
+    getJSON("data/arhiva/index.json").catch(function () { return null; }),
+    getJSON("data/permise.json").catch(function () { return null; })
   ]).then(function (res) {
+    AUT = (res[7] && res[7].zone) || {}; AUT_META = res[7] || null;
     ARH = res[6] && res[6].luni && res[6].luni.length ? res[6] : null;
     FIRMS_FC = res[5] || { type: "FeatureCollection", features: [] };
     if (res[0]) { DATA = res[0]; DATA.alerts = (DATA.alerts || []).filter(isPublic); }
@@ -119,8 +122,22 @@
   /* datele mai vechi pot avea încă zone neconfirmate: nu le arătăm */
   function isPublic(a) { return !!CONF_TOKEN[a.incredere] && a.incredere !== "de confirmat" && !a.expirata; }
   function shownArh(a) { return isPublic(a); }
-  function visible() { return DATA.alerts.filter(function (a) { return inPeriod(a) && state.conf[a.incredere] && inCounty(a) && inArii(a) && shownArh(a); }); }
+  function visible() { return DATA.alerts.filter(function (a) { return inPeriod(a) && state.conf[a.incredere] && inCounty(a) && inArii(a) && inAut(a) && shownArh(a); }); }
   function inArii(a) { return !state.arii || !!(a.arii && a.arii.length); }
+
+  /* ---------- autorizațiile de tăiere (APV) ----------
+     Pentru fiecare zonă căutăm în Inspectorul Pădurii autorizațiile din jur și le comparăm cu data schimbării.
+     Zonele neverificate nu primesc nimic: lipsa unei autorizații în datele noastre nu dovedește o tăiere ilegală. */
+  var AUT_T = {
+    in_perioada: { badge: "are autorizație în perioadă", ok: true, scurt: "cu autorizație" },
+    expirat: { badge: "autorizația expirase", atentie: true, scurt: "autorizația expirase" },
+    neinceput: { badge: "autorizația nu începuse", atentie: true, scurt: "autorizația nu începuse" },
+    in_apropiere: { badge: "autorizație doar în apropiere", scurt: "autorizație doar în apropiere" },
+    fara: { badge: "nicio autorizație găsită", atentie: true, scurt: "nicio autorizație găsită" }
+  };
+  function aut(a) { return AUT[a.id] || null; }
+  function autFara(a) { var v = aut(a); return !!v && !!(AUT_T[v.stare] || {}).atentie; }
+  function inAut(a) { return !state.faraAut || autFara(a); }
 
   /* județele alese, pe hartă sau din listă; niciunul = toată țara */
   function countyOf(a) { return (a.uat && a.uat.judet) || a.county || ""; }
@@ -235,6 +252,9 @@
     var oa = document.getElementById("only-arii");
     if (DATA.alerts.some(function (a) { return a.arii && a.arii.length; })) document.getElementById("tg-only-arii").hidden = false;
     oa.addEventListener("change", function () { setOnlyArii(oa.checked); });
+    var fa = document.getElementById("only-fara-aut");
+    if (DATA.alerts.some(autFara)) document.getElementById("tg-fara-aut").hidden = false;
+    fa.addEventListener("change", function () { state.faraAut = fa.checked; state.shown = 40; renderAll(); });
     document.getElementById("base").addEventListener("click", function (e) {
       var b = e.target.closest("button"); if (b && !b.disabled) setBase(b.dataset.base);
     });
@@ -411,6 +431,7 @@
       b.appendChild(el("span", "p", headline(a).t));
       b.appendChild(el("span", "a", fmt(a.ha, 1) + " ha"));
       if (isVerified(a)) meta.push("verificat și din alte surse");
+      var ma = aut(a); if (ma && AUT_T[ma.stare]) meta.push(AUT_T[ma.stare].scurt);
       if (a.arii && a.arii.length) meta.push("în arie protejată");
       if (a.extinsa) meta.push("s-a lărgit pe " + ziScurt(a.extinsa));
       if (a.langa) meta.push("lângă o zonă din " + ziScurt(a.langa.first_seen));
@@ -459,6 +480,7 @@
     var bd = el("div", "badges");
     var c1 = el("span", "badge"); c1.appendChild(key(a.incredere)); c1.appendChild(document.createTextNode("încredere " + a.incredere)); bd.appendChild(c1);
     if (isVerified(a)) bd.appendChild(el("span", "badge ok", "verificat și din alte surse"));
+    var va = aut(a); if (va && AUT_T[va.stare]) bd.appendChild(el("span", "badge" + (AUT_T[va.stare].ok ? " ok" : AUT_T[va.stare].atentie ? " aut" : ""), AUT_T[va.stare].badge));
     if (a.vant) bd.appendChild(el("span", "badge", "vânt puternic"));
     if (a.arii && a.arii.length) bd.appendChild(el("span", "badge arie", "în arie protejată"));
     if (a.extinsa) bd.appendChild(el("span", "badge", "s-a lărgit pe " + ziScurt(a.extinsa)));
@@ -480,6 +502,7 @@
     d.appendChild(act);
     if (a.arii && a.arii.length) d.appendChild(ariiBlock(a));
     var vi = verifItems(a); if (vi.length) d.appendChild(verifBlock(vi));
+    var ab2 = autBlock(a); if (ab2) d.appendChild(ab2);
     d.appendChild(ownerBlock(a));
     var ev = el("ul", "ev"); (a.dovezi || []).forEach(function (x) { ev.appendChild(el("li", null, x)); });
     d.appendChild(el("p", "lbl", "De ce acest nivel de încredere"));
@@ -687,6 +710,39 @@
       map.addLayer({ id: "arii-fill", type: "fill", source: "arii", paint: { "fill-color": col, "fill-opacity": ["interpolate", ["linear"], ["zoom"], 6, 0.16, 11, 0.1] } }, before);
       map.addLayer({ id: "arii-line", type: "line", source: "arii", paint: { "line-color": col, "line-width": ["interpolate", ["linear"], ["zoom"], 6, 0.6, 11, 1.4], "line-opacity": 0.7 } }, before);
     }).catch(function () { document.getElementById("tg-arii").hidden = true; document.getElementById("lg-arii").hidden = true; document.getElementById("ariibtn").hidden = true; });
+  }
+
+  /* ---------- autorizația de tăiere: ce scrie în Inspectorul Pădurii pentru zona asta ----------
+     Spunem ce am găsit și ce n-am găsit, cu limitele la vedere: harta parcelelor e publicată doar în parte. */
+  function autBlock(a) {
+    var v = aut(a); if (!v || !AUT_T[v.stare]) return null;
+    var t = AUT_T[v.stare], box = el("div", "verif aut");
+    box.appendChild(el("p", "lbl", "Autorizația de tăiere (APV)"));
+    var it = el("div", "vitem");
+    var head = el("p");
+    head.appendChild(el("b", null, v.apv ? "APV " + v.apv : t.badge));
+    if (v.apv) head.appendChild(el("span", "vfit " + (t.ok ? "sure" : t.atentie ? "none" : "maybe"), t.badge));
+    it.appendChild(head);
+    if (v.apv) {
+      var det = [v.ocol, v.ua && v.ua.length ? "u.a. " + v.ua.join(", ") : null,
+                 v.volum_m3 != null ? fmt(v.volum_m3) + " m³" : null].filter(Boolean).join(" · ");
+      if (det) it.appendChild(el("p", null, det));
+      if (v.start && v.end) it.appendChild(el("p", null, "Tăiere permisă de la " + zi(v.start, true) + " până la " + zi(v.end, true) + "."));
+      it.appendChild(el("p", "vfit", v.suprapunere > 0
+        ? "Se suprapune cu zona pe " + Math.round(v.suprapunere * 100) + "% din suprafață."
+        : "Nu se suprapune cu zona; cea mai apropiată, la " + fmt(v.dist_m) + " m."));
+      if (v.potrivire === "buffer") it.appendChild(el("p", "vfit", "Parcela nu e publicată; am folosit o estimare în jurul punctului autorizației."));
+    } else {
+      it.appendChild(el("p", null, "Nu am găsit nicio autorizație de tăiere la mai puțin de " + fmt((AUT_META && AUT_META.raza_m) || 500) + " m de zonă, pentru perioada schimbării."));
+    }
+    if (v.volum_suspect) it.appendChild(el("p", "vfit", "Suprafața schimbată pare mult mai mare decât volumul autorizat."));
+    if (v.n_apv > 1) it.appendChild(el("p", "vfit", v.n_apv + " autorizații în zonă; o arătăm pe cea care se potrivește cel mai bine."));
+    if (t.atentie) it.classList.add("quiet");
+    box.appendChild(it);
+    box.appendChild(el("p", "vfit", "Statul publică harta parcelelor doar în parte, mai ales pentru pădurile private, iar autorizațiile se pot prelungi. Lipsa unei autorizații aici nu dovedește o tăiere ilegală — e un motiv de verificat."));
+    var lk = el("a", null, "Caută în Inspectorul Pădurii"); lk.href = "https://inspectorulpadurii.ro"; lk.target = "_blank"; lk.rel = "noopener";
+    box.appendChild(lk);
+    return box;
   }
 
   /* ---------- cine deține terenul: nu publicăm nume; arătăm drumul legal, pas cu pas ---------- */

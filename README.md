@@ -72,6 +72,7 @@ python -m pipeline.eval_judge qwen3.5:4b                          # testează ju
 - Fundalul hărții: [Sentinel-2 cloudless](https://s2maps.eu) de EOX IT Services GmbH (CC BY-NC-SA 4.0), Esri World Imagery, © OpenStreetMap
 - Ariile protejate: [Agenția Europeană de Mediu](https://www.eea.europa.eu/), Natura 2000 și ariile protejate naționale (CDDA), CC BY 4.0; le aduce workflow-ul „Arii protejate” (`python -m pipeline.static_arii`) în `data/arii_ro.geojson` și `docs/data/static/arii.geojson`. La fiecare zonă scriem doar în ce arie cade; nivelul de încredere nu se schimbă după asta
 - Numele localităților de pe hartă: GeoNames, în `docs/data/static/places.json`, și conturul țării în `docs/data/static/romania.geojson`; le reface `python -m pipeline.static_map`
+- Autorizațiile de tăiere (APV): [Inspectorul Pădurii](https://inspectorulpadurii.ro) (SUMAL 2.0, Ministerul Mediului). Pentru fiecare zonă căutăm autorizațiile la mai puțin de 500 m și le comparăm cu data schimbării, cu o toleranță de 30 de zile. Rezultatul se pune în `docs/data/permise.json`, iar site-ul îl arată doar dacă fișierul există. Harta parcelelor e publicată doar în parte, mai ales pentru pădurile private, iar autorizațiile se pot prelungi, deci lipsa unei autorizații nu dovedește o tăiere ilegală
 
 ## Aspectul site-ului
 
