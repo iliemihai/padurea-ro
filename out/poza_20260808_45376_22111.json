@@ -1,0 +1,14 @@
+[
+ {
+  "SRC_DATE2": 1720137600000,
+  "SRC_RES": 0.5,
+  "SRC_DESC": "WV02",
+  "NICE_DESC": "Vantor"
+ },
+ {
+  "SRC_DATE2": null,
+  "SRC_RES": 15,
+  "SRC_DESC": "TerraColor NextGen",
+  "NICE_DESC": "Earthstar Geographics"
+ }
+]
