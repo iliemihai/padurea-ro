@@ -98,6 +98,11 @@ jobs:
         with:
           path: data/hansen
           key: hansen-gfc-2025
+      - uses: actions/cache@v4
+        with:
+          path: data/sumal_cache.sqlite
+          key: sumal-${{ github.run_id }}
+          restore-keys: sumal-
       - uses: actions/download-artifact@v4
         with:
           pattern: group-*
@@ -107,6 +112,9 @@ jobs:
         env:
           FIRMS_MAP_KEY: ${{ secrets.FIRMS_MAP_KEY }}
         run: python -m pipeline.run_finish
+      - name: Autorizațiile de tăiere (Inspectorul Pădurii)
+        continue-on-error: true
+        run: python -m pipeline.permise
       - uses: actions/upload-artifact@v4
         with:
           name: rezultat

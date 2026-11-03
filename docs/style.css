@@ -26,6 +26,13 @@
   --color-data-un: oklch(64% 0.012 80);
   --color-fire: var(--color-ink-2);
   --color-protected: oklch(74% 0.09 245);
+  /* stările autorizației de tăiere: de la cel mai îngrijorător la cel mai liniștitor */
+  --color-aut-fara: oklch(62% 0.22 27);
+  --color-aut-expirat: oklch(72% 0.17 45);
+  --color-aut-neinceput: oklch(80% 0.13 80);
+  --color-aut-langa: oklch(74% 0.09 245);
+  --color-aut-acoperit: oklch(70% 0.11 150);
+  --color-aut-nev: oklch(58% 0.010 80);
   --color-forest-lo: oklch(23% 0.03 150);
   --color-forest-hi: oklch(43% 0.065 150);
   --color-loss-old: oklch(48% 0.02 80);
@@ -125,6 +132,12 @@ button:disabled { opacity: 0.55; cursor: not-allowed; }
 .key.mid { background: var(--color-data-mid); }
 .key.lo { background: var(--color-data-lo); }
 .key.un { background: none; border: 1.5px dashed var(--color-data-un); }
+.key.a-fara { background: var(--color-aut-fara); }
+.key.a-expirat { background: var(--color-aut-expirat); }
+.key.a-neinceput { background: var(--color-aut-neinceput); }
+.key.a-langa { background: var(--color-aut-langa); }
+.key.a-acoperit { background: var(--color-aut-acoperit); }
+.key.a-nev { background: none; border: 1.5px dashed var(--color-aut-nev); }
 .key.fire { position: relative; background: none; }
 .key.arie { background: color-mix(in oklch, var(--color-protected) 22%, transparent); border: 1px solid var(--color-protected); }
 /* chenarul albastru: aceeași culoare a încrederii, dar zona e într-o arie protejată (ca pe hartă) */
@@ -205,7 +218,14 @@ div.empty { display: flex; flex-direction: column; align-items: flex-start; gap:
 .badge { display: inline-flex; align-items: center; gap: var(--space-xs); min-height: 28px; padding: 0 var(--space-xs); border: var(--rule-hair) solid var(--color-rule); font-size: var(--text-sm); color: var(--color-ink-2); }
 .badge.ok { border-color: var(--color-muted-2); color: var(--color-ink); }
 .badge.arie { border-color: var(--color-protected); color: var(--color-ink); }
-.badge.aut { border-color: var(--color-ink-2); color: var(--color-ink); }
+.badge.aut { color: var(--color-ink); }
+.badge.aut .key { margin-right: var(--space-2xs); }
+.lgset { display: contents; }
+.lgset[hidden] { display: none; }
+.lg-acop { color: var(--color-muted); }
+.lg-acop:empty { display: none; }
+.aut-head { display: flex; align-items: center; gap: var(--space-xs); color: var(--color-ink); }
+.aut-head b { font-weight: 500; }
 .sum { color: var(--color-ink-2); max-width: 65ch; }
 .detail .lbl { padding-top: var(--space-xs); }
 

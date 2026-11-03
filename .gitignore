@@ -12,3 +12,6 @@ __pycache__/
 .hallmark/*
 !.hallmark/log.json
 docs/.hallmark/
+data/sumal_cache.sqlite
+docs/_test.html
+docs/_test/
