@@ -24,6 +24,7 @@ Stări, de la cel mai îngrijorător la cel mai liniștitor:
   probabil    autorizație în zonă, dar amenajamentul nu publică parcela ei: nu putem confirma
   acoperit    parcela autorizată acoperă zona, în intervalul tăierii
   nu_taiere   nu e tăiere de lemn (drum, agricol, incendiu): autorizațiile de tăiere nu se aplică
+  nejudecat   ar fi roșu, dar analistul AI n-a confirmat „tăiere": nu acuzăm fără ochi pe poze
 
 Nicăieri nu scriem „ilegal": harta parcelelor e publicată doar în parte, autorizațiile se pot prelungi,
 iar o zonă fără autorizație găsită e un motiv de verificat, nu o dovadă.
@@ -319,6 +320,16 @@ def clasifica(a, permis):
     fel = fel_schimbare(a)
     if fel != "taiere":
         return "nu_taiere", fel
+    stare, motiv = _stare_permis(a, permis)
+    # ca să spunem „fără autorizație", trebuie ca cineva să fi văzut pozele și să fi zis „tăiere";
+    # în eșantionul verificat, zonele roșii fără părerea AI erau câmp sau sat, nu pădure tăiată.
+    # pentru verde (există autorizație) nu cerem asta: a spune că există hârtie nu acuză pe nimeni.
+    if stare in ("fara", "neacoperit") and (a.get("ai") or {}).get("categorie") != "taiere":
+        return "nejudecat", None
+    return stare, motiv
+
+
+def _stare_permis(a, permis):
     if not permis or not permis.get("apv"):
         return "fara", None
     reala = permis.get("potrivire") in PARCELA_REALA
@@ -452,7 +463,8 @@ def potriveste(zone, apv, parcele_pol=None, apv_pe_parcela=None, raza_m=RAZA_M):
                "stare_apv": STARE.get(d.get("codStare"), d.get("stare")), "titular": (d.get("autorizatie") or {}).get("titular"),
                "start": p["start"], "end": p["end"], "volum_m3": d.get("volumInitial") or d.get("volum"),
                "tratament": d.get("tratament"), "natura": d.get("naturaProdus"),
-               "potrivire": p["metoda"], "suprapunere": supra, "dist_m": dist, "n_apv": len(cands)}
+               "potrivire": p["metoda"], "suprapunere": supra, "dist_m": dist, "n_apv": len(cands),
+               "parcela_ha": None if p["metoda"] == "estimat" else round(in_metri(p["geom"], lat).area / 1e4, 1)}
         rec["stare"], rec["motiv"] = clasifica(a, rec)
         rec["fel"] = fel_schimbare(a)
         rec["fereastra"] = interval_taiere(a)[2]

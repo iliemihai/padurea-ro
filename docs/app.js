@@ -142,7 +142,7 @@
      Pentru fiecare zonă căutăm în Inspectorul Pădurii autorizațiile din jur și le comparăm cu data schimbării.
      Zonele neverificate nu primesc nimic: lipsa unei autorizații în datele noastre nu dovedește o tăiere ilegală. */
   /* ordinea e de la cel mai îngrijorător la cel mai liniștitor; culorile vin din foaia de stil */
-  var AUT_ORD = ["fara", "neacoperit", "probabil", "acoperit", "nu_taiere", "nev"];
+  var AUT_ORD = ["fara", "neacoperit", "probabil", "acoperit", "nu_taiere", "nejudecat", "nev"];
   var AUT_T = {
     fara: { cls: "a-fara", scurt: "fără autorizație", badge: "fără autorizație", grija: true,
             lung: "Nu am găsit nicio autorizație de tăiere în jurul zonei." },
@@ -163,6 +163,8 @@
                           incendiu: "Analistul AI vede urme de foc, nu de tăiere.",
                           nori: "Analistul AI crede că schimbarea vine din nori, nu de pe teren.",
                           "toamnă": "Analistul AI crede că e doar frunza care se îngălbenește toamna." } },
+    nejudecat: { cls: "a-nev", scurt: "de confirmat pe poze", badge: "de confirmat pe poze",
+                 lung: "N-am găsit o autorizație care să acopere zona, dar analistul AI n-a confirmat că e pădure tăiată. Nu dăm roșu fără asta: în verificările noastre, astfel de zone erau de multe ori câmp sau sat. Primește o stare după ce analistul vede pozele." },
     nev: { cls: "a-nev", scurt: "încă necomparată cu autorizațiile", badge: "încă necomparată",
            lung: "Zona asta e în coadă: n-a fost încă comparată cu autorizațiile din Inspectorul Pădurii. Nu e un semn, nici bun, nici rău — va primi o stare la următoarea rulare." }
   };
@@ -173,7 +175,7 @@
   function autT(a) { return AUT_T[autStare(a)]; }
   function autGrija(a) { return !!autT(a).grija; }
   function inAut(a) { return !state.faraAut || autGrija(a); }
-  function autColor(s) { return tok("--color-aut-" + (s === "nev" ? "nev" : s)).css; }
+  function autColor(s) { return tok("--color-aut-" + (s === "nev" || s === "nejudecat" ? "nev" : s)).css; }
   function autCount(list) { var n = {}; AUT_ORD.forEach(function (k) { n[k] = 0; }); list.forEach(function (a) { n[autStare(a)]++; }); return n; }
   /* colorăm după autorizație doar dacă avem ce arăta */
   function areAut() { for (var k in AUT) return true; return false; }
@@ -371,7 +373,7 @@
   function renderTop() {
     var box = document.getElementById("top-cty"), ol = document.getElementById("top-cty-list");
     if (!box || !ol) return;
-    var all = DATA.alerts.filter(function (a) { return inPeriod(a) && state.conf[a.incredere] && inArii(a) && shownArh(a) && autStare(a) !== "nu_taiere"; });
+    var all = DATA.alerts.filter(function (a) { return inPeriod(a) && state.conf[a.incredere] && inArii(a) && shownArh(a) && autStare(a) !== "nu_taiere" && autStare(a) !== "nejudecat"; });
     var per = {};
     all.forEach(function (a) {
       var n = countyOf(a); if (!n) return;
@@ -386,6 +388,7 @@
       var li = el("li"), b = el("button"); b.type = "button"; b.setAttribute("aria-pressed", String(!!state.cty[n]));
       b.appendChild(el("span", "t", n));
       b.appendChild(el("span", "n", fmt(per[n].n)));
+      b.appendChild(el("span", "h", fmt(per[n].ha, per[n].ha < 100 ? 1 : 0)));
       var r = el("span", "r"); if (per[n].r) r.textContent = fmt(per[n].r); b.appendChild(r);
       b.title = fmt(per[n].n) + " " + (per[n].n === 1 ? "tăiere" : "tăieri") + ", " + fmt(per[n].ha, 0) + " ha" + (per[n].r ? ", " + fmt(per[n].r) + " fără autorizație valabilă" : "");
       b.addEventListener("click", function () { if (!state.cty[n]) { state.cty = {}; } toggleCounty(n, true); });
@@ -445,8 +448,8 @@
     /* cât din ce se vede a fost comparat cu autorizațiile */
     var la = document.getElementById("lg-acop");
     if (la) {
-      var nv = v.filter(function (a) { return !!aut(a); }).length;
-      la.textContent = v.length && areAut() && nv < v.length ? fmt(nv) + " din " + fmt(v.length) + " comparate cu autorizațiile" : "";
+      var nv = v.filter(function (a) { return !!aut(a) && autStare(a) !== "nejudecat"; }).length;
+      la.textContent = v.length && areAut() && nv < v.length ? fmt(nv) + " din " + fmt(v.length) + " verificate" : "";
       var ln = document.getElementById("lg-nev"); if (ln) ln.hidden = !(areAut() && nv < v.length);
     }
     var np = v.filter(isProt).length, bn = document.getElementById("ariibtn-n"), ab = document.getElementById("ariibtn");
@@ -844,6 +847,7 @@
                  v.volum_m3 != null ? fmt(v.volum_m3) + " m³" : null, v.tratament].filter(Boolean).join(" · ");
       if (det) it.appendChild(el("p", null, det));
       if (v.start && v.end) it.appendChild(el("p", null, "Tăiere permisă între " + zi(v.start, true) + " și " + zi(v.end, true) + "."));
+      if (v.parcela_ha) it.appendChild(el("p", "vfit", "Parcela autorizată are " + fmt(v.parcela_ha, 1) + " ha; din satelit se vede schimbată o suprafață de " + fmt(a.ha, 1) + " ha. Cele două nu trebuie să coincidă: o autorizație poate permite tăierea doar a unor arbori de pe toată parcela (rărituri, tăieri progresive), iar satelitul vede doar unde a dispărut coronamentul."));
       it.appendChild(el("p", "vfit", v.suprapunere > 0
         ? "Parcela autorizată acoperă " + Math.round(v.suprapunere * 100) + "% din zona schimbată."
         : "Parcela autorizată nu atinge zona schimbată; e la " + fmt(v.dist_m) + " m."));
@@ -1081,9 +1085,10 @@
       }), { pixelRatio: 2 });
     }
     ICONS.forEach(function (c) { prot_("k-" + c[1] + "-p", confColor(c[0]), c[1] === "un" ? "punctat" : "plin"); });
-    AUT_ORD.forEach(function (k) { prot_("ka-" + k + "-p", autColor(k), k === "nev" ? "punctat" : k === "probabil" ? "gol" : "plin"); });
+    AUT_ORD.forEach(function (k) { if (k !== "nejudecat") prot_("ka-" + k + "-p", autColor(k), k === "nev" ? "punctat" : k === "probabil" ? "gol" : "plin"); });
     /* aceleași pătrate, dar în culorile stărilor de autorizație */
     AUT_ORD.forEach(function (k) {
+      if (k === "nejudecat") return;
       var fill = autColor(k);
       if (k === "probabil") {
         m.addImage("ka-probabil", img(function (x) {
@@ -1119,7 +1124,7 @@
   function ptImageAut() {
     function m(suf) {
       var e = ["match", ["get", "au"]];
-      AUT_ORD.forEach(function (k) { if (k !== "nev") { e.push(k, "ka-" + k + suf); } });
+      AUT_ORD.forEach(function (k) { if (k !== "nev" && k !== "nejudecat") { e.push(k, "ka-" + k + suf); } });
       e.push("ka-nev" + suf); return e;
     }
     return ["case", ["get", "p"], m("-p"), m("")];
