@@ -422,6 +422,15 @@ def potriveste(zone, apv, parcele_pol=None, apv_pe_parcela=None, raza_m=RAZA_M):
         lat = g.centroid.y
         gm = in_metri(g, lat)
         vazut, cands = set(), []
+        # cât din zonă cade în parcelele de amenajament publicate (stat + privat): 1.0 = pădure cu amenajament;
+        # 0 = în afara lor: pășune împădurită, zăvoi, aliniament sau pădure privată fără amenajament în registru
+        amenaj = None
+        if ptree is not None:
+            hits = [parcele_pol[int(i)] for i in ptree.query(g, predicate="intersects")]
+            amenaj = 0.0
+            if hits:
+                from shapely.ops import unary_union
+                amenaj = round(min(1.0, unary_union(hits).intersection(g).area / max(g.area, 1e-12)), 2)
 
         def pune(nr):
             if nr in vazut:
@@ -447,7 +456,7 @@ def potriveste(zone, apv, parcele_pol=None, apv_pe_parcela=None, raza_m=RAZA_M):
             pune(nrs[int(i)])
         if not cands:
             st, mo = clasifica(a, None)
-            rezultat[zid] = {"stare": st, "motiv": mo, "fel": fel_schimbare(a), "n_apv": 0}
+            rezultat[zid] = {"stare": st, "motiv": mo, "fel": fel_schimbare(a), "n_apv": 0, "amenajament": amenaj}
             continue
         cut = interval_taiere(a)[:2]
         rang = {"acoperit": 0, "expirat": 1, "neinceput": 2}
@@ -468,6 +477,7 @@ def potriveste(zone, apv, parcele_pol=None, apv_pe_parcela=None, raza_m=RAZA_M):
         rec["stare"], rec["motiv"] = clasifica(a, rec)
         rec["fel"] = fel_schimbare(a)
         rec["fereastra"] = interval_taiere(a)[2]
+        rec["amenajament"] = amenaj
         ha_zona = a.get("ha") or 0
         if rec["volum_m3"] and supra > 0 and ha_zona * M3_PER_HA > 3 * float(rec["volum_m3"]):
             rec["volum_suspect"] = True

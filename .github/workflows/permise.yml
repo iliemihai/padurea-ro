@@ -2,7 +2,8 @@ name: Autorizații de tăiere
 
 # Compară zonele de pe site cu autorizațiile din Inspectorul Pădurii (SUMAL 2.0) și publică docs/data/permise.json.
 # Rularea zilnică face același lucru doar pentru zonele noi; aici se poate porni de mână, pentru tot ce a rămas
-# necomparat (sau --full, pentru a reface totul), și rulează și singură o dată pe săptămână.
+# necomparat (sau --full, pentru a reface totul), și rulează și singură o dată pe lună: comparația peste tot
+# istoricul costă ore de cereri către Inspectorul Pădurii; zilnic se compară doar zonele noi (în daily.yml).
 on:
   workflow_dispatch:
     inputs:
@@ -11,7 +12,7 @@ on:
         type: boolean
         default: false
   schedule:
-    - cron: "41 2 * * 0"   # duminica, noaptea
+    - cron: "41 2 3 * *"   # pe 3 ale lunii, noaptea
 
 permissions:
   contents: write

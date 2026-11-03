@@ -870,6 +870,14 @@
       box.appendChild(it);
     }
 
+    /* e în pădurea cu amenajament, sau în afara ei (pășune cu copaci, zăvoi, pădure fără amenajament publicat)? */
+    if (v.amenajament != null && v.stare !== "nu_taiere") {
+      var am = el("p", "vfit");
+      if (v.amenajament >= 0.5) am.textContent = "Locul e în fondul forestier cu amenajament publicat (parcele u.a.): orice tăiere aici trece prin APV.";
+      else if (v.amenajament > 0) am.textContent = "Doar " + Math.round(v.amenajament * 100) + "% din zonă cade în parcelele de amenajament publicate; restul poate fi pășune cu copaci, zăvoi sau pădure fără amenajament în registru.";
+      else am.textContent = "Locul nu cade în nicio parcelă de amenajament publicată. Poate fi pășune împădurită, zăvoi sau aliniament (copaci din afara fondului forestier) ori pădure privată fără amenajament în registru. Și acolo, tăierea arborilor cere autorizație de exploatare de la ocolul silvic (Codul silvic, art. 60), dar nu e sigur că apare în Inspectorul Pădurii. Uită-te la „Detaliat, înainte”: pădure închisă sau copaci răzleți?";
+      box.appendChild(am);
+    }
     box.appendChild(el("p", "vfit", "Harta parcelelor e publicată doar în parte, mai ales pentru pădurile private, iar autorizațiile se pot prelungi. O zonă fără autorizație găsită nu e o dovadă de tăiere ilegală — e un motiv de verificat."));
     var lk = el("a", null, "Caută în Inspectorul Pădurii"); lk.href = "https://inspectorulpadurii.ro"; lk.target = "_blank"; lk.rel = "noopener";
     box.appendChild(lk);
@@ -944,6 +952,22 @@
     ["halo", "line"].forEach(function (c) { var p = document.createElementNS(NS, "path"); p.setAttribute("d", d); p.setAttribute("class", c); svg.appendChild(p); });
     return svg;
   }
+  var ESRI = "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer";
+  var ESRI_CACHE = {};
+  function esriData(a) {
+    /* de când e poza Esri de la locul zonei: stratul de metadate al serviciului (SRC_DATE2, SRC_RES) */
+    var key = a.lat.toFixed(3) + "," + a.lon.toFixed(3);
+    if (ESRI_CACHE[key]) return ESRI_CACHE[key];
+    var u = "https://services.arcgisonline.com/arcgis/rest/services/World_Imagery/MapServer/4/query?f=json&returnGeometry=false&inSR=4326&geometryType=esriGeometryPoint&spatialRel=esriSpatialRelIntersects&outFields=SRC_DATE2,SRC_RES,NICE_DESC&geometry=" + a.lon + "," + a.lat;
+    ESRI_CACHE[key] = fetch(u).then(function (r) { return r.json(); }).then(function (j) {
+      var fs = (j.features || []).map(function (f) { return f.attributes; }).filter(function (x) { return x.SRC_DATE2; });
+      if (!fs.length) return "data pozei nu e știută";
+      fs.sort(function (x, y) { return (x.SRC_RES || 99) - (y.SRC_RES || 99); });
+      var d = new Date(fs[0].SRC_DATE2);
+      return zi(d.toISOString().slice(0, 10), true) + (fs[0].SRC_RES ? ", " + String(fs[0].SRC_RES).replace(".", ",") + " m/pixel" : "");
+    }).catch(function () { return "data pozei nu e știută"; });
+    return ESRI_CACHE[key];
+  }
   function compare(a, big) {
     var wrap = el("div", "cmp" + (big ? " big" : "")), b = a.img_before, f = a.img_after;
     if (!f) { wrap.appendChild(el("p", "hint", "Nu avem încă o imagine curată a zonei.")); return wrap; }
@@ -954,8 +978,9 @@
       [["blink", "Clipește"], ["swipe", "Glisează"], ["side", "Una lângă alta"]].forEach(function (m) {
         var x = el("button", null, m[1]); x.type = "button"; x.dataset.mode = m[0]; seg.appendChild(x);
       });
-      top.appendChild(seg);
     }
+    if (a.chip_bbox) { var xe = el("button", null, "Detaliat, înainte"); xe.type = "button"; xe.dataset.mode = "esri"; seg.appendChild(xe); }
+    if (seg.children.length) top.appendChild(seg);
     var ln = el("button", "mini", "Contur"); ln.type = "button"; ln.setAttribute("aria-pressed", "true"); top.appendChild(ln);
     var pz = el("button", "mini", "Pauză"), paused = false, onPause = null; pz.type = "button"; pz.setAttribute("aria-pressed", "false"); pz.hidden = true; top.appendChild(pz);
     pz.addEventListener("click", function () { if (onPause) onPause(!paused); });
@@ -974,6 +999,19 @@
       stage.replaceChildren();
       onPause = null; pz.hidden = mode !== "blink";
       Array.prototype.forEach.call(seg.children, function (x) { x.setAttribute("aria-pressed", String(x.dataset.mode === mode)); });
+      if (mode === "esri") {
+        /* poza detaliată Esri (0,3–1 m, de obicei cu 1–4 ani în urmă): arată ce era acolo înainte, copac cu copac. Se ia direct de la Esri, la afișare. */
+        var bb = a.chip_bbox, fig2 = el("figure"), ie = el("img"), box2 = frame(ie), cap2 = el("figcaption");
+        ie.alt = "Poză detaliată de dinainte, Esri World Imagery";
+        ie.src = ESRI + "/export?bbox=" + bb.join(",") + "&bboxSR=4326&imageSR=3857&size=900,900&format=jpg&f=image";
+        box2.style.aspectRatio = "1 / 1";
+        box2.appendChild(ie); addLine(box2); fig2.appendChild(box2);
+        cap2.appendChild(el("span", "k", "Înainte, detaliat")); var cv = el("span", "v", "se caută data pozei…"); cap2.appendChild(cv);
+        fig2.appendChild(cap2); stage.appendChild(fig2);
+        hint.textContent = "Poză Esri World Imagery (Maxar și altele), la 0,3–1 m: se văd copacii unul câte unul. E de dinainte cu 1–4 ani, nu de azi. Compar-o cu „După”: dacă aici era pădure închisă, iar după e sol gol, e tăiere; dacă era pășune cu copaci răzleți, e altceva. © Esri, Maxar, Earthstar Geographics.";
+        esriData(a).then(function (t) { cv.textContent = t; });
+        return;
+      }
       if (mode === "side") {
         var g = el("div", "side");
         [[b, "Înainte"], [f, "După"]].forEach(function (p) {
