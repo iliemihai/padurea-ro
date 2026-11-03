@@ -295,7 +295,7 @@ def parcele_apv(con):
         pol.append(g)
     tree = STRtree(pol) if pol else None
 
-    out = {}
+    out, pe_parcela = {}, {}
     for nr, _, js in con.execute("SELECT nr,adus,json FROM apv"):
         d = json.loads(js)
         r = (d.get("rampePrimare") or [])
@@ -329,16 +329,25 @@ def parcele_apv(con):
         out[nr] = {"geom": geom, "metoda": metoda, "lat": lat, "lng": lng, "d": d,
                    "start": min((p[0] for p in per), default=None),
                    "end": max((p[1] for p in per), default=None)}
-    return out
+        for i in alese:
+            pe_parcela.setdefault(i, []).append(nr)
+    return out, pol, pe_parcela
 
 
-def potriveste(zone, apv, raza_m=RAZA_M):
-    """Pentru fiecare zonă, autorizația care o explică cel mai bine."""
+def potriveste(zone, apv, parcele_pol=None, apv_pe_parcela=None, raza_m=RAZA_M):
+    """Pentru fiecare zonă, autorizația care o explică cel mai bine.
+
+    Căutăm pe două căi, pentru că raza singură nu e de ajuns. Punctul unei autorizații e de multe ori
+    rampa primară, nu locul tăierii: la o parcelă mare, rampa poate fi la un kilometru de unde s-a tăiat.
+    Așa că ne uităm și la parcela din amenajament în care cade zona, și luăm toate autorizațiile emise
+    pe acea parcelă, oricât de departe ar fi punctul lor.
+    """
     from shapely.geometry import shape
     from shapely.strtree import STRtree
 
     nrs = list(apv)
     tree = STRtree([apv[n]["geom"] for n in nrs])
+    ptree = STRtree(parcele_pol) if parcele_pol else None
     rezultat, parcele = {}, {}
     for zid, a in zone.items():
         g = shape(a["geometry"])
@@ -346,14 +355,30 @@ def potriveste(zone, apv, raza_m=RAZA_M):
             g = g.buffer(0)
         lat = g.centroid.y
         gm = in_metri(g, lat)
-        cands = []
-        for i in tree.query(g.buffer(grade_acoperitoare(lat, raza_m))):
-            p = apv[nrs[int(i)]]
+        vazut, cands = set(), []
+
+        def pune(nr):
+            if nr in vazut:
+                return
+            vazut.add(nr)
+            p = apv[nr]
             supra = g.intersection(p["geom"]).area / max(g.area, 1e-12)
             dist = gm.distance(in_metri(p["geom"], lat))
-            if supra <= 0 and dist > raza_m:
-                continue   # intrase doar prin colțul pătratului
-            cands.append((nrs[int(i)], p, round(supra, 4), round(dist)))
+            if supra <= 0 and dist > raza_m and nr not in prin_parcela:
+                return   # intrase doar prin colțul pătratului de căutare
+            cands.append((nr, p, round(supra, 4), round(dist)))
+
+        # (a) autorizațiile emise pe parcela în care cade zona — fără limită de distanță
+        prin_parcela = set()
+        if ptree is not None and apv_pe_parcela:
+            for i in ptree.query(g, predicate="intersects"):
+                for nr in apv_pe_parcela.get(int(i), []):
+                    prin_parcela.add(nr)
+        for nr in prin_parcela:
+            pune(nr)
+        # (b) autorizațiile din raza din jurul zonei
+        for i in tree.query(g.buffer(grade_acoperitoare(lat, raza_m))):
+            pune(nrs[int(i)])
         if not cands:
             rezultat[zid] = {"stare": "fara", "n_apv": 0}
             continue
@@ -412,6 +437,53 @@ def citeste_existent():
     return {}
 
 
+def vecini_apv(L, geoms, k=15, raza_max_m=5000, an_minim="24"):
+    """Cele mai apropiate k autorizații de fiecare zonă, nu toate dintr-o rază fixă.
+
+    Punctul unei autorizații e de obicei rampa primară, nu locul tăierii: la o parcelă mare poate fi
+    la un kilometru și mai bine. O rază fixă de câteva sute de metri le pierde pe acelea, iar una
+    largă ar însemna zeci de mii de cereri. Luăm, pentru fiecare zonă, cele mai apropiate k puncte
+    de până la `raza_max_m` — același cost, dar ajungem mult mai departe.
+    """
+    pas = 0.02
+    grid = {}
+    for i in range(len(L["nr"])):
+        lat, lng = L["lat"][i], L["lng"][i]
+        if lat is None or L["nr"][i][:2] < an_minim:
+            continue
+        grid.setdefault((math.floor(lat / pas), math.floor(lng / pas)), []).append(i)
+
+    ales = {}
+    for g in geoms:
+        c = g.centroid
+        lat, lng = c.y, c.x
+        inele = max(1, math.ceil(grid_raze(lat, raza_max_m, pas)))
+        gasit = []
+        for r in range(0, inele + 1):
+            if len(gasit) >= k and r > 1:
+                break
+            ci, cj = math.floor(lat / pas), math.floor(lng / pas)
+            for i in range(ci - r, ci + r + 1):
+                for j in range(cj - r, cj + r + 1):
+                    if r and max(abs(i - ci), abs(j - cj)) != r:
+                        continue   # doar inelul nou
+                    for idx in grid.get((i, j), []):
+                        dx = (L["lng"][idx] - lng) * m_per_deg_lon(lat)
+                        dy = (L["lat"][idx] - lat) * M_PER_DEG_LAT
+                        d = math.hypot(dx, dy)
+                        if d <= raza_max_m:
+                            gasit.append((d, idx))
+        gasit.sort()
+        for _, idx in gasit[:k]:
+            ales[L["nr"][idx]] = (L["lat"][idx], L["lng"][idx])
+    return [(nr, la, lo) for nr, (la, lo) in ales.items()]
+
+
+def grid_raze(lat, raza_m, pas):
+    """Câte inele de pătrate acoperă raza dată."""
+    return raza_m / (min(m_per_deg_lon(lat), M_PER_DEG_LAT) * pas)
+
+
 # ---------------------------------------------------------------- comenzi
 def cmd_retime(args):
     """Recalculează doar stările, din ce avem deja. Fără rețea."""
@@ -449,14 +521,7 @@ def cmd_run(args):
 
     print("iau lista de autorizații...")
     L = puncte_apv()
-    cls = set(celule(geoms, RAZA_M, CELL))
-    nrs = []
-    for k in range(len(L["nr"])):
-        lat, lng = L["lat"][k], L["lng"][k]
-        if lat is None:
-            continue
-        if (math.floor(lat / CELL), math.floor(lng / CELL)) in cls:
-            nrs.append((L["nr"][k], lat, lng))
+    nrs = vecini_apv(L, geoms, args.vecini, args.raza_cautare, args.an_minim)
     print(f"  {len(nrs)} autorizații în jurul zonelor")
     adu_apv(con, [n for n, _, _ in nrs])
     # punem coordonatele din listă în detaliile salvate (detaliul nu le are)
@@ -473,8 +538,8 @@ def cmd_run(args):
     adu_parcele(con, celule(geoms, RAZA_M, TILE))
 
     print("potrivesc...")
-    apv = parcele_apv(con)
-    rez, parcele = potriveste(tinta, apv)
+    apv, parcele_pol, apv_pe_parcela = parcele_apv(con)
+    rez, parcele = potriveste(tinta, apv, parcele_pol, apv_pe_parcela, raza_m=args.raza)
     vechi.update(rez)
     scrie(vechi, parcele)
 
@@ -485,6 +550,10 @@ def main(argv=None):
     ap.add_argument("--retime", action="store_true", help="doar recalculează stările, fără rețea")
     ap.add_argument("--judet", help="doar zonele dintr-un județ")
     ap.add_argument("--limit", type=int, help="cel mult N zone (pentru probe)")
+    ap.add_argument("--raza", type=float, default=RAZA_M, help="cât de departe de zonă poate fi o autorizație ca să o legăm de ea, în metri")
+    ap.add_argument("--vecini", type=int, default=15, help="câte autorizații apropiate aducem pentru fiecare zonă")
+    ap.add_argument("--raza-cautare", type=float, default=5000, help="cât de departe căutăm autorizații apropiate, în metri")
+    ap.add_argument("--an-minim", default="24", help="numărul APV începe cu anul: 24 = din 2024 încoace")
     a = ap.parse_args(argv)
     (cmd_retime if a.retime else cmd_run)(a)
 
