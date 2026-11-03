@@ -305,6 +305,11 @@
     document.getElementById("base").addEventListener("click", function (e) {
       var b = e.target.closest("button"); if (b && !b.disabled) setBase(b.dataset.base);
     });
+    var lb = document.getElementById("lgbtn");
+    if (lb) lb.addEventListener("click", function () {
+      var deschis = document.getElementById("legend").classList.toggle("open");
+      lb.setAttribute("aria-expanded", String(deschis));
+    });
     document.getElementById("splitbtn").addEventListener("click", function () { toggleSplit(this.getAttribute("aria-pressed") !== "true"); });
     document.getElementById("lyr-split").addEventListener("change", function (e) { toggleSplit(e.target.checked); });
   }
