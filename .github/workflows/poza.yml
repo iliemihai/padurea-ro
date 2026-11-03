@@ -1,0 +1,31 @@
+name: Poza detaliată (Esri)
+
+# Descarcă imaginea Esri World Imagery („ce era înainte”) pentru zonele date și o pune ca artefact al rulării.
+on:
+  workflow_dispatch:
+    inputs:
+      zone:
+        description: "ID-uri de zone, despărțite prin spațiu"
+        type: string
+        required: true
+      zoom:
+        description: "Zoom (17 = ~1 m/pixel)"
+        type: string
+        default: "17"
+
+jobs:
+  poza:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - run: python -m pipeline.poza --zoom "${{ inputs.zoom }}" ${{ inputs.zone }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: poze
+          path: out/poza_*
