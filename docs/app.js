@@ -12,7 +12,7 @@
 
   var state = { days: 30, conf: { "ridicată": true, "medie": true, "scăzută": false }, shown: 40, sel: null, years: [21, 25], cty: {}, arii: false, ariiMode: false, faraAut: false, culoare: "aut" };
   var DATA = { alerts: [], data_until: null, generated: null }, RUNS = [], VERIF = {}, FIRMS_FC = null, map, hansen = null;
-  var AUT = {}, AUT_META = null; /* autorizațiile de tăiere (APV) din Inspectorul Pădurii, potrivite cu zonele */
+  var AUT = {}, AUT_META = null, STIRI = {}; /* și știrile care numesc locul zonei */ /* autorizațiile de tăiere (APV) din Inspectorul Pădurii, potrivite cu zonele */
   var ARH = null, ARH_LOADED = {}; /* arhiva pe luni: indexul și lunile deja aduse */
   var COUNTY_BB = {}, RO_FC = null, PLACE_LAYERS = ["pl-5", "pl-4", "pl-3", "pl-2", "pl-01"];
   /* literele pentru numele de pe hartă (Noto Sans) stau lângă pagină, în fonts/; harta nu iese din jurul României */
@@ -96,9 +96,11 @@
     getJSON("data/verificari.json").catch(function () { return null; }),
     getJSON("data/firms.geojson").catch(function () { return null; }),
     getJSON("data/arhiva/index.json").catch(function () { return null; }),
-    getJSON("data/permise.json").catch(function () { return null; })
+    getJSON("data/permise.json").catch(function () { return null; }),
+    getJSON("data/stiri.json").catch(function () { return null; })
   ]).then(function (res) {
     AUT = (res[7] && res[7].zone) || {}; AUT_META = res[7] || null;
+    STIRI = (res[8] && res[8].zone) || {};
     ARH = res[6] && res[6].luni && res[6].luni.length ? res[6] : null;
     FIRMS_FC = res[5] || { type: "FeatureCollection", features: [] };
     if (res[0]) { DATA = res[0]; DATA.alerts = (DATA.alerts || []).filter(isPublic); }
@@ -452,6 +454,12 @@
       la.textContent = v.length && areAut() && nv < v.length ? fmt(nv) + " din " + fmt(v.length) + " verificate" : "";
       var ln = document.getElementById("lg-nev"); if (ln) ln.hidden = !(areAut() && nv < v.length);
     }
+    var pr = document.getElementById("presa");
+    if (pr) {
+      var rosii = v.filter(autGrija), inp = rosii.filter(inPresa).length;
+      pr.hidden = !rosii.length || !Object.keys(STIRI).length;
+      pr.textContent = rosii.length ? fmt(inp) + " din " + fmt(rosii.length) + " " + (rosii.length === 1 ? "zonă" : "zone") + " fără autorizație valabilă au apărut în presă" : "";
+    }
     var np = v.filter(isProt).length, bn = document.getElementById("ariibtn-n"), ab = document.getElementById("ariibtn");
     if (bn) bn.replaceChildren(el("b", null, fmt(np)), document.createTextNode(" " + (np === 1 ? "zonă" : de(np) + "zone")));
     if (ab) ab.title = np === 1 ? "O zonă din cele afișate e într-o arie protejată" : fmt(np) + " " + de(np) + "zone din cele afișate sunt în arii protejate";
@@ -524,6 +532,7 @@
       b.appendChild(el("span", "p", headline(a).t));
       b.appendChild(el("span", "a", fmt(a.ha, 1) + " ha"));
       if (isVerified(a)) meta.push("verificat și din alte surse");
+      if (inPresa(a)) meta.push("a apărut în presă");
       if (aut(a)) meta.push(autT(a).scurt);
       if (a.arii && a.arii.length) meta.push("în arie protejată");
       if (a.extinsa) meta.push("s-a lărgit pe " + ziScurt(a.extinsa));
@@ -573,6 +582,7 @@
     var bd = el("div", "badges");
     var c1 = el("span", "badge"); c1.appendChild(key(a.incredere)); c1.appendChild(document.createTextNode("încredere " + a.incredere)); bd.appendChild(c1);
     if (isVerified(a)) bd.appendChild(el("span", "badge ok", "verificat și din alte surse"));
+    if (inPresa(a)) bd.appendChild(el("span", "badge ok", "a apărut în presă"));
     if (aut(a)) {
       var t = autT(a), ba = el("span", "badge aut" + (t.ok ? " ok" : ""));
       ba.appendChild(el("i", "key " + t.cls)); ba.appendChild(document.createTextNode(t.badge));
@@ -715,8 +725,9 @@
       text: "Sateliții NASA au văzut " + fi.n + (fi.n === 1 ? " punct" : " " + de(fi.n) + "puncte") + " de foc la cel mult " + fmt(fi.dist_m) + " m de zonă, " + rangeTxt(fi.prima, fi.ultima) + (fi.surse ? " (" + fi.surse.join(", ") + ")" : "") + "." });
     else if (fi) out.push({ sursa: "NASA FIRMS, senzori în infraroșu", potrivire: "nimic",
       text: "Sateliții NASA n-au văzut foc la sub 750 m de zonă " + rangeTxt(fi.de_la, fi.pana_la) + ". Focurile mici sau ascunse de nori pot scăpa." });
-    return out.concat(VERIF[a.id] || []);
+    return out.concat(VERIF[a.id] || []).concat(STIRI[a.id] || []);
   }
+  function inPresa(a) { return !!(STIRI[a.id] && STIRI[a.id].length); }
   function isVerified(a) { return verifItems(a).some(function (v) { return v.potrivire !== "nimic"; }); }
   function verifBlock(items) {
     var box = el("div", "verif");
