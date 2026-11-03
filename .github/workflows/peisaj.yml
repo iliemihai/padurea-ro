@@ -1,0 +1,51 @@
+name: Peisajul zonelor
+
+# Contextul fiecărei zone (relief, WorldCover, coronament Hansen, drumuri/ape/sate din OSM): docs/data/peisaj.json.
+on:
+  workflow_dispatch:
+    inputs:
+      full:
+        description: "Reface pentru toate zonele (altfel doar cele fără context)"
+        type: boolean
+        default: false
+      limit:
+        description: "Doar primele N zone (probă); gol = toate"
+        type: string
+        default: ""
+  schedule:
+    - cron: "17 3 * * 0"   # duminica, noaptea: zonele noi din săptămână
+
+permissions:
+  contents: write
+
+concurrency:
+  group: peisaj
+  cancel-in-progress: false
+
+jobs:
+  peisaj:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - uses: actions/cache@v4
+        with:
+          path: data/hansen
+          key: hansen-gfc-2025
+      - name: Peisajul
+        run: python -m pipeline.peisaj ${{ inputs.full && '--full' || '' }} ${{ inputs.limit && format('--limit {0}', inputs.limit) || '' }}
+      - name: Salvez în repo
+        run: |
+          git config user.name "padurea-ro bot"
+          git config user.email "actions@users.noreply.github.com"
+          cp docs/data/peisaj.json /tmp/peisaj.json
+          git fetch origin main && git reset --hard origin/main
+          cp /tmp/peisaj.json docs/data/peisaj.json
+          git add docs/data/peisaj.json
+          git commit -m "Peisaj: $(date -u +%Y-%m-%d)" || echo "nimic nou"
+          git push origin HEAD:main
