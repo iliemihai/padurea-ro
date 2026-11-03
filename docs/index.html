@@ -9,7 +9,7 @@
 <meta property="og:description" content="Schimbări în pădurile României, văzute din satelit, actualizate zilnic.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23030201'/%3E%3Crect x='11' y='11' width='10' height='10' fill='%23f97c3d'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style.css?v=202611031548">
 </head>
 <body>
 <div class="app">
@@ -27,9 +27,10 @@
         <button type="button" data-days="7">7 zile</button>
         <button type="button" data-days="30" aria-pressed="true">30 de zile</button>
         <button type="button" data-days="90">90 de zile</button>
+        <button type="button" data-days="all">Tot istoricul</button>
       </div>
       <label class="slider" for="ndays">
-        <span>Sau alege câte zile în urmă: <b id="ndays-v">ultimele 30 de zile</b></span>
+        <span>Sau glisează: <b id="ndays-v">ultimele 30 de zile</b></span>
         <input type="range" id="ndays" min="1" max="180" step="1" value="30">
       </label>
       <p class="range" id="range"></p>
@@ -129,7 +130,7 @@
         <span><i class="key a-probabil" aria-hidden="true"></i>probabil cu autorizație</span>
         <span><i class="key a-acoperit" aria-hidden="true"></i>cu autorizație</span>
         <span><i class="key a-nu_taiere" aria-hidden="true"></i>nu e tăiere de pădure</span>
-        <span><i class="key a-nev" aria-hidden="true"></i>neverificată</span>
+        <span id="lg-nev"><i class="key a-nev" aria-hidden="true"></i>încă necomparată</span>
         <span id="lg-acop" class="lg-acop"></span>
       </span>
       <span id="lg-conf" class="lgset">
@@ -144,6 +145,6 @@
   </main>
 </div>
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-<script src="app.js"></script>
+<script src="app.js?v=202611031548"></script>
 </body>
 </html>

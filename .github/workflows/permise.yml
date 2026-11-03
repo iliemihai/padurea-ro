@@ -1,0 +1,58 @@
+name: Autorizații de tăiere
+
+# Compară zonele de pe site cu autorizațiile din Inspectorul Pădurii (SUMAL 2.0) și publică docs/data/permise.json.
+# Rularea zilnică face același lucru doar pentru zonele noi; aici se poate porni de mână, pentru tot ce a rămas
+# necomparat (sau --full, pentru a reface totul), și rulează și singură o dată pe săptămână.
+on:
+  workflow_dispatch:
+    inputs:
+      full:
+        description: "Reface verdictele pentru toate zonele (altfel doar pe cele fără verdict)"
+        type: boolean
+        default: false
+  schedule:
+    - cron: "41 2 * * 0"   # duminica, noaptea
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pipeline
+  cancel-in-progress: false
+
+jobs:
+  permise:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - uses: actions/cache@v4
+        with:
+          path: data/sumal_cache.sqlite
+          key: sumal-${{ github.run_id }}
+          restore-keys: sumal-
+      - name: Autorizațiile din Inspectorul Pădurii
+        run: python -m pipeline.permise ${{ inputs.full && '--full' || '' }}
+      - name: Salvez în repo
+        run: |
+          git config user.name "padurea-ro bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A docs/data/permise.json docs/data/parcele.json 2>/dev/null || git add -A docs/data/permise.json
+          git commit -m "Autorizații: $(date -u +%Y-%m-%d)" || echo "nimic nou"
+          git pull --rebase origin main && git push origin HEAD:main
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs
+      - id: deploy
+        uses: actions/deploy-pages@v4

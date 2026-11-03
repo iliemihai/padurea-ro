@@ -162,8 +162,8 @@
                           incendiu: "Analistul AI vede urme de foc, nu de tăiere.",
                           nori: "Analistul AI crede că schimbarea vine din nori, nu de pe teren.",
                           "toamnă": "Analistul AI crede că e doar frunza care se îngălbenește toamna." } },
-    nev: { cls: "a-nev", scurt: "autorizația neverificată", badge: "neverificată",
-           lung: "Zona asta încă n-a fost comparată cu autorizațiile din Inspectorul Pădurii." }
+    nev: { cls: "a-nev", scurt: "încă necomparată cu autorizațiile", badge: "încă necomparată",
+           lung: "Zona asta e în coadă: n-a fost încă comparată cu autorizațiile din Inspectorul Pădurii. Nu e un semn, nici bun, nici rău — va primi o stare la următoarea rulare." }
   };
   /* numele vechi, ca o hartă deschisă cu datele de ieri să nu arate goluri */
   var AUT_VECHI = { in_perioada: "acoperit", in_apropiere: "probabil", langa: "probabil", neclar: "probabil", afara: "neacoperit", expirat: "neacoperit", neinceput: "neacoperit" };
@@ -217,8 +217,11 @@
   /* perioada: butoanele și glisorul arată mereu același număr de zile */
   function setPeriod(n, silent) {
     state.days = Math.max(1, Math.min(3650, n | 0));
-    Array.prototype.forEach.call(document.querySelectorAll("#periods button"), function (b) { b.setAttribute("aria-pressed", String(+b.dataset.days === state.days)); });
     var nd = document.getElementById("ndays");
+    Array.prototype.forEach.call(document.querySelectorAll("#periods button"), function (b) {
+      var d = b.dataset.days === "all" ? +nd.max : +b.dataset.days;
+      b.setAttribute("aria-pressed", String(d === state.days));
+    });
     nd.value = Math.min(+nd.max, state.days);
     document.getElementById("ndays-v").textContent = daysLabel(state.days);
     document.getElementById("period-hint").hidden = state.days > 3;
@@ -254,7 +257,7 @@
 
   function initControls() {
     var per = document.getElementById("periods"), nd = document.getElementById("ndays");
-    per.addEventListener("click", function (e) { var b = e.target.closest("button"); if (b) setPeriod(+b.dataset.days); });
+    per.addEventListener("click", function (e) { var b = e.target.closest("button"); if (b) setPeriod(b.dataset.days === "all" ? +nd.max : +b.dataset.days); });
     nd.addEventListener("input", function () { setPeriod(+nd.value); });
     var cov = coverageDays();
     if (cov) nd.max = String(Math.max(7, cov));
@@ -415,7 +418,8 @@
     var la = document.getElementById("lg-acop");
     if (la) {
       var nv = v.filter(function (a) { return !!aut(a); }).length;
-      la.textContent = v.length && areAut() ? fmt(nv) + " din " + fmt(v.length) + " verificate" : "";
+      la.textContent = v.length && areAut() && nv < v.length ? fmt(nv) + " din " + fmt(v.length) + " comparate cu autorizațiile" : "";
+      var ln = document.getElementById("lg-nev"); if (ln) ln.hidden = !(areAut() && nv < v.length);
     }
     var np = v.filter(isProt).length, bn = document.getElementById("ariibtn-n"), ab = document.getElementById("ariibtn");
     if (bn) bn.replaceChildren(el("b", null, fmt(np)), document.createTextNode(" " + (np === 1 ? "zonă" : de(np) + "zone")));
