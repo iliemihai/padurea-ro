@@ -6,3 +6,4 @@ planetary-computer>=1.0
 shapely>=2.0
 pyproj>=3.6
 pillow>=10.1
+requests>=2.31

@@ -10,7 +10,7 @@
   var LUNI = ["ian.", "feb.", "mar.", "apr.", "mai", "iun.", "iul.", "aug.", "sept.", "oct.", "nov.", "dec."];
   var LUNI_L = ["ianuarie", "februarie", "martie", "aprilie", "mai", "iunie", "iulie", "august", "septembrie", "octombrie", "noiembrie", "decembrie"];
 
-  var state = { days: 30, conf: { "ridicată": true, "medie": true, "scăzută": false }, shown: 40, sel: null, years: [21, 25], cty: {}, arii: false, ariiMode: false, faraAut: false };
+  var state = { days: 30, conf: { "ridicată": true, "medie": true, "scăzută": false }, shown: 40, sel: null, years: [21, 25], cty: {}, arii: false, ariiMode: false, faraAut: false, culoare: "aut" };
   var DATA = { alerts: [], data_until: null, generated: null }, RUNS = [], VERIF = {}, FIRMS_FC = null, map, hansen = null;
   var AUT = {}, AUT_META = null; /* autorizațiile de tăiere (APV) din Inspectorul Pădurii, potrivite cu zonele */
   var ARH = null, ARH_LOADED = {}; /* arhiva pe luni: indexul și lunile deja aduse */
@@ -71,7 +71,18 @@
   }
   function confColor(c) { return tok(CONF_TOKEN[c] || "--color-data-lo").css; }
   function colorMatch() { return ["match", ["get", "c"], "ridicată", confColor("ridicată"), "medie", confColor("medie"), "scăzută", confColor("scăzută"), confColor("de confirmat")]; }
+  function colorAutMatch() {
+    var m = ["match", ["get", "au"]];
+    AUT_ORD.forEach(function (k) { if (k !== "nev") { m.push(k, autColor(k)); } });
+    m.push(autColor("nev")); return m;
+  }
+  function culoareZone() { return peAut() ? colorAutMatch() : colorMatch(); }
   function key(c, prot) { var k = el("i", "key " + confCls(c) + (prot ? " p" : "")); k.setAttribute("aria-hidden", "true"); return k; }
+  /* pătratul din listă: după autorizație când asta e culoarea aleasă, altfel după încredere */
+  function keyFor(a, prot) {
+    if (!peAut()) return key(a.incredere, prot);
+    var k = el("i", "key " + AUT_T[autStare(a)].cls + (prot ? " p" : "")); k.setAttribute("aria-hidden", "true"); return k;
+  }
   function isProt(a) { return !!(a.arii && a.arii.length); }
 
   /* ---------- datele ---------- */
@@ -96,6 +107,8 @@
     try { initMap(res[2], res[3]); } catch (e) { mapMissing(); }
     initControls();
     initCounties(res[3]);
+    document.getElementById("lg-conf").hidden = peAut();
+    document.getElementById("lg-aut").hidden = !peAut();
     renderAll();
     var m = location.hash.match(/a=([\w-]+)/);
     if (m) selectById(m[1], true);
@@ -128,16 +141,34 @@
   /* ---------- autorizațiile de tăiere (APV) ----------
      Pentru fiecare zonă căutăm în Inspectorul Pădurii autorizațiile din jur și le comparăm cu data schimbării.
      Zonele neverificate nu primesc nimic: lipsa unei autorizații în datele noastre nu dovedește o tăiere ilegală. */
+  /* ordinea e de la cel mai îngrijorător la cel mai liniștitor; culorile vin din foaia de stil */
+  var AUT_ORD = ["fara", "expirat", "neinceput", "langa", "acoperit", "nev"];
   var AUT_T = {
-    in_perioada: { badge: "are autorizație în perioadă", ok: true, scurt: "cu autorizație" },
-    expirat: { badge: "autorizația expirase", atentie: true, scurt: "autorizația expirase" },
-    neinceput: { badge: "autorizația nu începuse", atentie: true, scurt: "autorizația nu începuse" },
-    in_apropiere: { badge: "autorizație doar în apropiere", scurt: "autorizație doar în apropiere" },
-    fara: { badge: "nicio autorizație găsită", atentie: true, scurt: "nicio autorizație găsită" }
+    fara: { cls: "a-fara", scurt: "nicio autorizație găsită", badge: "nicio autorizație găsită",
+            lung: "Nu am găsit nicio autorizație de tăiere în jurul zonei, pentru perioada în care s-a tăiat.", grija: true },
+    expirat: { cls: "a-expirat", scurt: "autorizația expirase", badge: "autorizația expirase",
+               lung: "Peste zonă există o autorizație, dar se terminase înainte ca pădurea să fie încă întreagă aici.", grija: true },
+    neinceput: { cls: "a-neinceput", scurt: "autorizația a început după", badge: "autorizația a început după",
+                 lung: "Peste zonă există o autorizație, dar începe după ce schimbarea se vedea deja.", grija: true },
+    langa: { cls: "a-langa", scurt: "autorizație, dar nu se potrivește", badge: "autorizație, dar nu se potrivește",
+             lung: "Am găsit o autorizație în zonă, dar nu o putem lega de schimbarea asta: ori parcela ei nu atinge zona, ori nu știm exact unde e parcela." },
+    acoperit: { cls: "a-acoperit", scurt: "cu autorizație", badge: "cu autorizație", ok: true,
+                lung: "Peste zonă există o autorizație de tăiere, valabilă în intervalul în care s-a tăiat." },
+    nev: { cls: "a-nev", scurt: "autorizația neverificată", badge: "neverificată",
+           lung: "Zona asta încă n-a fost comparată cu autorizațiile din Inspectorul Pădurii." }
   };
+  /* numele vechi, ca o hartă deschisă cu datele de ieri să nu arate goluri */
+  var AUT_VECHI = { in_perioada: "acoperit", in_apropiere: "langa" };
   function aut(a) { return AUT[a.id] || null; }
-  function autFara(a) { var v = aut(a); return !!v && !!(AUT_T[v.stare] || {}).atentie; }
-  function inAut(a) { return !state.faraAut || autFara(a); }
+  function autStare(a) { var v = aut(a); if (!v) return "nev"; return AUT_VECHI[v.stare] || v.stare; }
+  function autT(a) { return AUT_T[autStare(a)]; }
+  function autGrija(a) { return !!autT(a).grija; }
+  function inAut(a) { return !state.faraAut || autGrija(a); }
+  function autColor(s) { return tok("--color-aut-" + (s === "nev" ? "nev" : s)).css; }
+  function autCount(list) { var n = {}; AUT_ORD.forEach(function (k) { n[k] = 0; }); list.forEach(function (a) { n[autStare(a)]++; }); return n; }
+  /* colorăm după autorizație doar dacă avem ce arăta */
+  function areAut() { for (var k in AUT) return true; return false; }
+  function peAut() { return state.culoare === "aut" && areAut(); }
 
   /* județele alese, pe hartă sau din listă; niciunul = toată țara */
   function countyOf(a) { return (a.uat && a.uat.judet) || a.county || ""; }
@@ -253,8 +284,16 @@
     if (DATA.alerts.some(function (a) { return a.arii && a.arii.length; })) document.getElementById("tg-only-arii").hidden = false;
     oa.addEventListener("change", function () { setOnlyArii(oa.checked); });
     var fa = document.getElementById("only-fara-aut");
-    if (DATA.alerts.some(autFara)) document.getElementById("tg-fara-aut").hidden = false;
+    if (DATA.alerts.some(autGrija)) document.getElementById("tg-fara-aut").hidden = false;
     fa.addEventListener("change", function () { state.faraAut = fa.checked; state.shown = 40; renderAll(); });
+    if (areAut()) {
+      document.getElementById("culoare").hidden = false;
+      document.getElementById("culoare").addEventListener("click", function (e) {
+        var b = e.target.closest("button"); if (b) setCuloare(b.dataset.culoare);
+      });
+    } else {
+      state.culoare = "incredere";
+    }
     document.getElementById("base").addEventListener("click", function (e) {
       var b = e.target.closest("button"); if (b && !b.disabled) setBase(b.dataset.base);
     });
@@ -359,6 +398,12 @@
       var d = el("div"); d.appendChild(el("b", null, x[0])); d.appendChild(el("span", null, x[1])); st.appendChild(d);
     });
     renderSpark(v);
+    /* cât din ce se vede a fost comparat cu autorizațiile */
+    var la = document.getElementById("lg-acop");
+    if (la) {
+      var nv = v.filter(function (a) { return !!aut(a); }).length;
+      la.textContent = v.length && areAut() ? fmt(nv) + " din " + fmt(v.length) + " verificate" : "";
+    }
     var np = v.filter(isProt).length, bn = document.getElementById("ariibtn-n"), ab = document.getElementById("ariibtn");
     if (bn) bn.replaceChildren(el("b", null, fmt(np)), document.createTextNode(" " + (np === 1 ? "zonă" : de(np) + "zone")));
     if (ab) ab.title = np === 1 ? "O zonă din cele afișate e într-o arie protejată" : fmt(np) + " " + de(np) + "zone din cele afișate sunt în arii protejate";
@@ -424,14 +469,14 @@
     v.slice(0, state.shown).forEach(function (a) {
       var li = el("li"), b = el("button", "row"), meta = [];
       b.type = "button";
-      b.appendChild(el("span", "visually-hidden", "Încredere " + a.incredere + ". "));
-      b.appendChild(key(a.incredere, isProt(a)));
+      b.appendChild(el("span", "visually-hidden", (peAut() ? AUT_T[autStare(a)].badge + ". Încredere " + a.incredere : "Încredere " + a.incredere) + ". "));
+      b.appendChild(keyFor(a, isProt(a)));
       b.appendChild(el("span", "t", placeName(a)));
       b.appendChild(el("span", "d", ziScurt(a.first_seen)));
       b.appendChild(el("span", "p", headline(a).t));
       b.appendChild(el("span", "a", fmt(a.ha, 1) + " ha"));
       if (isVerified(a)) meta.push("verificat și din alte surse");
-      var ma = aut(a); if (ma && AUT_T[ma.stare]) meta.push(AUT_T[ma.stare].scurt);
+      if (aut(a)) meta.push(autT(a).scurt);
       if (a.arii && a.arii.length) meta.push("în arie protejată");
       if (a.extinsa) meta.push("s-a lărgit pe " + ziScurt(a.extinsa));
       if (a.langa) meta.push("lângă o zonă din " + ziScurt(a.langa.first_seen));
@@ -480,7 +525,11 @@
     var bd = el("div", "badges");
     var c1 = el("span", "badge"); c1.appendChild(key(a.incredere)); c1.appendChild(document.createTextNode("încredere " + a.incredere)); bd.appendChild(c1);
     if (isVerified(a)) bd.appendChild(el("span", "badge ok", "verificat și din alte surse"));
-    var va = aut(a); if (va && AUT_T[va.stare]) bd.appendChild(el("span", "badge" + (AUT_T[va.stare].ok ? " ok" : AUT_T[va.stare].atentie ? " aut" : ""), AUT_T[va.stare].badge));
+    if (aut(a)) {
+      var t = autT(a), ba = el("span", "badge aut" + (t.ok ? " ok" : ""));
+      ba.appendChild(el("i", "key " + t.cls)); ba.appendChild(document.createTextNode(t.badge));
+      bd.appendChild(ba);
+    }
     if (a.vant) bd.appendChild(el("span", "badge", "vânt puternic"));
     if (a.arii && a.arii.length) bd.appendChild(el("span", "badge arie", "în arie protejată"));
     if (a.extinsa) bd.appendChild(el("span", "badge", "s-a lărgit pe " + ziScurt(a.extinsa)));
@@ -715,31 +764,48 @@
   /* ---------- autorizația de tăiere: ce scrie în Inspectorul Pădurii pentru zona asta ----------
      Spunem ce am găsit și ce n-am găsit, cu limitele la vedere: harta parcelelor e publicată doar în parte. */
   function autBlock(a) {
-    var v = aut(a); if (!v || !AUT_T[v.stare]) return null;
-    var t = AUT_T[v.stare], box = el("div", "verif aut");
+    var v = aut(a); if (!v) return null;
+    var t = autT(a), box = el("div", "verif aut");
     box.appendChild(el("p", "lbl", "Autorizația de tăiere (APV)"));
-    var it = el("div", "vitem");
-    var head = el("p");
-    head.appendChild(el("b", null, v.apv ? "APV " + v.apv : t.badge));
-    if (v.apv) head.appendChild(el("span", "vfit " + (t.ok ? "sure" : t.atentie ? "none" : "maybe"), t.badge));
-    it.appendChild(head);
-    if (v.apv) {
-      var det = [v.ocol, v.ua && v.ua.length ? "u.a. " + v.ua.join(", ") : null,
-                 v.volum_m3 != null ? fmt(v.volum_m3) + " m³" : null].filter(Boolean).join(" · ");
-      if (det) it.appendChild(el("p", null, det));
-      if (v.start && v.end) it.appendChild(el("p", null, "Tăiere permisă de la " + zi(v.start, true) + " până la " + zi(v.end, true) + "."));
-      it.appendChild(el("p", "vfit", v.suprapunere > 0
-        ? "Se suprapune cu zona pe " + Math.round(v.suprapunere * 100) + "% din suprafață."
-        : "Nu se suprapune cu zona; cea mai apropiată, la " + fmt(v.dist_m) + " m."));
-      if (v.potrivire === "buffer") it.appendChild(el("p", "vfit", "Parcela nu e publicată; am folosit o estimare în jurul punctului autorizației."));
-    } else {
-      it.appendChild(el("p", null, "Nu am găsit nicio autorizație de tăiere la mai puțin de " + fmt((AUT_META && AUT_META.raza_m) || 500) + " m de zonă, pentru perioada schimbării."));
+
+    /* verdictul, în cuvinte, înaintea cifrelor */
+    var head = el("p", "aut-head");
+    head.appendChild(el("i", "key " + t.cls));
+    head.appendChild(el("b", null, t.badge));
+    box.appendChild(head);
+    box.appendChild(el("p", null, t.lung));
+
+    /* când s-a tăiat: intervalul, nu data la care am văzut noi */
+    var cs = a.before_date ? zi(a.before_date, true) : (a.vara ? "vara lui " + a.vara : null);
+    if (cs) {
+      var p1 = el("p", "vfit", "Tăierea s-a întâmplat între " + cs + " (ultima dată când pădurea era întreagă aici) și "
+        + zi(a.first_seen, true) + " (prima imagine cu schimbarea).");
+      if (!a.before_date) p1.textContent += " E un interval larg, deci despre perioada autorizației putem spune puține.";
+      box.appendChild(p1);
     }
-    if (v.volum_suspect) it.appendChild(el("p", "vfit", "Suprafața schimbată pare mult mai mare decât volumul autorizat."));
-    if (v.n_apv > 1) it.appendChild(el("p", "vfit", v.n_apv + " autorizații în zonă; o arătăm pe cea care se potrivește cel mai bine."));
-    if (t.atentie) it.classList.add("quiet");
-    box.appendChild(it);
-    box.appendChild(el("p", "vfit", "Statul publică harta parcelelor doar în parte, mai ales pentru pădurile private, iar autorizațiile se pot prelungi. Lipsa unei autorizații aici nu dovedește o tăiere ilegală — e un motiv de verificat."));
+
+    if (v.apv) {
+      var it = el("div", "vitem");
+      var h2 = el("p"); h2.appendChild(el("b", null, "APV " + v.apv));
+      if (v.stare_apv) h2.appendChild(el("span", "vfit", v.stare_apv));
+      it.appendChild(h2);
+      var uaTxt = v.ua_text || (v.ua && v.ua.length ? v.ua.join(", ") : null);
+      var det = [v.ocol, uaTxt ? "u.a. " + uaTxt : null,
+                 v.volum_m3 != null ? fmt(v.volum_m3) + " m³" : null, v.tratament].filter(Boolean).join(" · ");
+      if (det) it.appendChild(el("p", null, det));
+      if (v.start && v.end) it.appendChild(el("p", null, "Tăiere permisă între " + zi(v.start, true) + " și " + zi(v.end, true) + "."));
+      it.appendChild(el("p", "vfit", v.suprapunere > 0
+        ? "Parcela autorizată acoperă " + Math.round(v.suprapunere * 100) + "% din zona schimbată."
+        : "Parcela autorizată nu atinge zona schimbată; e la " + fmt(v.dist_m) + " m."));
+      if (v.potrivire === "estimat" || v.potrivire === "buffer")
+        it.appendChild(el("p", "vfit", "Parcela nu e publicată în amenajament; în locul ei am folosit un cerc în jurul punctului autorizației, pe măsura volumului. Poziția e aproximativă."));
+      if (v.volum_suspect) it.appendChild(el("p", "vfit", "Suprafața schimbată pare mult mai mare decât ar explica volumul autorizat."));
+      if (v.n_apv > 1) it.appendChild(el("p", "vfit", v.n_apv + " autorizații în jur; o arătăm pe cea care se potrivește cel mai bine."));
+      if (t.grija) it.classList.add("quiet");
+      box.appendChild(it);
+    }
+
+    box.appendChild(el("p", "vfit", "Harta parcelelor e publicată doar în parte, mai ales pentru pădurile private, iar autorizațiile se pot prelungi. O zonă fără autorizație găsită nu e o dovadă de tăiere ilegală — e un motiv de verificat."));
     var lk = el("a", null, "Caută în Inspectorul Pădurii"); lk.href = "https://inspectorulpadurii.ro"; lk.target = "_blank"; lk.rel = "noopener";
     box.appendChild(lk);
     return box;
@@ -920,15 +986,28 @@
     /* în arie protejată: chenar albastru, gros, în jurul aceluiași pătrat */
     var P = 52;
     function imgP(draw) { var c = document.createElement("canvas"); c.width = c.height = P; var x = c.getContext("2d"); draw(x); return x.getImageData(0, 0, P, P); }
-    ICONS.forEach(function (c) {
-      var fill = confColor(c[0]);
-      m.addImage("k-" + c[1] + "-p", imgP(function (x) {
+    function prot_(nume, fill, gol) {
+      m.addImage(nume, imgP(function (x) {
         x.fillStyle = edge; x.fillRect(0, 0, P, P);
         x.fillStyle = prot; x.fillRect(3, 3, P - 6, P - 6);
         x.fillStyle = edge; x.fillRect(10, 10, P - 20, P - 20);
-        if (c[1] === "un") { x.setLineDash([5, 4]); x.strokeStyle = fill; x.lineWidth = 3; x.strokeRect(15, 15, P - 30, P - 30); }
+        if (gol) { x.setLineDash([5, 4]); x.strokeStyle = fill; x.lineWidth = 3; x.strokeRect(15, 15, P - 30, P - 30); }
         else { x.fillStyle = fill; x.fillRect(14, 14, P - 28, P - 28); }
       }), { pixelRatio: 2 });
+    }
+    ICONS.forEach(function (c) { prot_("k-" + c[1] + "-p", confColor(c[0]), c[1] === "un"); });
+    AUT_ORD.forEach(function (k) { prot_("ka-" + k + "-p", autColor(k), k === "nev"); });
+    /* aceleași pătrate, dar în culorile stărilor de autorizație */
+    AUT_ORD.forEach(function (k) {
+      var fill = autColor(k);
+      if (k === "nev") {
+        m.addImage("ka-nev", img(function (x) {
+          x.strokeStyle = edge; x.lineWidth = 7; x.strokeRect(9, 9, S - 18, S - 18);
+          x.setLineDash([5, 4]); x.strokeStyle = fill; x.lineWidth = 3; x.strokeRect(9, 9, S - 18, S - 18);
+        }), { pixelRatio: 2 });
+      } else {
+        m.addImage("ka-" + k, img(function (x) { x.fillStyle = edge; x.fillRect(4, 4, S - 8, S - 8); x.fillStyle = fill; x.fillRect(8, 8, S - 16, S - 16); }), { pixelRatio: 2 });
+      }
     });
     m.addImage("k-sel", img(function (x) {
       x.strokeStyle = edge; x.lineWidth = 8; x.strokeRect(6, 6, S - 12, S - 12);
@@ -945,6 +1024,15 @@
   var PT_IMAGE = ["case", ["get", "p"],
     ["match", ["get", "c"], "ridicată", "k-hi-p", "medie", "k-mid-p", "scăzută", "k-lo-p", "k-un-p"],
     ["match", ["get", "c"], "ridicată", "k-hi", "medie", "k-mid", "scăzută", "k-lo", "k-un"]];
+  function ptImageAut() {
+    function m(suf) {
+      var e = ["match", ["get", "au"]];
+      AUT_ORD.forEach(function (k) { if (k !== "nev") { e.push(k, "ka-" + k + suf); } });
+      e.push("ka-nev" + suf); return e;
+    }
+    return ["case", ["get", "p"], m("-p"), m("")];
+  }
+  function ptImage() { return peAut() ? ptImageAut() : PT_IMAGE; }
   function zoneText(p) { return [fmt(p.ha, 1) + " ha", p.loc || p.county || "", ziScurt(p.d), p.p ? "în arie protejată" : ""].filter(Boolean).join(", "); }
 
   function initMap(hj, counties) {
@@ -1004,13 +1092,13 @@
       map.addSource("alerts", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
       map.addSource("points", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
       map.addSource("sel", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
-      var color = colorMatch();
+      var color = culoareZone();
       map.addLayer({ id: "a-fill", type: "fill", source: "alerts", minzoom: 9, paint: { "fill-color": color, "fill-opacity": 0.28 } });
       map.addLayer({ id: "a-line-p", type: "line", source: "alerts", minzoom: 9, filter: ["==", ["get", "p"], true],
         paint: { "line-color": tok("--color-protected").css, "line-width": ["interpolate", ["linear"], ["zoom"], 9, 4, 14, 7] } });
       map.addLayer({ id: "a-line", type: "line", source: "alerts", minzoom: 9, paint: { "line-color": color, "line-width": ["interpolate", ["linear"], ["zoom"], 9, 1.2, 14, 2.6] } });
       map.addLayer({ id: "a-pt", type: "symbol", source: "points", maxzoom: 12.5, layout: {
-        "icon-image": PT_IMAGE, "icon-allow-overlap": true, "icon-ignore-placement": true,
+        "icon-image": ptImage(), "icon-allow-overlap": true, "icon-ignore-placement": true,
         "icon-size": ["interpolate", ["linear"], ["sqrt", ["get", "ha"]], 1, 0.7, 4, 1.1, 12, 2],
         /* cele din arii protejate deasupra; între ele, cele mici peste cele mari */
         "symbol-sort-key": ["+", ["-", ["get", "ha"]], ["case", ["get", "p"], 100000, 0]] } });
@@ -1034,6 +1122,7 @@
       });
       document.getElementById("lyr-firms").addEventListener("change", function (e) { setVis("firms", e.target.checked); });
       if (!FIRMS_FC || !FIRMS_FC.features || !FIRMS_FC.features.length) { document.getElementById("tg-firms").hidden = true; document.getElementById("lg-firms").hidden = true; }
+      setCuloare(state.culoare, true);
       if (counties) countyEvents();
       /* conturul țării și numele localităților vin după, ca lista să nu aștepte după ele */
       Promise.all([getJSON("data/static/romania.geojson").catch(function () { return null; }),
@@ -1182,14 +1271,33 @@
 
   function alertsFC(v) {
     return { type: "FeatureCollection", features: v.map(function (a) {
-      return { type: "Feature", geometry: a.geometry, properties: { id: a.id, c: a.incredere, ha: a.ha, d: a.first_seen, county: a.county, loc: placeName(a), p: isProt(a) } };
+      return { type: "Feature", geometry: a.geometry, properties: { id: a.id, c: a.incredere, au: autStare(a), ha: a.ha, d: a.first_seen, county: a.county, loc: placeName(a), p: isProt(a) } };
     }) };
   }
   function pointsFC(v) {
     return { type: "FeatureCollection", features: v.map(function (a) {
-      return { type: "Feature", geometry: { type: "Point", coordinates: [a.lon, a.lat] }, properties: { id: a.id, c: a.incredere, ha: a.ha, d: a.first_seen, county: a.county, loc: placeName(a), p: isProt(a) } };
+      return { type: "Feature", geometry: { type: "Point", coordinates: [a.lon, a.lat] }, properties: { id: a.id, c: a.incredere, au: autStare(a), ha: a.ha, d: a.first_seen, county: a.county, loc: placeName(a), p: isProt(a) } };
     }).sort(function (x, y) { return y.properties.ha - x.properties.ha; }) };
   }
+  /* ---------- după ce colorăm zonele: autorizație sau încredere ---------- */
+  function setCuloare(mod, silent) {
+    state.culoare = mod;
+    Array.prototype.forEach.call(document.querySelectorAll("#culoare button"), function (b) {
+      b.setAttribute("aria-pressed", String(b.dataset.culoare === mod));
+    });
+    [map, map2].forEach(function (m) {
+      if (!m || !m.getLayer || !m.getLayer("a-fill")) return;
+      var c = culoareZone();
+      m.setPaintProperty("a-fill", "fill-color", c);
+      if (m.getLayer("a-line")) m.setPaintProperty("a-line", "line-color", c);
+      if (m.getLayer("a-line-p")) m.setPaintProperty("a-line-p", "line-color", c);
+      if (m.getLayer("a-pt")) m.setLayoutProperty("a-pt", "icon-image", ptImage());
+    });
+    document.getElementById("lg-conf").hidden = peAut();
+    document.getElementById("lg-aut").hidden = !peAut();
+    if (!silent) renderAll();
+  }
+
   function updateMapData() {
     var v = visible(), s = periodStart();
     if (map && map.getLayer && map.getLayer("firms") && s) map.setFilter("firms", ["all", [">=", ["get", "d"], s], ["<=", ["get", "d"], DATA.data_until]]);
@@ -1220,14 +1328,14 @@
         layers: [{ id: "osm", type: "raster", source: "osm" }] }
     });
     map2.on("load", function () {
-      var color = colorMatch(), dark = tok("--color-paper-3").css;
+      var color = culoareZone(), dark = tok("--color-paper-3").css;
       addIcons(map2);
       map2.addSource("alerts", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
       map2.addSource("points", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
       map2.addSource("sel", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
       map2.addLayer({ id: "a-fill", type: "fill", source: "alerts", minzoom: 9, paint: { "fill-color": color, "fill-opacity": 0.18 } });
       map2.addLayer({ id: "a-line", type: "line", source: "alerts", minzoom: 9, paint: { "line-color": color, "line-width": 2.4 } });
-      map2.addLayer({ id: "a-pt", type: "symbol", source: "points", maxzoom: 12.5, layout: { "icon-image": PT_IMAGE, "icon-size": 0.9, "icon-allow-overlap": true, "icon-ignore-placement": true } });
+      map2.addLayer({ id: "a-pt", type: "symbol", source: "points", maxzoom: 12.5, layout: { "icon-image": ptImage(), "icon-size": 0.9, "icon-allow-overlap": true, "icon-ignore-placement": true } });
       map2.addLayer({ id: "sel-line", type: "line", source: "sel", paint: { "line-color": dark, "line-width": 3 } });
       addContour(map2, true);
       ["a-pt", "a-fill"].forEach(function (id) {

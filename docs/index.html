@@ -54,7 +54,7 @@
       <div class="chips ctys" id="ctys" hidden></div>
       <p class="hint" id="cty-hint">Sau dă clic pe un județ pe hartă. Poți alege mai multe.</p>
       <label class="tg" id="tg-only-arii" hidden><input type="checkbox" id="only-arii"><span>Doar zonele din arii protejate</span></label>
-      <label class="tg" id="tg-fara-aut" hidden><input type="checkbox" id="only-fara-aut"><span>Doar zonele fără autorizație de tăiere potrivită</span></label>
+      <label class="tg" id="tg-fara-aut" hidden><input type="checkbox" id="only-fara-aut"><span>Doar zonele fără autorizație care să le acopere</span></label>
     </section>
 
     <section class="block grow results" id="listbox" aria-labelledby="h-list">
@@ -98,6 +98,10 @@
       <details class="layers">
         <summary><h2 id="h-lay" class="lbl">Straturi</h2></summary>
         <section class="layers-body" aria-labelledby="h-lay">
+          <div class="seg small" id="culoare" role="group" aria-label="Ce arată culoarea zonelor" hidden>
+            <button type="button" data-culoare="aut" aria-pressed="true">Culoare: autorizație</button>
+            <button type="button" data-culoare="incredere" aria-pressed="false">Încredere</button>
+          </div>
           <div class="seg small" id="base" role="group" aria-label="Fundal">
             <button type="button" data-base="sat" aria-pressed="true">Satelit 10&nbsp;m</button>
             <button type="button" data-base="hd">Satelit detaliat</button>
@@ -118,9 +122,20 @@
       <button type="button" class="splitbtn" id="splitbtn" aria-pressed="false">Harta normală alături</button>
     </div>
     <div class="legend" id="legend">
-      <span><i class="key hi" aria-hidden="true"></i>încredere ridicată</span>
-      <span><i class="key mid" aria-hidden="true"></i>medie</span>
-      <span><i class="key lo" aria-hidden="true"></i>scăzută</span>
+      <span id="lg-aut" hidden class="lgset">
+        <span><i class="key a-fara" aria-hidden="true"></i>fără autorizație</span>
+        <span><i class="key a-expirat" aria-hidden="true"></i>autorizația expirase</span>
+        <span><i class="key a-neinceput" aria-hidden="true"></i>a început după</span>
+        <span><i class="key a-langa" aria-hidden="true"></i>nu se potrivește</span>
+        <span><i class="key a-acoperit" aria-hidden="true"></i>cu autorizație</span>
+        <span><i class="key a-nev" aria-hidden="true"></i>neverificată</span>
+        <span id="lg-acop" class="lg-acop"></span>
+      </span>
+      <span id="lg-conf" class="lgset">
+        <span><i class="key hi" aria-hidden="true"></i>încredere ridicată</span>
+        <span><i class="key mid" aria-hidden="true"></i>medie</span>
+        <span><i class="key lo" aria-hidden="true"></i>scăzută</span>
+      </span>
       <span id="lg-firms"><i class="key fire" aria-hidden="true"></i>foc văzut de NASA</span>
       <span id="lg-p" hidden><i class="key frame" aria-hidden="true"></i>în arie protejată</span>
       <span id="lg-arii" hidden><i class="key arie" aria-hidden="true"></i>limita ariei</span>

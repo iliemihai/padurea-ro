@@ -72,7 +72,26 @@ python -m pipeline.eval_judge qwen3.5:4b                          # testează ju
 - Fundalul hărții: [Sentinel-2 cloudless](https://s2maps.eu) de EOX IT Services GmbH (CC BY-NC-SA 4.0), Esri World Imagery, © OpenStreetMap
 - Ariile protejate: [Agenția Europeană de Mediu](https://www.eea.europa.eu/), Natura 2000 și ariile protejate naționale (CDDA), CC BY 4.0; le aduce workflow-ul „Arii protejate” (`python -m pipeline.static_arii`) în `data/arii_ro.geojson` și `docs/data/static/arii.geojson`. La fiecare zonă scriem doar în ce arie cade; nivelul de încredere nu se schimbă după asta
 - Numele localităților de pe hartă: GeoNames, în `docs/data/static/places.json`, și conturul țării în `docs/data/static/romania.geojson`; le reface `python -m pipeline.static_map`
-- Autorizațiile de tăiere (APV): [Inspectorul Pădurii](https://inspectorulpadurii.ro) (SUMAL 2.0, Ministerul Mediului). Pentru fiecare zonă căutăm autorizațiile la mai puțin de 500 m și le comparăm cu data schimbării, cu o toleranță de 30 de zile. Rezultatul se pune în `docs/data/permise.json`, iar site-ul îl arată doar dacă fișierul există. Harta parcelelor e publicată doar în parte, mai ales pentru pădurile private, iar autorizațiile se pot prelungi, deci lipsa unei autorizații nu dovedește o tăiere ilegală
+- Autorizațiile de tăiere (APV): [Inspectorul Pădurii](https://inspectorulpadurii.ro) (SUMAL 2.0, Ministerul Mediului), aduse de `python -m pipeline.permise` în `docs/data/permise.json`; site-ul le arată doar dacă fișierul există
+
+## Autorizația de tăiere
+
+Pentru fiecare zonă căutăm în Inspectorul Pădurii autorizațiile (APV) de la mai puțin de 500 m și ne uităm la două lucruri: parcela autorizată acoperă zona schimbată, și perioada autorizației cuprinde intervalul în care s-a tăiat.
+
+Intervalul contează, și e partea ușor de greșit. Satelitul nu vede tăierea când se întâmplă, ci când revine frunza: o tăiere din ianuarie, cu autorizație valabilă până în decembrie, apare ca schimbare abia în aprilie. Dacă am compara perioada autorizației cu data la care am văzut-o noi, am declara „expirat” o tăiere perfect legală — așa s-a și întâmplat la prima încercare, cu 277 de zone în loc de 27. Așa că folosim intervalul dintre ultima imagine cu pădurea întreagă și prima imagine cu schimbarea. Când nu avem o imagine întreagă recentă (iarnă, nori), zona are doar „intactă în vara lui X”: intervalul e de aproape un an, spunem mai puțin, dar tot putem exclude o autorizație închisă înainte de vara aceea.
+
+| stare | ce înseamnă |
+|---|---|
+| cu autorizație | parcela autorizată acoperă zona, iar perioada cuprinde intervalul tăierii |
+| autorizația expirase | parcela acoperă zona, dar autorizația se terminase înainte ca pădurea să fie încă întreagă |
+| a început după | parcela acoperă zona, dar autorizația începe după ce schimbarea se vedea deja |
+| nu se potrivește | există autorizație în zonă, dar parcela ei nu atinge schimbarea, sau nu știm unde e parcela |
+| fără autorizație | nicio autorizație în 500 m |
+| neverificată | zona n-a fost încă comparată |
+
+Ca să spunem că o autorizație **nu** acoperă tăierea, trebuie întâi să știm unde e parcela ei. Statul publică hărțile amenajistice doar în parte, mai ales pentru pădurile private; acolo punem un cerc în jurul punctului autorizației, pe măsura volumului, și atunci nu afirmăm nimic despre perioadă — zona rămâne „nu se potrivește”.
+
+Nicăieri nu scriem „ilegal”. Autorizațiile se pot prelungi, parcelele lipsesc, iar o zonă fără autorizație găsită e un motiv de verificat, nu o dovadă.
 
 ## Aspectul site-ului
 
