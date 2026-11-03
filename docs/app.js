@@ -142,25 +142,31 @@
      Pentru fiecare zonă căutăm în Inspectorul Pădurii autorizațiile din jur și le comparăm cu data schimbării.
      Zonele neverificate nu primesc nimic: lipsa unei autorizații în datele noastre nu dovedește o tăiere ilegală. */
   /* ordinea e de la cel mai îngrijorător la cel mai liniștitor; culorile vin din foaia de stil */
-  var AUT_ORD = ["fara", "afara", "expirat", "neinceput", "acoperit", "neclar", "nev"];
+  var AUT_ORD = ["fara", "neacoperit", "probabil", "acoperit", "nu_taiere", "nev"];
   var AUT_T = {
     fara: { cls: "a-fara", scurt: "fără autorizație", badge: "fără autorizație", grija: true,
-            lung: "Nu am găsit nicio autorizație de tăiere la mai puțin de 500 m de zonă." },
-    afara: { cls: "a-afara", scurt: "tăiat în afara parcelei", badge: "tăiat în afara parcelei", grija: true,
-             lung: "Lângă zonă există o autorizație, iar parcela ei e publicată în amenajament — dar schimbarea nu cade în parcela aceea, ci în afara ei." },
-    expirat: { cls: "a-expirat", scurt: "autorizația expirase", badge: "autorizația expirase", grija: true,
-               lung: "Parcela autorizată acoperă zona, dar autorizația se terminase înainte ca pădurea să fie încă întreagă aici." },
-    neinceput: { cls: "a-neinceput", scurt: "autorizația a început după", badge: "autorizația a început după", grija: true,
-                 lung: "Parcela autorizată acoperă zona, dar autorizația începe după ce schimbarea se vedea deja." },
+            lung: "Nu am găsit nicio autorizație de tăiere în jurul zonei." },
+    neacoperit: { cls: "a-neacoperit", scurt: "autorizația nu acoperă tăierea", badge: "autorizația nu acoperă tăierea", grija: true,
+                  lung: "Există o autorizație cu parcela publicată în amenajament, dar nu acoperă tăierea asta.",
+                  motiv: { afara: "Schimbarea cade în afara parcelei autorizate.",
+                           expirat: "Autorizația se terminase înainte ca pădurea să fie încă întreagă aici.",
+                           neinceput: "Autorizația începe după ce schimbarea se vedea deja." } },
+    probabil: { cls: "a-probabil", scurt: "probabil cu autorizație", badge: "probabil cu autorizație",
+                lung: "Există o autorizație în zonă, dar amenajamentul nu publică harta parcelei ei, deci nu putem confirma că o acoperă. De cele mai multe ori o acoperă." },
     acoperit: { cls: "a-acoperit", scurt: "cu autorizație", badge: "cu autorizație", ok: true,
-                lung: "Peste zonă există o autorizație de tăiere, valabilă în intervalul în care s-a tăiat." },
-    neclar: { cls: "a-neclar", scurt: "nu putem verifica", badge: "nu putem verifica",
-              lung: "Există o autorizație în zonă, dar statul nu publică harta parcelei ei, așa că nu putem spune dacă acoperă tăierea sau nu. Nu e nici semn bun, nici semn rău." },
+                lung: "Parcela autorizată acoperă zona, iar autorizația era valabilă când s-a tăiat." },
+    nu_taiere: { cls: "a-nu_taiere", scurt: "nu e tăiere de pădure", badge: "nu e tăiere de pădure",
+                 lung: "Schimbarea nu pare tăiere de lemn, așa că autorizațiile de tăiere nu se aplică.",
+                 motiv: { drum: "Forma e o linie lungă și îngustă, ca un drum, o autostradă sau o linie electrică. Un drum prin pădure se aprobă altfel, prin scoatere din fondul forestier, nu cu APV.",
+                          agricol: "Analistul AI vede teren agricol: arătură sau recoltă, nu pădure tăiată.",
+                          incendiu: "Analistul AI vede urme de foc, nu de tăiere.",
+                          nori: "Analistul AI crede că schimbarea vine din nori, nu de pe teren.",
+                          "toamnă": "Analistul AI crede că e doar frunza care se îngălbenește toamna." } },
     nev: { cls: "a-nev", scurt: "autorizația neverificată", badge: "neverificată",
            lung: "Zona asta încă n-a fost comparată cu autorizațiile din Inspectorul Pădurii." }
   };
   /* numele vechi, ca o hartă deschisă cu datele de ieri să nu arate goluri */
-  var AUT_VECHI = { in_perioada: "acoperit", in_apropiere: "neclar", langa: "neclar" };
+  var AUT_VECHI = { in_perioada: "acoperit", in_apropiere: "probabil", langa: "probabil", neclar: "probabil", afara: "neacoperit", expirat: "neacoperit", neinceput: "neacoperit" };
   function aut(a) { return AUT[a.id] || null; }
   function autStare(a) { var v = aut(a); if (!v) return "nev"; return AUT_VECHI[v.stare] || v.stare; }
   function autT(a) { return AUT_T[autStare(a)]; }
@@ -776,6 +782,7 @@
     head.appendChild(el("b", null, t.badge));
     box.appendChild(head);
     box.appendChild(el("p", null, t.lung));
+    if (t.motiv && v.motiv && t.motiv[v.motiv]) box.appendChild(el("p", null, t.motiv[v.motiv]));
 
     /* când s-a tăiat: intervalul, nu data la care am văzut noi */
     var cs = a.before_date ? zi(a.before_date, true) : (a.vara ? "vara lui " + a.vara : null);
@@ -786,7 +793,7 @@
       box.appendChild(p1);
     }
 
-    if (v.apv) {
+    if (v.apv && v.stare !== "nu_taiere") {
       var it = el("div", "vitem");
       var h2 = el("p"); h2.appendChild(el("b", null, "APV " + v.apv));
       if (v.stare_apv) h2.appendChild(el("span", "vfit", v.stare_apv));
@@ -988,20 +995,29 @@
     /* în arie protejată: chenar albastru, gros, în jurul aceluiași pătrat */
     var P = 52;
     function imgP(draw) { var c = document.createElement("canvas"); c.width = c.height = P; var x = c.getContext("2d"); draw(x); return x.getImageData(0, 0, P, P); }
-    function prot_(nume, fill, gol) {
+    /* stil: "plin", "gol" (contur) sau "punctat" */
+    function prot_(nume, fill, stil) {
       m.addImage(nume, imgP(function (x) {
         x.fillStyle = edge; x.fillRect(0, 0, P, P);
         x.fillStyle = prot; x.fillRect(3, 3, P - 6, P - 6);
         x.fillStyle = edge; x.fillRect(10, 10, P - 20, P - 20);
-        if (gol) { x.setLineDash([5, 4]); x.strokeStyle = fill; x.lineWidth = 3; x.strokeRect(15, 15, P - 30, P - 30); }
+        if (stil === "punctat") { x.setLineDash([5, 4]); x.strokeStyle = fill; x.lineWidth = 3; x.strokeRect(15, 15, P - 30, P - 30); }
+        else if (stil === "gol") { x.strokeStyle = fill; x.lineWidth = 4; x.strokeRect(16, 16, P - 32, P - 32); }
         else { x.fillStyle = fill; x.fillRect(14, 14, P - 28, P - 28); }
       }), { pixelRatio: 2 });
     }
-    ICONS.forEach(function (c) { prot_("k-" + c[1] + "-p", confColor(c[0]), c[1] === "un"); });
-    AUT_ORD.forEach(function (k) { prot_("ka-" + k + "-p", autColor(k), k === "nev"); });
+    ICONS.forEach(function (c) { prot_("k-" + c[1] + "-p", confColor(c[0]), c[1] === "un" ? "punctat" : "plin"); });
+    AUT_ORD.forEach(function (k) { prot_("ka-" + k + "-p", autColor(k), k === "nev" ? "punctat" : k === "probabil" ? "gol" : "plin"); });
     /* aceleași pătrate, dar în culorile stărilor de autorizație */
     AUT_ORD.forEach(function (k) {
       var fill = autColor(k);
+      if (k === "probabil") {
+        m.addImage("ka-probabil", img(function (x) {
+          x.fillStyle = edge; x.fillRect(4, 4, S - 8, S - 8);
+          x.strokeStyle = fill; x.lineWidth = 5; x.strokeRect(10.5, 10.5, S - 21, S - 21);
+        }), { pixelRatio: 2 });
+        return;
+      }
       if (k === "nev") {
         m.addImage("ka-nev", img(function (x) {
           x.strokeStyle = edge; x.lineWidth = 7; x.strokeRect(9, 9, S - 18, S - 18);
@@ -1044,7 +1060,7 @@
       bounds: [[20.2, 43.55], [29.8, 48.3]],
       fitBoundsOptions: { padding: 20 },
       maxZoom: 16, minZoom: 5, maxBounds: MAXB,
-      cooperativeGestures: NARROW.matches,
+      cooperativeGestures: false, /* un deget mișcă harta; pagina se derulează din afara ei */
       attributionControl: { compact: true },
       style: {
         version: 8,
