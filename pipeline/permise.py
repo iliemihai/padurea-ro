@@ -258,7 +258,9 @@ def stare_din_timp(cut, permis, toleranta=TOLERANTA_ZILE):
 # un incendiu nu au APV și nu trebuie judecate după el. Întrebăm asta înaintea oricărui permis.
 CORIDOR_ALUNGIRE = 5.0    # de câte ori mai lung decât lat
 CORIDOR_LATIME_M = 120.0  # o autostradă cu taluzuri are ~100 m; un parchet e mult mai lat
-NU_TAIERE_AI = {"agricol": "agricol", "incendiu": "incendiu", "nori": "nori", "toamna": "toamnă"}
+NU_TAIERE_AI = {"drum": "drum", "agricol": "agricol", "incendiu": "incendiu", "nori": "nori", "toamna": "toamnă", "altceva": "altceva"}
+# zonele judecate înainte să existe categoria „drum": dacă analistul a descris chiar el un drum nou prin zonă, îl credem
+DRUM_IN_MOTIV = re.compile(r"(drum\w*|cale\w*|coridor\w*|linie\w*)[^.]{0,40}\bno[iu]\b[^.]{0,60}(prin|peste|traverseaz|trece)|\bno[iu]\b[^.]{0,30}drum[^.]{0,60}(prin|peste|traverseaz|trece)", re.I)
 
 
 def forma(a):
@@ -276,9 +278,18 @@ def forma(a):
 
 def fel_schimbare(a):
     """'taiere' sau de ce nu e tăiere de lemn: 'drum', 'agricol', 'incendiu', 'nori', 'toamnă'."""
-    cat = (a.get("ai") or {}).get("categorie")
+    ai = a.get("ai") or {}
+    cat = ai.get("categorie")
     if cat in NU_TAIERE_AI:
         return NU_TAIERE_AI[cat]
+    if cat == "taiere" and DRUM_IN_MOTIV.search(ai.get("motiv") or ""):
+        # drum nou descris de analist: îl credem doar dacă și forma e alungită (regulă de tranziție; judecătorul are acum categoria „drum")
+        try:
+            alungire, _, _ = forma(a)
+        except Exception:
+            alungire = 1.0
+        if alungire >= 2.5:
+            return "drum"
     try:
         alungire, latime, _ = forma(a)
     except Exception:

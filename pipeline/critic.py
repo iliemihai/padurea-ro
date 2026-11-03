@@ -1,8 +1,8 @@
 """Agentul 3, criticul: pune dovezile cap la cap și dă un nivel de încredere. Reguli simple și vizibile."""
 import datetime as dt
 
-AI_FALS = {"nori": "AI-ul vede nori", "toamna": "AI-ul vede doar frunze de toamnă", "agricol": "AI-ul vede teren agricol"}
-AI_DA = {"taiere": "AI-ul vede pădure dispărută", "incendiu": "AI-ul vede o zonă arsă"}
+AI_FALS = {"nori": "AI-ul vede nori", "toamna": "AI-ul vede doar frunze de toamnă", "agricol": "AI-ul vede teren agricol", "altceva": "AI-ul nu vede pădure nici înainte"}
+AI_DA = {"taiere": "AI-ul vede pădure dispărută", "incendiu": "AI-ul vede o zonă arsă", "drum": "AI-ul vede un drum sau un coridor nou prin pădure"}
 GAP_MAX = 40   # zile între „ultima dată intactă" și „prima dată schimbată" peste care nu mai știm bine când
 VIS_TXT = {
     "deschisa": "în poza de dinainte zona era deja mai luminoasă decât pădurea din jur: luminiș, pajiște sau drum, nu pădure tăiată acum",

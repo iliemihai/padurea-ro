@@ -16,18 +16,21 @@ from PIL import Image, ImageDraw, ImageFont
 
 from . import config as C
 
-CATEGORII = ["taiere", "incendiu", "toamna", "nori", "agricol", "neclar"]
+CATEGORII = ["taiere", "drum", "incendiu", "toamna", "nori", "agricol", "altceva", "neclar"]
 
 PROMPT = """You are a remote-sensing analyst checking an automatic forest-change alert in Romania.
 The picture shows the SAME place twice, seen by the Sentinel-2 satellite (about 10 m per pixel, natural colours):
 LEFT = BEFORE ({d0}), RIGHT = AFTER ({d1}). The flagged area is in the middle of each image.
 A simple detector flagged it because the vegetation became much less green.
 Decide what really happened in the middle of the image. Pick exactly one category:
-- "taiere": trees were removed (clear-cut, logging or windthrow). New bare soil, stumps or slash with sharp edges; often new tracks or roads.
+- "taiere": trees were removed over an AREA (clear-cut, logging or windthrow). New bare soil, stumps or slash with sharp edges.
+- "drum": trees were removed only along a LINE: a new road, forest track, motorway, pipeline or power-line corridor, long and
+  narrow, that continues beyond the flagged area. The forest on both sides of the line is still standing.
 - "incendiu": a burn scar. Black, dark brown or purple-grey burned area with irregular edges.
 - "toamna": only a seasonal change of the same forest: autumn colours, or a leafless winter forest (brown or grey). The flagged area looks like the forest around it in AFTER, with the same canopy texture.
 - "nori": clouds, haze, smoke or cloud shadow cover the BEFORE or the AFTER image, so it only looks changed.
 - "agricol": farmland, pasture or a meadow (ploughed, mowed or harvested fields), not a forest.
+- "altceva": the flagged area was not a forest in BEFORE either: orchard, vineyard, scrub, built-up land, quarry or water.
 - "neclar": you cannot tell.
 The two images can be from different seasons (for example BEFORE in summer, AFTER in winter or early spring). Then the whole
 forest looks different in AFTER and that alone is not a change: compare the flagged area with the forest AROUND it in the
@@ -39,7 +42,7 @@ In "motiv", call the images «înainte» and «după» (never BEFORE/AFTER) and 
 BOX_NOTE = """
 The RED RECTANGLE marks the area the detector flagged. Judge only what happened INSIDE the red rectangle, comparing BEFORE with AFTER.
 If the area inside the rectangle already looked bare, open, like a quarry or like fields in BEFORE, it is NOT a new cut:
-pick the category that explains the difference (toamna, agricol, nori or neclar)."""
+pick the category that explains the difference (toamna, agricol, altceva, nori or neclar)."""
 
 SCHEMA = {
     "type": "object",

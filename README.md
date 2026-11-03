@@ -97,6 +97,14 @@ Ca să spunem că o autorizație **nu** acoperă tăierea, trebuie întâi să �
 
 Nicăieri nu scriem „ilegal”. Autorizațiile se pot prelungi, parcelele lipsesc, iar o zonă fără autorizație găsită e un motiv de verificat, nu o dovadă.
 
+## Cât de des avem dreptate
+
+Harta nu poate răspunde singură la „câte din zonele roșii sunt tăieri ilegale pe bune”. Răspunsul vine dintr-un eșantion verificat de un om: `python -m pipeline.esantion` scoate 30 de zone roșii alese la întâmplare într-un CSV, cu linkuri spre fișa de pe site și spre Inspectorul Pădurii; omul completează `verdict_om`, apoi `python -m pipeline.esantion --raport out/esantion_fara.csv` calculează precizia, cu interval de încredere. Fără pasul ăsta, numărul de zone roșii e o estimare, nu o constatare.
+
+## La cine te duci
+
+Fișa fiecărei zone spune de care Gardă Forestieră ține județul (cele nouă gărzi și județele arondate, după HG 743/2015, anexa 1) și ce ocol silvic a emis autorizația găsită în zonă. Sesizările se pot trimite, și fără nume, prin [formularul Gărzii Forestiere Naționale](https://gfn.gov.ro/taieri-ilegale/); dacă tăierea e în desfășurare, 112.
+
 ## Aspectul site-ului
 
 Designul vine din [Hallmark](https://github.com/Nutlope/hallmark), tema Rim: hârtie aproape neagră, Switzer pentru text, Geist Mono pentru tot ce se măsoară (date, hectare, coordonate), o singură culoare de semnal (portocaliu). Culorile stau în `docs/tokens.css` și în blocul `:root` din `docs/style.css`; harta le citește de acolo.

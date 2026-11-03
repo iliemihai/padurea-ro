@@ -146,7 +146,7 @@
   var AUT_T = {
     fara: { cls: "a-fara", scurt: "fără autorizație", badge: "fără autorizație", grija: true,
             lung: "Nu am găsit nicio autorizație de tăiere în jurul zonei." },
-    neacoperit: { cls: "a-neacoperit", scurt: "autorizația nu acoperă tăierea", badge: "autorizația nu acoperă tăierea", grija: true,
+    neacoperit: { cls: "a-fara", scurt: "autorizația nu acoperă tăierea", badge: "autorizația nu acoperă tăierea", grija: true,
                   lung: "Există o autorizație cu parcela publicată în amenajament, dar nu acoperă tăierea asta.",
                   motiv: { afara: "Schimbarea cade în afara parcelei autorizate.",
                            expirat: "Autorizația se terminase înainte ca pădurea să fie încă întreagă aici.",
@@ -157,7 +157,8 @@
                 lung: "Parcela autorizată acoperă zona, iar autorizația era valabilă când s-a tăiat." },
     nu_taiere: { cls: "a-nu_taiere", scurt: "nu e tăiere de pădure", badge: "nu e tăiere de pădure",
                  lung: "Schimbarea nu pare tăiere de lemn, așa că autorizațiile de tăiere nu se aplică.",
-                 motiv: { drum: "Forma e o linie lungă și îngustă, ca un drum, o autostradă sau o linie electrică. Un drum prin pădure se aprobă altfel, prin scoatere din fondul forestier, nu cu APV.",
+                 motiv: { drum: "E o linie lungă și îngustă, ca un drum, o autostradă sau o linie electrică — pădurea a dispărut doar pe linie. Un drum prin pădure se aprobă altfel, prin scoatere din fondul forestier, nu cu APV.",
+                          altceva: "Analistul AI vede că zona nu era pădure nici înainte: livadă, vie, tufăriș, construcții sau carieră.",
                           agricol: "Analistul AI vede teren agricol: arătură sau recoltă, nu pădure tăiată.",
                           incendiu: "Analistul AI vede urme de foc, nu de tăiere.",
                           nori: "Analistul AI crede că schimbarea vine din nori, nu de pe teren.",
@@ -362,7 +363,34 @@
     renderHeader();
     renderStats();
     renderList();
+    renderTop();
     updateMapData();
+  }
+
+  /* ---------- județele cu cele mai multe tăieri, în perioada și la nivelurile alese ---------- */
+  function renderTop() {
+    var box = document.getElementById("top-cty"), ol = document.getElementById("top-cty-list");
+    if (!box || !ol) return;
+    var all = DATA.alerts.filter(function (a) { return inPeriod(a) && state.conf[a.incredere] && inArii(a) && shownArh(a) && autStare(a) !== "nu_taiere"; });
+    var per = {};
+    all.forEach(function (a) {
+      var n = countyOf(a); if (!n) return;
+      per[n] = per[n] || { n: 0, r: 0, ha: 0 };
+      per[n].n++; per[n].ha += a.ha || 0;
+      if (autGrija(a)) per[n].r++;
+    });
+    var top = Object.keys(per).sort(function (x, y) { return per[y].n - per[x].n || per[y].r - per[x].r || x.localeCompare(y, "ro"); }).slice(0, 10);
+    box.hidden = top.length < 2;
+    ol.replaceChildren();
+    top.forEach(function (n) {
+      var li = el("li"), b = el("button"); b.type = "button"; b.setAttribute("aria-pressed", String(!!state.cty[n]));
+      b.appendChild(el("span", "t", n));
+      b.appendChild(el("span", "n", fmt(per[n].n)));
+      var r = el("span", "r"); if (per[n].r) r.textContent = fmt(per[n].r); b.appendChild(r);
+      b.title = fmt(per[n].n) + " " + (per[n].n === 1 ? "tăiere" : "tăieri") + ", " + fmt(per[n].ha, 0) + " ha" + (per[n].r ? ", " + fmt(per[n].r) + " fără autorizație valabilă" : "");
+      b.addEventListener("click", function () { if (!state.cty[n]) { state.cty = {}; } toggleCounty(n, true); });
+      li.appendChild(b); ol.appendChild(li);
+    });
   }
 
   function stamp(k, v, z) {
@@ -569,6 +597,7 @@
     if (a.arii && a.arii.length) d.appendChild(ariiBlock(a));
     var vi = verifItems(a); if (vi.length) d.appendChild(verifBlock(vi));
     var ab2 = autBlock(a); if (ab2) d.appendChild(ab2);
+    if (autStare(a) !== "nu_taiere") d.appendChild(sesizareBlock(a));
     d.appendChild(ownerBlock(a));
     var ev = el("ul", "ev"); (a.dovezi || []).forEach(function (x) { ev.appendChild(el("li", null, x)); });
     d.appendChild(el("p", "lbl", "De ce acest nivel de încredere"));
@@ -636,6 +665,8 @@
   var KIND = {
     incendiu: ["Pare o zonă arsă", "fire"],
     taiere: ["Pare pădure tăiată sau sol gol nou", "cut"],
+    drum: ["Pare un drum sau un coridor nou prin pădure", "road"],
+    altceva: ["Nu pare să fi fost pădure", "q"],
     toamna: ["Pare doar culoarea de toamnă", "leaf"],
     nori: ["Pare nori sau ceață", "cloud"],
     agricol: ["Pare teren agricol", "field"],
@@ -647,6 +678,7 @@
     leaf: '<path d="M5 19c0-8 6-14 14-14 0 8-6 14-14 14z"/><path d="M5 19l8-8"/>',
     cloud: '<path d="M7 18h10a4 4 0 0 0 0-8 6 6 0 0 0-11.5 1.5A3.5 3.5 0 0 0 7 18z"/>',
     field: '<path d="M3 18h18M5 14h14M7 10h10"/>',
+    road: '<path d="M4 20 10 4h4l6 16"/><path d="M12 7v3M12 13v3"/>',
     q: '<path d="M4 4h16v16H4z"/><path d="M12 16.5v.5M9.5 9.5a2.5 2.5 0 1 1 3.6 2.2c-.7.4-1.1.9-1.1 1.8"/>'
   };
   function headline(a) {
@@ -826,6 +858,39 @@
     box.appendChild(el("p", "vfit", "Harta parcelelor e publicată doar în parte, mai ales pentru pădurile private, iar autorizațiile se pot prelungi. O zonă fără autorizație găsită nu e o dovadă de tăiere ilegală — e un motiv de verificat."));
     var lk = el("a", null, "Caută în Inspectorul Pădurii"); lk.href = "https://inspectorulpadurii.ro"; lk.target = "_blank"; lk.rel = "noopener";
     box.appendChild(lk);
+    return box;
+  }
+
+  /* ---------- la cine te duci: Garda Forestieră de care ține județul (HG 743/2015, anexa 1) ---------- */
+  var GARZI = {
+    "Brașov": ["Brașov", "Covasna", "Harghita", "Mureș", "Sibiu"],
+    "București": ["București", "Călărași", "Constanța", "Ilfov", "Giurgiu", "Ialomița", "Teleorman"],
+    "Cluj": ["Alba", "Bistrița-Năsăud", "Cluj", "Maramureș"],
+    "Focșani": ["Brăila", "Buzău", "Galați", "Tulcea", "Vrancea", "Vaslui"],
+    "Oradea": ["Arad", "Bihor", "Satu Mare", "Sălaj"],
+    "Ploiești": ["Argeș", "Dâmbovița", "Prahova"],
+    "Râmnicu Vâlcea": ["Dolj", "Gorj", "Mehedinți", "Olt", "Vâlcea"],
+    "Suceava": ["Bacău", "Botoșani", "Iași", "Neamț", "Suceava"],
+    "Timișoara": ["Caraș-Severin", "Hunedoara", "Timiș"]
+  };
+  function gardaFor(judet) { for (var g in GARZI) if (GARZI[g].indexOf(judet) >= 0) return g; return null; }
+  function sesizareBlock(a) {
+    var j = countyOf(a), g = gardaFor(j), v = aut(a);
+    var box = el("div", "sesizare");
+    box.appendChild(el("p", "lbl", "Cine răspunde și unde sesizezi"));
+    var p1 = el("p");
+    if (g) { p1.appendChild(document.createTextNode("Pădurile din " + (j === "București" ? "București" : "județul " + j) + " sunt în grija ")); p1.appendChild(el("b", null, "Gărzii Forestiere " + g)); p1.appendChild(document.createTextNode(", instituția care controlează tăierile și aplică amenzile.")); }
+    else p1.textContent = "Tăierile sunt controlate de Garda Forestieră din regiune.";
+    if (v && v.ocol) { p1.appendChild(document.createTextNode(" Autorizația găsită în zonă e emisă de ")); p1.appendChild(el("b", null, v.ocol)); p1.appendChild(document.createTextNode(", ocolul silvic care administrează pădurea.")); }
+    box.appendChild(p1);
+    var p2 = el("p");
+    p2.appendChild(document.createTextNode("Dacă vrei să sesizezi: "));
+    var a1 = el("a", null, "formularul Gărzii Forestiere Naționale"); a1.href = "https://gfn.gov.ro/taieri-ilegale/"; a1.target = "_blank"; a1.rel = "noopener";
+    p2.appendChild(a1);
+    p2.appendChild(document.createTextNode(" primește sesizări și fără nume, cu locul și poze. Dacă tăierea e în desfășurare, sună la "));
+    p2.appendChild(el("b", null, "112")); p2.appendChild(document.createTextNode("."));
+    box.appendChild(p2);
+    box.appendChild(el("p", "vfit", "Harta asta arată ce se vede din satelit și ce scrie în registrul public; nu e o dovadă în sine. Trimite și coordonatele din fișă, și pozele înainte/după."));
     return box;
   }
 

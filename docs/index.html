@@ -9,7 +9,7 @@
 <meta property="og:description" content="Schimbări în pădurile României, văzute din satelit, actualizate zilnic.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23030201'/%3E%3Crect x='11' y='11' width='10' height='10' fill='%23f97c3d'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
-<link rel="stylesheet" href="style.css?v=202611031548">
+<link rel="stylesheet" href="style.css?v=202611031618">
 </head>
 <body>
 <div class="app">
@@ -54,6 +54,11 @@
       <select id="cty-pick" class="pick" aria-labelledby="h-cty"><option value="">Toată țara</option></select>
       <div class="chips ctys" id="ctys" hidden></div>
       <p class="hint" id="cty-hint">Sau dă clic pe un județ pe hartă. Poți alege mai multe.</p>
+      <div id="top-cty" class="topcty" hidden>
+        <h3 class="lbl">Județele cu cele mai multe tăieri, în perioada aleasă</h3>
+        <ol id="top-cty-list"></ol>
+        <p class="hint">Numărul mare: tăieri de pădure găsite. Roșu: dintre ele, fără autorizație valabilă. Dă clic pe un județ ca să-l vezi.</p>
+      </div>
       <label class="tg" id="tg-only-arii" hidden><input type="checkbox" id="only-arii"><span>Doar zonele din arii protejate</span></label>
       <label class="tg" id="tg-fara-aut" hidden><input type="checkbox" id="only-fara-aut"><span>Doar tăierile fără autorizație care să le acopere</span></label>
     </section>
@@ -125,8 +130,7 @@
     <div class="legend" id="legend">
       <button type="button" class="lgtoggle" id="lgbtn" aria-expanded="false" aria-controls="legend">Legendă</button>
       <span id="lg-aut" hidden class="lgset">
-        <span><i class="key a-fara" aria-hidden="true"></i>fără autorizație</span>
-        <span><i class="key a-neacoperit" aria-hidden="true"></i>autorizația nu acoperă</span>
+        <span><i class="key a-fara" aria-hidden="true"></i>fără autorizație valabilă</span>
         <span><i class="key a-probabil" aria-hidden="true"></i>probabil cu autorizație</span>
         <span><i class="key a-acoperit" aria-hidden="true"></i>cu autorizație</span>
         <span><i class="key a-nu_taiere" aria-hidden="true"></i>nu e tăiere de pădure</span>
@@ -145,6 +149,6 @@
   </main>
 </div>
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-<script src="app.js?v=202611031548"></script>
+<script src="app.js?v=202611031618"></script>
 </body>
 </html>
