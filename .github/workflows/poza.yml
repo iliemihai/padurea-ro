@@ -13,6 +13,9 @@ on:
         type: string
         default: "17"
 
+permissions:
+  contents: write
+
 jobs:
   poza:
     runs-on: ubuntu-latest
@@ -29,3 +32,12 @@ jobs:
         with:
           name: poze
           path: out/poza_*
+      - name: Și pe ramura „poze” (când artefactele nu se pot descărca)
+        run: |
+          git config user.name "padurea-ro bot"
+          git config user.email "actions@users.noreply.github.com"
+          git checkout --orphan poze
+          git rm -rfq --cached . && git clean -fdq -e out
+          git add -f out/poza_*
+          git commit -qm "poze $(date -u +%Y-%m-%dT%H:%M)"
+          git push -f origin poze
