@@ -260,21 +260,23 @@ SUPRA_MIN = 0.2    # cât din zonă trebuie să acopere parcela ca să vorbim de
 def clasifica(a, permis):
     """Starea finală a unei zone, din potrivirea în spațiu și în timp.
 
-    Ca să spunem că o autorizație NU acoperă tăierea, trebuie întâi să știm unde e parcela ei.
-    Când parcela nu e publicată și am pus un cerc estimat, sau când abia atinge zona, nu afirmăm
-    nimic despre perioadă: rămâne „autorizație, dar nu se potrivește clar".
+    Două lucruri cu totul diferite nu trebuie puse la un loc:
+      - parcela autorizată e publicată, iar tăierea cade în afara ei  -> „afara", e un semnal
+      - parcela nu e publicată, deci nu știm unde e                   -> „neclar", nu spunem nimic
+
+    Ca să afirmăm că o autorizație NU acoperă tăierea, trebuie întâi să știm unde e parcela ei.
     """
     if not permis or not permis.get("apv"):
         return "fara"
+    reala = permis.get("potrivire") in PARCELA_REALA
     supra = permis.get("suprapunere") or 0
     if supra <= 0:
-        return "langa"
+        return "afara" if reala else "neclar"
     cs, ce, _ = interval_taiere(a)
     stare = stare_din_timp((cs, ce), permis)
     if stare == "acoperit":
         return stare
-    sigur = permis.get("potrivire") in PARCELA_REALA and supra > SUPRA_MIN
-    return stare if sigur else "langa"
+    return stare if (reala and supra > SUPRA_MIN) else "neclar"
 
 
 # ---------------------------------------------------------------- potrivirea
