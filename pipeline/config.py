@@ -33,7 +33,10 @@ LEAFON_NDVI = 0.70        # căutăm doar unde referința de sezon e pădure cu 
 # Iarna nu căutăm deloc: testul pe iarna 2024–2025 a dat 5% potriviri cu Hansen (zăpadă și sol ud sub foioasele
 # desfrunzite, diferite de la un an la altul), iar zonele din noiembrie 2025 au avut 0–2%. O tăiere de iarnă apare
 # primăvara, când pădurea din jur înverzește, cu intervalul în care s-a putut întâmpla.
-WINTER = ("11-01", "03-15")
+# Din noiembrie 2026 căutăm și în noiembrie – mijlocul lui decembrie (toamnele fără zăpadă), cu pragurile stricte
+# și cu regula de toamnă (rămâne „scăzută” până o vedem primăvara). De urmărit la primăvară câte s-au confirmat;
+# dacă iese ca în noiembrie 2025, pauza revine la 1 noiembrie.
+WINTER = ("12-15", "03-15")
 MAX_SCENE_CLOUD = 85      # sărim imaginile cu mai mult de atâția % nori (după metadate)
 MIN_SCENE_CLEAR = 0.05    # și pe cele în care se vede curat sub 5% din pădurea plăcii
 
@@ -58,13 +61,13 @@ NBR_NOW_MAX = 0.45
 # alarme false (testul pe 2025: 30–37% potriviri în iulie–august, față de 50–75% cu pragurile stricte; pădure
 # stresată de secetă și arșiță, altfel decât vara trecută). Toamna, frunzele se îngălbenesc la date diferite de la
 # un an la altul. O tăiere rasă trece și de pragurile stricte, iar una parțială apare primăvara următoare.
-STRICT = ("07-01", "10-31")
+STRICT = ("07-01", "12-14")
 NDVI_DROP_STRICT = 0.25
 NDVI_NOW_MAX_STRICT = 0.50
 NBR_DROP_STRICT = 0.25
 NBR_NOW_MAX_STRICT = 0.35
 # Tot ce găsim toamna rămâne cel mult „scăzută” până o vedem schimbată și după (octombrie 2025: 38% potriviri).
-AUTUMN = ("09-15", "10-31")
+AUTUMN = ("09-15", "12-14")
 HAZE_BLUE = 0.09          # albastru mare ȘI aproape cât roșul = nor sau ceață (solul gol e mai roșu decât albastru)
 HAZE_BLUE_RED = 0.85
 CONFIRM_DATES = 4         # o zonă e confirmată când se vede schimbată în cel puțin atâtea zile diferite

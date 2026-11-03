@@ -18,7 +18,7 @@ imagini Sentinel-2 noi (la 2–5 zile)
      ca frunzele care vin sau cad la alte date să nu arate ca o tăiere
    - pentru fiecare imagine nouă: unde a scăzut infraroșul de undă scurtă (NBR, SWIR) și verdele (NDVI)
      mai mult decât în pădurea din jur
-   - iarna (1 noiembrie – 15 martie) nu caută: o tăiere din iarnă apare primăvara, cu intervalul ei;
+   - iarna (15 decembrie – 15 martie) nu caută: o tăiere din iarnă apare primăvara, cu intervalul ei;
      din iulie până în octombrie pragurile sunt mai stricte, iar ce găsim toamna rămâne cel mult „scăzută”
    - păstrează doar ce rămâne schimbat în imaginile următoare (confirmată = în cel puțin 4 imagini)
    - respinge ce se vedea deja schimbat înainte și schimbările care cuprind tot dealul (ceață)
@@ -135,7 +135,7 @@ Hansen e o referință independentă, dar nu perfectă: ratează tăierile parț
 
 ## Limite
 
-Norii ascund pădurea uneori zile întregi. Între noiembrie și mijlocul lui martie nu căutăm deloc: o tăiere făcută atunci apare primăvara, cu intervalul în care s-a putut întâmpla. Nu vedem zone mai mici de 1 ha și nici tăierile de sub coronament. Și AI-ul greșește. Dacă vezi o alertă greșită, deschide un issue.
+Norii ascund pădurea uneori zile întregi. Între mijlocul lui decembrie și mijlocul lui martie nu căutăm deloc: o tăiere făcută atunci apare primăvara, cu intervalul în care s-a putut întâmpla. Nu vedem zone mai mici de 1 ha și nici tăierile de sub coronament. Și AI-ul greșește. Dacă vezi o alertă greșită, deschide un issue.
 
 ## Cheile (secrete)
 
