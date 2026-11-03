@@ -30,11 +30,10 @@
   /* cald = merită verificat, cu cât mai aprins cu atât mai serios; verde = are hârtie; gri = nu știm.
      Albastrul rămâne doar al ariilor protejate, ca să nu se încurce cu starea autorizației. */
   --color-aut-fara: oklch(62% 0.22 27);
-  --color-aut-afara: oklch(70% 0.19 40);
-  --color-aut-expirat: oklch(78% 0.15 70);
-  --color-aut-neinceput: oklch(84% 0.12 95);
+  --color-aut-neacoperit: oklch(74% 0.17 55);
+  --color-aut-probabil: oklch(70% 0.11 150);
   --color-aut-acoperit: oklch(70% 0.11 150);
-  --color-aut-neclar: oklch(60% 0.015 80);
+  --color-aut-nu_taiere: oklch(42% 0.010 80);
   --color-aut-nev: oklch(45% 0.010 80);
   --color-forest-lo: oklch(23% 0.03 150);
   --color-forest-hi: oklch(43% 0.065 150);
@@ -136,10 +135,9 @@ button:disabled { opacity: 0.55; cursor: not-allowed; }
 .key.lo { background: var(--color-data-lo); }
 .key.un { background: none; border: 1.5px dashed var(--color-data-un); }
 .key.a-fara { background: var(--color-aut-fara); }
-.key.a-expirat { background: var(--color-aut-expirat); }
-.key.a-neinceput { background: var(--color-aut-neinceput); }
-.key.a-afara { background: var(--color-aut-afara); }
-.key.a-neclar { background: var(--color-aut-neclar); }
+.key.a-neacoperit { background: var(--color-aut-neacoperit); }
+.key.a-probabil { background: none; border: 2px solid var(--color-aut-probabil); }
+.key.a-nu_taiere { background: var(--color-aut-nu_taiere); }
 .key.a-acoperit { background: var(--color-aut-acoperit); }
 .key.a-nev { background: none; border: 1.5px dashed var(--color-aut-nev); }
 .key.fire { position: relative; background: none; }

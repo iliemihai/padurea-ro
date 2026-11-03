@@ -54,7 +54,7 @@
       <div class="chips ctys" id="ctys" hidden></div>
       <p class="hint" id="cty-hint">Sau dă clic pe un județ pe hartă. Poți alege mai multe.</p>
       <label class="tg" id="tg-only-arii" hidden><input type="checkbox" id="only-arii"><span>Doar zonele din arii protejate</span></label>
-      <label class="tg" id="tg-fara-aut" hidden><input type="checkbox" id="only-fara-aut"><span>Doar zonele fără autorizație care să le acopere</span></label>
+      <label class="tg" id="tg-fara-aut" hidden><input type="checkbox" id="only-fara-aut"><span>Doar tăierile fără autorizație care să le acopere</span></label>
     </section>
 
     <section class="block grow results" id="listbox" aria-labelledby="h-list">
@@ -124,11 +124,10 @@
     <div class="legend" id="legend">
       <span id="lg-aut" hidden class="lgset">
         <span><i class="key a-fara" aria-hidden="true"></i>fără autorizație</span>
-        <span><i class="key a-afara" aria-hidden="true"></i>tăiat în afara parcelei</span>
-        <span><i class="key a-expirat" aria-hidden="true"></i>autorizația expirase</span>
-        <span><i class="key a-neinceput" aria-hidden="true"></i>a început după</span>
+        <span><i class="key a-neacoperit" aria-hidden="true"></i>autorizația nu acoperă</span>
+        <span><i class="key a-probabil" aria-hidden="true"></i>probabil cu autorizație</span>
         <span><i class="key a-acoperit" aria-hidden="true"></i>cu autorizație</span>
-        <span><i class="key a-neclar" aria-hidden="true"></i>nu putem verifica</span>
+        <span><i class="key a-nu_taiere" aria-hidden="true"></i>nu e tăiere de pădure</span>
         <span><i class="key a-nev" aria-hidden="true"></i>neverificată</span>
         <span id="lg-acop" class="lg-acop"></span>
       </span>

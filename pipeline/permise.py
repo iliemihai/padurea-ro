@@ -18,12 +18,12 @@ perfect legală. Așa că folosim intervalul [ultima imagine cu pădurea intact�
 Când nu avem o imagine intactă recentă (iarnă, nori), zona are doar „intactă în vara lui X" și intervalul e
 larg, de aproape un an: atunci spunem mai puțin, dar tot putem exclude o autorizație închisă înainte de vara aia.
 
-Stări:
-  acoperit   autorizație pe zona tăiată, valabilă în intervalul în care s-a tăiat
-  expirat    autorizație pe zona tăiată, dar se terminase înainte ca zona să fie încă intactă
-  neinceput  autorizație pe zona tăiată, dar începe după ce schimbarea se vedea deja
-  langa      autorizație în apropiere, dar nu peste zona tăiată
-  fara       nicio autorizație în raza căutată
+Stări, de la cel mai îngrijorător la cel mai liniștitor:
+  fara        nicio autorizație în jur
+  neacoperit  autorizație pe parcelă, dar nu acoperă tăierea (motiv: afara / expirat / neinceput)
+  probabil    autorizație în zonă, dar amenajamentul nu publică parcela ei: nu putem confirma
+  acoperit    parcela autorizată acoperă zona, în intervalul tăierii
+  nu_taiere   nu e tăiere de lemn (drum, agricol, incendiu): autorizațiile de tăiere nu se aplică
 
 Nicăieri nu scriem „ilegal": harta parcelelor e publicată doar în parte, autorizațiile se pot prelungi,
 iar o zonă fără autorizație găsită e un motiv de verificat, nu o dovadă.
@@ -253,30 +253,74 @@ def stare_din_timp(cut, permis, toleranta=TOLERANTA_ZILE):
     return "acoperit"
 
 
+# ---------------------------------------------------------------- ce fel de schimbare e
+# Autorizațiile de tăiere (APV) au sens doar pentru tăieri de lemn. Un drum prin pădure, un teren arat,
+# un incendiu nu au APV și nu trebuie judecate după el. Întrebăm asta înaintea oricărui permis.
+CORIDOR_ALUNGIRE = 5.0    # de câte ori mai lung decât lat
+CORIDOR_LATIME_M = 120.0  # o autostradă cu taluzuri are ~100 m; un parchet e mult mai lat
+NU_TAIERE_AI = {"agricol": "agricol", "incendiu": "incendiu", "nori": "nori", "toamna": "toamnă"}
+
+
+def forma(a):
+    """(alungire, lățime m, lungime m) din dreptunghiul minim rotit, în metri."""
+    from shapely.geometry import shape
+    g = shape(a["geometry"])
+    lat = g.centroid.y
+    gm = in_metri(g, lat)
+    r = gm.minimum_rotated_rectangle
+    xs, ys = r.exterior.coords.xy
+    pts = list(zip(xs, ys))
+    l = sorted(math.hypot(pts[i + 1][0] - pts[i][0], pts[i + 1][1] - pts[i][1]) for i in range(2))
+    return (l[1] / max(l[0], 1.0), l[0], l[1])
+
+
+def fel_schimbare(a):
+    """'taiere' sau de ce nu e tăiere de lemn: 'drum', 'agricol', 'incendiu', 'nori', 'toamnă'."""
+    cat = (a.get("ai") or {}).get("categorie")
+    if cat in NU_TAIERE_AI:
+        return NU_TAIERE_AI[cat]
+    try:
+        alungire, latime, _ = forma(a)
+    except Exception:
+        return "taiere"
+    if alungire >= CORIDOR_ALUNGIRE and latime <= CORIDOR_LATIME_M:
+        return "drum"
+    return "taiere"
+
+
 PARCELA_REALA = ("exact", "cheie", "spațial")
 SUPRA_MIN = 0.2    # cât din zonă trebuie să acopere parcela ca să vorbim despre perioada ei
 
 
 def clasifica(a, permis):
-    """Starea finală a unei zone, din potrivirea în spațiu și în timp.
+    """Starea unei zone, de la cel mai îngrijorător la cel mai liniștitor.
 
-    Două lucruri cu totul diferite nu trebuie puse la un loc:
-      - parcela autorizată e publicată, iar tăierea cade în afara ei  -> „afara", e un semnal
-      - parcela nu e publicată, deci nu știm unde e                   -> „neclar", nu spunem nimic
+      nu_taiere   nu e tăiere de lemn (drum, agricol, incendiu...): autorizațiile de tăiere nu se aplică
+      fara        nicio autorizație în jur
+      neacoperit  există autorizație pe parcelă, dar nu acoperă tăierea; `motiv` spune de ce:
+                    afara (parcela nu cuprinde zona), expirat, neinceput
+      probabil    există autorizație în zonă, dar amenajamentul nu publică parcela ei: nu putem confirma
+      acoperit    parcela autorizată acoperă zona, în intervalul tăierii
 
     Ca să afirmăm că o autorizație NU acoperă tăierea, trebuie întâi să știm unde e parcela ei.
+    Întoarce (stare, motiv).
     """
+    fel = fel_schimbare(a)
+    if fel != "taiere":
+        return "nu_taiere", fel
     if not permis or not permis.get("apv"):
-        return "fara"
+        return "fara", None
     reala = permis.get("potrivire") in PARCELA_REALA
     supra = permis.get("suprapunere") or 0
     if supra <= 0:
-        return "afara" if reala else "neclar"
+        return ("neacoperit", "afara") if reala else ("probabil", None)
     cs, ce, _ = interval_taiere(a)
-    stare = stare_din_timp((cs, ce), permis)
-    if stare == "acoperit":
-        return stare
-    return stare if (reala and supra > SUPRA_MIN) else "neclar"
+    t = stare_din_timp((cs, ce), permis)
+    if t == "acoperit":
+        return "acoperit", None
+    if reala and supra > SUPRA_MIN:
+        return "neacoperit", t
+    return "probabil", None
 
 
 # ---------------------------------------------------------------- potrivirea
@@ -380,7 +424,8 @@ def potriveste(zone, apv, parcele_pol=None, apv_pe_parcela=None, raza_m=RAZA_M):
         for i in tree.query(g.buffer(grade_acoperitoare(lat, raza_m))):
             pune(nrs[int(i)])
         if not cands:
-            rezultat[zid] = {"stare": "fara", "n_apv": 0}
+            st, mo = clasifica(a, None)
+            rezultat[zid] = {"stare": st, "motiv": mo, "fel": fel_schimbare(a), "n_apv": 0}
             continue
         cut = interval_taiere(a)[:2]
         rang = {"acoperit": 0, "expirat": 1, "neinceput": 2}
@@ -397,7 +442,8 @@ def potriveste(zone, apv, parcele_pol=None, apv_pe_parcela=None, raza_m=RAZA_M):
                "start": p["start"], "end": p["end"], "volum_m3": d.get("volumInitial") or d.get("volum"),
                "tratament": d.get("tratament"), "natura": d.get("naturaProdus"),
                "potrivire": p["metoda"], "suprapunere": supra, "dist_m": dist, "n_apv": len(cands)}
-        rec["stare"] = clasifica(a, rec)
+        rec["stare"], rec["motiv"] = clasifica(a, rec)
+        rec["fel"] = fel_schimbare(a)
         rec["fereastra"] = interval_taiere(a)[2]
         ha_zona = a.get("ha") or 0
         if rec["volum_m3"] and supra > 0 and ha_zona * M3_PER_HA > 3 * float(rec["volum_m3"]):
@@ -495,7 +541,8 @@ def cmd_retime(args):
         if not a:
             nou[zid] = rec; continue
         r = dict(rec)
-        r["stare"] = clasifica(a, r)
+        r["stare"], r["motiv"] = clasifica(a, r)
+        r["fel"] = fel_schimbare(a)
         r["fereastra"] = interval_taiere(a)[2]
         mutari[(rec["stare"], r["stare"])] += 1
         nou[zid] = r

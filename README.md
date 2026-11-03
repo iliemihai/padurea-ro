@@ -80,21 +80,20 @@ Pentru fiecare zonă căutăm în Inspectorul Pădurii autorizațiile (APV) de l
 
 Intervalul contează, și e partea ușor de greșit. Satelitul nu vede tăierea când se întâmplă, ci când revine frunza: o tăiere din ianuarie, cu autorizație valabilă până în decembrie, apare ca schimbare abia în aprilie. Dacă am compara perioada autorizației cu data la care am văzut-o noi, am declara „expirat” o tăiere perfect legală — așa s-a și întâmplat la prima încercare, cu 277 de zone în loc de 27. Așa că folosim intervalul dintre ultima imagine cu pădurea întreagă și prima imagine cu schimbarea. Când nu avem o imagine întreagă recentă (iarnă, nori), zona are doar „intactă în vara lui X”: intervalul e de aproape un an, spunem mai puțin, dar tot putem exclude o autorizație închisă înainte de vara aceea.
 
-| stare | ce înseamnă |
-|---|---|
-| fără autorizație | nicio autorizație la mai puțin de 500 m |
-| tăiat în afara parcelei | parcela autorizată e publicată, dar schimbarea cade în afara ei |
-| autorizația expirase | parcela acoperă zona, dar autorizația se terminase înainte ca pădurea să fie încă întreagă |
-| a început după | parcela acoperă zona, dar autorizația începe după ce schimbarea se vedea deja |
-| cu autorizație | parcela acoperă zona, iar perioada cuprinde intervalul tăierii |
-| nu putem verifica | există autorizație în zonă, dar amenajamentul nu publică parcela ei |
-| neverificată | zona n-a fost încă comparată |
+Înainte de orice autorizație, întrebăm **ce fel de schimbare e**. Un drum prin pădure, un teren arat sau un incendiu n-au autorizație de tăiere și nu trebuie judecate după ea: o linie lungă și îngustă (de cel puțin 5 ori mai lungă decât lată, sub 120 m lățime) e un coridor — drum, autostradă, linie electrică — iar categoriile analistului AI (agricol, incendiu, nori, toamnă) spun restul.
 
-Primele patru stări merită privite; „cu autorizație” înseamnă că hârtiile se potrivesc; „nu putem verifica” nu e nici semn bun, nici rău.
+| stare | culoare | ce înseamnă |
+|---|---|---|
+| fără autorizație | roșu | nicio autorizație în jurul zonei |
+| autorizația nu acoperă | portocaliu | parcela e publicată, dar nu cuprinde zona, sau autorizația nu era valabilă când s-a tăiat; fișa spune care |
+| probabil cu autorizație | verde gol | autorizație în zonă, dar amenajamentul nu publică parcela ei; nu putem confirma |
+| cu autorizație | verde plin | parcela autorizată acoperă zona, în intervalul tăierii |
+| nu e tăiere de pădure | gri | drum, agricol, incendiu, nori sau toamnă: autorizațiile de tăiere nu se aplică |
+| neverificată | contur punctat | zona n-a fost încă comparată |
 
-Ca să spunem că o autorizație **nu** acoperă tăierea, trebuie întâi să știm unde e parcela ei. Statul publică hărțile amenajistice doar în parte, mai ales pentru pădurile private; acolo punem un cerc în jurul punctului autorizației, pe măsura volumului, și nu mai afirmăm nimic despre perioadă — zona rămâne „nu putem verifica”. Din 1.264 de zone comparate, 157 ajung acolo doar pentru că parcela nu e publicată.
+O singură scară: cu cât mai cald, cu atât mai mult merită privit. Albastrul rămâne doar al ariilor protejate.
 
-Pe hartă, culoarea zonelor arată starea autorizației: de la roșu (fără) prin portocaliu și galben, la verde (cu autorizație), cu gri pentru ce nu putem verifica. Albastrul rămâne doar al ariilor protejate.
+Ca să spunem că o autorizație **nu** acoperă tăierea, trebuie întâi să știm unde e parcela ei. Statul publică hărțile amenajistice doar în parte, mai ales pentru pădurile private; acolo punem un cerc în jurul punctului autorizației, pe măsura volumului, și nu afirmăm nimic despre perioadă — zona rămâne „probabil cu autorizație”.
 
 Nicăieri nu scriem „ilegal”. Autorizațiile se pot prelungi, parcelele lipsesc, iar o zonă fără autorizație găsită e un motiv de verificat, nu o dovadă.
 
