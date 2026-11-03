@@ -1,0 +1,53 @@
+name: Judecata cu context
+
+# AI-ul rejudecă zonele roșii/nejudecate/probabile cu poza Esri, perechea Sentinel, vederea largă și fișa de context.
+on:
+  workflow_dispatch:
+    inputs:
+      full:
+        description: "Reface și zonele deja judecate"
+        type: boolean
+        default: false
+      martori:
+        description: "Și un eșantion de zone verzi (martor pentru evaluare)"
+        type: boolean
+        default: false
+      limit:
+        description: "Doar primele N zone (probă); gol = toate"
+        type: string
+        default: ""
+
+permissions:
+  contents: write
+
+concurrency:
+  group: judecata
+  cancel-in-progress: false
+
+jobs:
+  judecata:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Judecata
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: python -m pipeline.rejudeca ${{ inputs.full && '--full' || '' }} ${{ inputs.martori && '--si-martori' || '' }} ${{ inputs.limit && format('--limit {0}', inputs.limit) || '' }}
+      - name: Salvez în repo
+        if: always()
+        run: |
+          git config user.name "padurea-ro bot"
+          git config user.email "actions@users.noreply.github.com"
+          [ -f docs/data/judecata.json ] || exit 0
+          cp docs/data/judecata.json /tmp/judecata.json
+          git fetch origin main && git reset --hard origin/main
+          cp /tmp/judecata.json docs/data/judecata.json
+          git add docs/data/judecata.json
+          git commit -m "Judecata: $(date -u +%Y-%m-%d)" || echo "nimic nou"
+          git push origin HEAD:main
