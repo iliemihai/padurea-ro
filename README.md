@@ -82,14 +82,19 @@ Intervalul contează, și e partea ușor de greșit. Satelitul nu vede tăierea 
 
 | stare | ce înseamnă |
 |---|---|
-| cu autorizație | parcela autorizată acoperă zona, iar perioada cuprinde intervalul tăierii |
+| fără autorizație | nicio autorizație la mai puțin de 500 m |
+| tăiat în afara parcelei | parcela autorizată e publicată, dar schimbarea cade în afara ei |
 | autorizația expirase | parcela acoperă zona, dar autorizația se terminase înainte ca pădurea să fie încă întreagă |
 | a început după | parcela acoperă zona, dar autorizația începe după ce schimbarea se vedea deja |
-| nu se potrivește | există autorizație în zonă, dar parcela ei nu atinge schimbarea, sau nu știm unde e parcela |
-| fără autorizație | nicio autorizație în 500 m |
+| cu autorizație | parcela acoperă zona, iar perioada cuprinde intervalul tăierii |
+| nu putem verifica | există autorizație în zonă, dar amenajamentul nu publică parcela ei |
 | neverificată | zona n-a fost încă comparată |
 
-Ca să spunem că o autorizație **nu** acoperă tăierea, trebuie întâi să știm unde e parcela ei. Statul publică hărțile amenajistice doar în parte, mai ales pentru pădurile private; acolo punem un cerc în jurul punctului autorizației, pe măsura volumului, și atunci nu afirmăm nimic despre perioadă — zona rămâne „nu se potrivește”.
+Primele patru stări merită privite; „cu autorizație” înseamnă că hârtiile se potrivesc; „nu putem verifica” nu e nici semn bun, nici rău.
+
+Ca să spunem că o autorizație **nu** acoperă tăierea, trebuie întâi să știm unde e parcela ei. Statul publică hărțile amenajistice doar în parte, mai ales pentru pădurile private; acolo punem un cerc în jurul punctului autorizației, pe măsura volumului, și nu mai afirmăm nimic despre perioadă — zona rămâne „nu putem verifica”. Din 1.264 de zone comparate, 157 ajung acolo doar pentru că parcela nu e publicată.
+
+Pe hartă, culoarea zonelor arată starea autorizației: de la roșu (fără) prin portocaliu și galben, la verde (cu autorizație), cu gri pentru ce nu putem verifica. Albastrul rămâne doar al ariilor protejate.
 
 Nicăieri nu scriem „ilegal”. Autorizațiile se pot prelungi, parcelele lipsesc, iar o zonă fără autorizație găsită e un motiv de verificat, nu o dovadă.
 

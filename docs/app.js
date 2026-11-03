@@ -142,23 +142,25 @@
      Pentru fiecare zonă căutăm în Inspectorul Pădurii autorizațiile din jur și le comparăm cu data schimbării.
      Zonele neverificate nu primesc nimic: lipsa unei autorizații în datele noastre nu dovedește o tăiere ilegală. */
   /* ordinea e de la cel mai îngrijorător la cel mai liniștitor; culorile vin din foaia de stil */
-  var AUT_ORD = ["fara", "expirat", "neinceput", "langa", "acoperit", "nev"];
+  var AUT_ORD = ["fara", "afara", "expirat", "neinceput", "acoperit", "neclar", "nev"];
   var AUT_T = {
-    fara: { cls: "a-fara", scurt: "nicio autorizație găsită", badge: "nicio autorizație găsită",
-            lung: "Nu am găsit nicio autorizație de tăiere în jurul zonei, pentru perioada în care s-a tăiat.", grija: true },
-    expirat: { cls: "a-expirat", scurt: "autorizația expirase", badge: "autorizația expirase",
-               lung: "Peste zonă există o autorizație, dar se terminase înainte ca pădurea să fie încă întreagă aici.", grija: true },
-    neinceput: { cls: "a-neinceput", scurt: "autorizația a început după", badge: "autorizația a început după",
-                 lung: "Peste zonă există o autorizație, dar începe după ce schimbarea se vedea deja.", grija: true },
-    langa: { cls: "a-langa", scurt: "autorizație, dar nu se potrivește", badge: "autorizație, dar nu se potrivește",
-             lung: "Am găsit o autorizație în zonă, dar nu o putem lega de schimbarea asta: ori parcela ei nu atinge zona, ori nu știm exact unde e parcela." },
+    fara: { cls: "a-fara", scurt: "fără autorizație", badge: "fără autorizație", grija: true,
+            lung: "Nu am găsit nicio autorizație de tăiere la mai puțin de 500 m de zonă." },
+    afara: { cls: "a-afara", scurt: "tăiat în afara parcelei", badge: "tăiat în afara parcelei", grija: true,
+             lung: "Lângă zonă există o autorizație, iar parcela ei e publicată în amenajament — dar schimbarea nu cade în parcela aceea, ci în afara ei." },
+    expirat: { cls: "a-expirat", scurt: "autorizația expirase", badge: "autorizația expirase", grija: true,
+               lung: "Parcela autorizată acoperă zona, dar autorizația se terminase înainte ca pădurea să fie încă întreagă aici." },
+    neinceput: { cls: "a-neinceput", scurt: "autorizația a început după", badge: "autorizația a început după", grija: true,
+                 lung: "Parcela autorizată acoperă zona, dar autorizația începe după ce schimbarea se vedea deja." },
     acoperit: { cls: "a-acoperit", scurt: "cu autorizație", badge: "cu autorizație", ok: true,
                 lung: "Peste zonă există o autorizație de tăiere, valabilă în intervalul în care s-a tăiat." },
+    neclar: { cls: "a-neclar", scurt: "nu putem verifica", badge: "nu putem verifica",
+              lung: "Există o autorizație în zonă, dar statul nu publică harta parcelei ei, așa că nu putem spune dacă acoperă tăierea sau nu. Nu e nici semn bun, nici semn rău." },
     nev: { cls: "a-nev", scurt: "autorizația neverificată", badge: "neverificată",
            lung: "Zona asta încă n-a fost comparată cu autorizațiile din Inspectorul Pădurii." }
   };
   /* numele vechi, ca o hartă deschisă cu datele de ieri să nu arate goluri */
-  var AUT_VECHI = { in_perioada: "acoperit", in_apropiere: "langa" };
+  var AUT_VECHI = { in_perioada: "acoperit", in_apropiere: "neclar", langa: "neclar" };
   function aut(a) { return AUT[a.id] || null; }
   function autStare(a) { var v = aut(a); if (!v) return "nev"; return AUT_VECHI[v.stare] || v.stare; }
   function autT(a) { return AUT_T[autStare(a)]; }
