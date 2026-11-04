@@ -217,7 +217,7 @@ def _json_din(txt):
 
 # ---------------------------------------------------------------- întrebarea
 def intreaba(png, a, context, esri_date, model=None):
-    model = model or C.CLAUDE_MODEL
+    model = model or C.JUDGE_MODEL
     text = PROMPT.format(esri_date=esri_date or "an unknown date", d0=(a.get("img_before") or {}).get("date", "?"), d1=(a.get("img_after") or {}).get("date", "?"), context=context)
     content = [{"type": "image", "source": {"type": "base64", "media_type": "image/png", "data": base64.b64encode(png).decode()}},
                {"type": "text", "text": text}]
@@ -266,10 +266,14 @@ def main(argv=None):
     ap.add_argument("--ids", nargs="*")
     ap.add_argument("--fara-esri", action="store_true")
     ap.add_argument("--fara-larg", action="store_true")
-    ap.add_argument("--model", help="modelul (implicit config.CLAUDE_MODEL)")
+    ap.add_argument("--model", help="modelul (implicit config.JUDGE_MODEL)")
+    ap.add_argument("--refa-alt-model", action="store_true",
+                    help="rejudecă tot ce a fost judecat cu alt model (sau niciodată); se poate relua dacă se oprește")
     ap.add_argument("--out", help="fișierul de ieșire (implicit docs/data/judecata.json)")
     ap.add_argument("--planse", help="doar planșele + fișa neutră, pentru evaluare oarbă, în acest director (fără model)")
     ap.add_argument("--seed", type=int, default=11)
+    ap.add_argument("--strat", choices=("v1", "holdout"), default="v1", help="compoziția eșantionului de planșe")
+    ap.add_argument("--exclude", nargs="*", default=[], help="cheie.json-uri ale eșantioanelor deja folosite")
     args = ap.parse_args(argv)
     if not os.environ.get("ANTHROPIC_API_KEY") and not args.planse:
         raise SystemExit("lipsește ANTHROPIC_API_KEY")
@@ -292,7 +296,11 @@ def main(argv=None):
         if args.si_martori:
             verzi = [k for k, v in verd.items() if v.get("stare") == "acoperit" and k in zone and zone[k].get("img_after")]
             random.seed(7); tinta += random.sample(verzi, min(args.martori, len(verzi)))
-        if not args.full:
+        if args.refa_alt_model:
+            model = args.model or C.JUDGE_MODEL
+            tinta = list(dict.fromkeys(tinta + [k for k in vechi if k in zone and zone[k].get("img_after")]))
+            tinta = [k for k in tinta if (vechi.get(k) or {}).get("model") != model]
+        elif not args.full:
             tinta = [k for k in tinta if k not in vechi]
     tinta.sort(key=lambda k: zone[k]["first_seen"], reverse=True)
     if args.limit:
@@ -333,13 +341,28 @@ def main(argv=None):
 
 
 def planse_oarbe(args, zone, verd, peis):
-    """Eșantion stratificat pe stările de acum (60 roșii, 15 vegetație, 15 nu_taiere, 10 acoperit), amestecat.
+    """Eșantionul de planșe. v1: stratificat pe stările de acum (60 roșii, 15 vegetație, 15 nu_taiere, 10 acoperit);
+    holdout: 120 la întâmplare din zonele care ar putea fi roșii, fără cele din --exclude. Amestecat.
     Scrie NN.png (planșa) și NN.txt (fișa fără registru și fără ghicirea de peisaj), plus cheie.json separat."""
     rnd = random.Random(args.seed)
+    folosite = set()
+    for f in args.exclude:
+        folosite |= {v["id"] for v in json.loads(pathlib.Path(f).read_text(encoding="utf-8")).values()}
     ids = []
-    for stari, n in ((("fara", "neacoperit"), 60), (("vegetatie",), 15), (("nu_taiere",), 15), (("acoperit",), 10)):
-        c = [k for k, v in verd.items() if v.get("stare") in stari and k in zone and zone[k].get("img_after")]
-        ids += rnd.sample(c, min(n, len(c)))
+    if args.strat == "v1":
+        for stari, n in ((("fara", "neacoperit"), 60), (("vegetatie",), 15), (("nu_taiere",), 15), (("acoperit",), 10)):
+            c = sorted(k for k, v in verd.items() if v.get("stare") in stari and k in zone and zone[k].get("img_after") and k not in folosite)
+            ids += rnd.sample(c, min(n, len(c)))
+    else:
+        # holdout: eșantion simplu aleator din TOATE zonele care ar putea ajunge roșii (fără autorizație care să le acopere,
+        # văzute de judecător), indiferent de starea de azi; roșiile finale din el sunt atunci un eșantion aleator al roșiilor
+        from . import permise as P
+        jud = json.loads(OUT.read_text(encoding="utf-8")).get("zone", {}) if OUT.exists() else {}
+        c = sorted(k for k, v in verd.items() if k in zone and zone[k].get("img_after") and k not in folosite
+                   and (k in jud or v.get("stare") in ("fara", "neacoperit", "nejudecat", "probabil"))
+                   and P._stare_permis(zone[k], v)[0] in ("fara", "neacoperit"))
+        print(f"holdout: {len(c)} zone posibil roșii, aleg 120", flush=True)
+        ids = rnd.sample(c, min(120, len(c)))
     rnd.shuffle(ids)
     if args.limit:
         ids = ids[: args.limit]

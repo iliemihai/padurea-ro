@@ -28,6 +28,10 @@ on:
         description: "Fișier de ieșire (gol = docs/data/judecata.json)"
         type: string
         default: ""
+      refa:
+        description: "Rejudecă tot ce a fost judecat cu alt model (se poate relua)"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -39,7 +43,7 @@ concurrency:
 jobs:
   judecata:
     runs-on: ubuntu-latest
-    timeout-minutes: 300
+    timeout-minutes: 340
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -50,7 +54,7 @@ jobs:
       - name: Judecata
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-        run: python -m pipeline.rejudeca ${{ inputs.full && '--full' || '' }} ${{ inputs.martori && '--si-martori' || '' }} ${{ inputs.limit && format('--limit {0}', inputs.limit) || '' }} ${{ inputs.ids && format('--ids {0}', inputs.ids) || '' }} ${{ inputs.model && format('--model {0}', inputs.model) || '' }} ${{ inputs.out && format('--out {0}', inputs.out) || '' }}
+        run: python -m pipeline.rejudeca ${{ inputs.full && '--full' || '' }} ${{ inputs.martori && '--si-martori' || '' }} ${{ inputs.limit && format('--limit {0}', inputs.limit) || '' }} ${{ inputs.ids && format('--ids {0}', inputs.ids) || '' }} ${{ inputs.model && format('--model {0}', inputs.model) || '' }} ${{ inputs.out && format('--out {0}', inputs.out) || '' }} ${{ inputs.refa && '--refa-alt-model' || '' }}
       - name: Salvez în repo
         if: always()
         run: |

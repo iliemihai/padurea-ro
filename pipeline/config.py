@@ -110,6 +110,9 @@ JUDGE_MAX_PER_GROUP = int(os.environ.get("JUDGE_MAX_PER_GROUP", "150"))
 OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://localhost:11434")
 LOCAL_MODEL = os.environ.get("LOCAL_MODEL", "qwen3.5:4b")
 CLAUDE_MODEL = os.environ.get("CLAUDE_MODEL", "claude-haiku-5-5")
+# judecătorul cu context (rejudeca.py): pe eșantionul etichetat orb, Sonnet a ținut capcanele (toamnă, foc, pășune,
+# șantier) mult mai bine decât Haiku: precizia roșului 83% față de 77% (același prompt) și 58% (promptul vechi)
+JUDGE_MODEL = os.environ.get("JUDGE_MODEL", "claude-sonnet-5-5")
 
 os.environ.setdefault("GDAL_DISABLE_READDIR_ON_OPEN", "EMPTY_DIR")
 os.environ.setdefault("GDAL_HTTP_MAX_RETRY", "4")

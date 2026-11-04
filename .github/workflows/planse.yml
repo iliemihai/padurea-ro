@@ -13,6 +13,14 @@ on:
         description: "Sămânța eșantionului"
         type: string
         default: "11"
+      strat:
+        description: "Compoziția: v1 sau holdout"
+        type: string
+        default: "v1"
+      exclude:
+        description: "cheie.json-uri de exclus (eșantioane deja folosite), despărțite prin spațiu"
+        type: string
+        default: ""
 
 permissions:
   contents: write
@@ -28,7 +36,7 @@ jobs:
           python-version: "3.12"
           cache: pip
       - run: pip install -r requirements.txt
-      - run: python -m pipeline.rejudeca --planse out/planse --seed "${{ inputs.seed }}" ${{ inputs.limit && format('--limit {0}', inputs.limit) || '' }}
+      - run: python -m pipeline.rejudeca --planse out/planse --seed "${{ inputs.seed }}" --strat "${{ inputs.strat }}" ${{ inputs.exclude && format('--exclude {0}', inputs.exclude) || '' }} ${{ inputs.limit && format('--limit {0}', inputs.limit) || '' }}
       - name: Pe ramura „planse”
         run: |
           git config user.name "padurea-ro bot"

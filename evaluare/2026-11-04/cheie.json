@@ -1,0 +1,502 @@
+{
+ "001": {
+  "id": "20260504_47840_26160",
+  "stare": "neacoperit",
+  "motiv": "expirat"
+ },
+ "002": {
+  "id": "20260621_46194_24179",
+  "stare": "neacoperit",
+  "motiv": "expirat"
+ },
+ "003": {
+  "id": "20260430_46111_21743",
+  "stare": "acoperit",
+  "motiv": null
+ },
+ "004": {
+  "id": "20260430_45787_22486",
+  "stare": "neacoperit",
+  "motiv": "afara"
+ },
+ "005": {
+  "id": "20260614_45015_21667",
+  "stare": "nu_taiere",
+  "motiv": "agricol"
+ },
+ "006": {
+  "id": "20260426_45192_29340",
+  "stare": "fara",
+  "motiv": null
+ },
+ "007": {
+  "id": "20260619_46169_22442",
+  "stare": "fara",
+  "motiv": null
+ },
+ "008": {
+  "id": "20260914_45381_22087",
+  "stare": "fara",
+  "motiv": null
+ },
+ "009": {
+  "id": "20260924_46256_22288",
+  "stare": "fara",
+  "motiv": null
+ },
+ "010": {
+  "id": "20260425_45221_21730",
+  "stare": "neacoperit",
+  "motiv": "afara"
+ },
+ "011": {
+  "id": "20260417_45865_21849",
+  "stare": "nu_taiere",
+  "motiv": "nori"
+ },
+ "012": {
+  "id": "20260613_44937_24287",
+  "stare": "nu_taiere",
+  "motiv": "santier"
+ },
+ "013": {
+  "id": "20260914_45377_22097",
+  "stare": "fara",
+  "motiv": null
+ },
+ "014": {
+  "id": "20260815_46952_21997",
+  "stare": "neacoperit",
+  "motiv": "afara"
+ },
+ "015": {
+  "id": "20260516_44246_27902",
+  "stare": "vegetatie",
+  "motiv": "pasune"
+ },
+ "016": {
+  "id": "20260524_45852_27437",
+  "stare": "vegetatie",
+  "motiv": "pasune"
+ },
+ "017": {
+  "id": "20260914_46038_22148",
+  "stare": "vegetatie",
+  "motiv": "pasune"
+ },
+ "018": {
+  "id": "20260515_46070_22573",
+  "stare": "neacoperit",
+  "motiv": "afara"
+ },
+ "019": {
+  "id": "20260417_46611_22344",
+  "stare": "neacoperit",
+  "motiv": "afara"
+ },
+ "020": {
+  "id": "20260427_44806_21656",
+  "stare": "fara",
+  "motiv": null
+ },
+ "021": {
+  "id": "20260917_46348_22447",
+  "stare": "vegetatie",
+  "motiv": "pasune"
+ },
+ "022": {
+  "id": "20260820_47277_25562",
+  "stare": "neacoperit",
+  "motiv": "expirat"
+ },
+ "023": {
+  "id": "20260808_45879_22124",
+  "stare": "vegetatie",
+  "motiv": "pasune"
+ },
+ "024": {
+  "id": "20260425_45932_22271",
+  "stare": "neacoperit",
+  "motiv": "afara"
+ },
+ "025": {
+  "id": "20260504_48251_26761",
+  "stare": "fara",
+  "motiv": null
+ },
+ "026": {
+  "id": "20260626_46059_26322",
+  "stare": "neacoperit",
+  "motiv": "afara"
+ },
+ "027": {
+  "id": "20260425_45264_22368",
+  "stare": "fara",
+  "motiv": null
+ },
+ "028": {
+  "id": "20260512_44520_22582",
+  "stare": "acoperit",
+  "motiv": null
+ },
+ "029": {
+  "id": "20260810_46314_23512",
+  "stare": "vegetatie",
+  "motiv": "pasune"
+ },
+ "030": {
+  "id": "20260417_46167_21165",
+  "stare": "nu_taiere",
+  "motiv": "agricol"
+ },
+ "031": {
+  "id": "20260815_46575_22302",
+  "stare": "neacoperit",
+  "motiv": "afara"
+ },
+ "032": {
+  "id": "20260610_44730_25445",
+  "stare": "neacoperit",
+  "motiv": "afara"
+ },
+ "033": {
+  "id": "20260504_47046_24032",
+  "stare": "nu_taiere",
+  "motiv": "toamnă"
+ },
+ "034": {
+  "id": "20260726_47399_23587",
+  "stare": "vegetatie",
+  "motiv": "pasune"
+ },
+ "035": {
+  "id": "20260516_45773_27504",
+  "stare": "nu_taiere",
+  "motiv": "agricol"
+ },
+ "036": {
+  "id": "20260404_46396_26880",
+  "stare": "neacoperit",
+  "motiv": "afara"
+ },
+ "037": {
+  "id": "20260505_47944_23352",
+  "stare": "fara",
+  "motiv": null
+ },
+ "038": {
+  "id": "20260505_45038_21996",
+  "stare": "fara",
+  "motiv": null
+ },
+ "039": {
+  "id": "20260511_44795_26331",
+  "stare": "neacoperit",
+  "motiv": "expirat"
+ },
+ "040": {
+  "id": "20260417_46245_22224",
+  "stare": "acoperit",
+  "motiv": null
+ },
+ "041": {
+  "id": "20260519_47136_26187",
+  "stare": "neacoperit",
+  "motiv": "afara"
+ },
+ "042": {
+  "id": "20260917_45165_21819",
+  "stare": "fara",
+  "motiv": null
+ },
+ "043": {
+  "id": "20260504_45852_24187",
+  "stare": "nu_taiere",
+  "motiv": "agricol"
+ },
+ "044": {
+  "id": "20260427_44643_23470",
+  "stare": "fara",
+  "motiv": null
+ },
+ "045": {
+  "id": "20260810_47021_24590",
+  "stare": "vegetatie",
+  "motiv": "pasune"
+ },
+ "046": {
+  "id": "20260902_45390_22012",
+  "stare": "vegetatie",
+  "motiv": "pasune"
+ },
+ "047": {
+  "id": "20260609_46889_22620",
+  "stare": "vegetatie",
+  "motiv": "pasune"
+ },
+ "048": {
+  "id": "20260825_45013_25088",
+  "stare": "acoperit",
+  "motiv": null
+ },
+ "049": {
+  "id": "20260425_45098_21467",
+  "stare": "fara",
+  "motiv": null
+ },
+ "050": {
+  "id": "20260527_46708_22583",
+  "stare": "neacoperit",
+  "motiv": "afara"
+ },
+ "051": {
+  "id": "20260815_47085_24283",
+  "stare": "fara",
+  "motiv": null
+ },
+ "052": {
+  "id": "20260427_45345_22055",
+  "stare": "vegetatie",
+  "motiv": "pasune"
+ },
+ "053": {
+  "id": "20260417_45974_21545",
+  "stare": "neacoperit",
+  "motiv": "afara"
+ },
+ "054": {
+  "id": "20260517_47156_23655",
+  "stare": "fara",
+  "motiv": null
+ },
+ "055": {
+  "id": "20260527_45565_23646",
+  "stare": "neacoperit",
+  "motiv": "afara"
+ },
+ "056": {
+  "id": "20260427_45940_25411",
+  "stare": "acoperit",
+  "motiv": null
+ },
+ "057": {
+  "id": "20260506_44423_28087",
+  "stare": "nu_taiere",
+  "motiv": "agricol"
+ },
+ "058": {
+  "id": "20260808_44727_22721",
+  "stare": "nu_taiere",
+  "motiv": "agricol"
+ },
+ "059": {
+  "id": "20261019_44286_22703",
+  "stare": "nu_taiere",
+  "motiv": "agricol"
+ },
+ "060": {
+  "id": "20260505_45604_22353",
+  "stare": "neacoperit",
+  "motiv": "afara"
+ },
+ "061": {
+  "id": "20260917_46388_22329",
+  "stare": "neacoperit",
+  "motiv": "afara"
+ },
+ "062": {
+  "id": "20260526_44066_27907",
+  "stare": "vegetatie",
+  "motiv": "pasune"
+ },
+ "063": {
+  "id": "20260813_46290_22064",
+  "stare": "neacoperit",
+  "motiv": "afara"
+ },
+ "064": {
+  "id": "20260425_44829_23363",
+  "stare": "neacoperit",
+  "motiv": "afara"
+ },
+ "065": {
+  "id": "20260427_44952_22785",
+  "stare": "acoperit",
+  "motiv": null
+ },
+ "066": {
+  "id": "20260505_45629_22459",
+  "stare": "neacoperit",
+  "motiv": "afara"
+ },
+ "067": {
+  "id": "20260921_47938_23298",
+  "stare": "nu_taiere",
+  "motiv": "toamnă"
+ },
+ "068": {
+  "id": "20260427_46022_22549",
+  "stare": "neacoperit",
+  "motiv": "afara"
+ },
+ "069": {
+  "id": "20260706_46953_22004",
+  "stare": "neacoperit",
+  "motiv": "afara"
+ },
+ "070": {
+  "id": "20260504_46958_27568",
+  "stare": "neacoperit",
+  "motiv": "expirat"
+ },
+ "071": {
+  "id": "20260902_46485_22393",
+  "stare": "neacoperit",
+  "motiv": "afara"
+ },
+ "072": {
+  "id": "20260516_44852_27733",
+  "stare": "neacoperit",
+  "motiv": "expirat"
+ },
+ "073": {
+  "id": "20260424_46349_24158",
+  "stare": "nu_taiere",
+  "motiv": "agricol"
+ },
+ "074": {
+  "id": "20260901_44867_27506",
+  "stare": "neacoperit",
+  "motiv": "afara"
+ },
+ "075": {
+  "id": "20260501_45821_25725",
+  "stare": "neacoperit",
+  "motiv": "afara"
+ },
+ "076": {
+  "id": "20260808_45340_21861",
+  "stare": "fara",
+  "motiv": null
+ },
+ "077": {
+  "id": "20260803_47123_22260",
+  "stare": "vegetatie",
+  "motiv": "pasune"
+ },
+ "078": {
+  "id": "20260417_45951_22408",
+  "stare": "acoperit",
+  "motiv": null
+ },
+ "079": {
+  "id": "20260417_46931_22026",
+  "stare": "fara",
+  "motiv": null
+ },
+ "080": {
+  "id": "20260424_45206_27946",
+  "stare": "neacoperit",
+  "motiv": "afara"
+ },
+ "081": {
+  "id": "20260603_44239_22876",
+  "stare": "neacoperit",
+  "motiv": "expirat"
+ },
+ "082": {
+  "id": "20260907_44732_22817",
+  "stare": "neacoperit",
+  "motiv": "afara"
+ },
+ "083": {
+  "id": "20260524_45070_24160",
+  "stare": "nu_taiere",
+  "motiv": "santier"
+ },
+ "084": {
+  "id": "20260618_45261_25557",
+  "stare": "neacoperit",
+  "motiv": "neinceput"
+ },
+ "085": {
+  "id": "20260504_45913_24970",
+  "stare": "fara",
+  "motiv": null
+ },
+ "086": {
+  "id": "20260426_44768_27868",
+  "stare": "neacoperit",
+  "motiv": "afara"
+ },
+ "087": {
+  "id": "20260515_45283_23239",
+  "stare": "acoperit",
+  "motiv": null
+ },
+ "088": {
+  "id": "20260828_45378_22084",
+  "stare": "fara",
+  "motiv": null
+ },
+ "089": {
+  "id": "20260524_45579_23252",
+  "stare": "neacoperit",
+  "motiv": "expirat"
+ },
+ "090": {
+  "id": "20260511_45265_26475",
+  "stare": "neacoperit",
+  "motiv": "afara"
+ },
+ "091": {
+  "id": "20260426_45468_27633",
+  "stare": "nu_taiere",
+  "motiv": "agricol"
+ },
+ "092": {
+  "id": "20260810_45412_23567",
+  "stare": "neacoperit",
+  "motiv": "expirat"
+ },
+ "093": {
+  "id": "20260425_47079_22370",
+  "stare": "fara",
+  "motiv": null
+ },
+ "094": {
+  "id": "20260424_46544_25039",
+  "stare": "acoperit",
+  "motiv": null
+ },
+ "095": {
+  "id": "20260504_47275_24215",
+  "stare": "acoperit",
+  "motiv": null
+ },
+ "096": {
+  "id": "20260828_45374_22084",
+  "stare": "vegetatie",
+  "motiv": "pasune"
+ },
+ "097": {
+  "id": "20260610_45513_27050",
+  "stare": "fara",
+  "motiv": null
+ },
+ "098": {
+  "id": "20260426_45300_28796",
+  "stare": "fara",
+  "motiv": null
+ },
+ "099": {
+  "id": "20260902_47087_23244",
+  "stare": "vegetatie",
+  "motiv": "pasune"
+ },
+ "100": {
+  "id": "20260828_47631_22283",
+  "stare": "nu_taiere",
+  "motiv": "incendiu"
+ }
+}
