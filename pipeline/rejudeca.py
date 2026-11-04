@@ -257,6 +257,7 @@ def intreaba(png, a, context, esri_date, model=None):
 
 
 def main(argv=None):
+    global OUT
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--full", action="store_true")
     ap.add_argument("--si-martori", action="store_true", help="și un eșantion de zone verzi, pentru evaluare")
@@ -280,7 +281,6 @@ def main(argv=None):
 
     if args.planse:
         return planse_oarbe(args, zone, verd, peis)
-    global OUT
     if args.out:
         OUT = pathlib.Path(args.out)
         vechi = json.loads(OUT.read_text(encoding="utf-8")).get("zone", {}) if OUT.exists() else {}
