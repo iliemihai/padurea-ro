@@ -359,6 +359,11 @@ body.noscroll { overflow-y: clip; }
 .splitbtn:active { background: var(--color-paper-3); }
 .splitbtn[aria-pressed="true"] { border-color: var(--color-accent); }
 .ariibtn { display: inline-flex; align-items: center; gap: var(--space-xs); }
+/* pagina județului ales: un buton separat de clicul pe hartă, care doar face zoom */
+.ctycard { display: inline-flex; align-items: center; border-color: var(--color-accent); text-decoration: none; }
+.ctycard:hover { border-color: var(--color-focus); background: var(--color-paper); }
+.pagebtn { display: flex; align-items: center; min-height: 40px; margin-top: var(--space-xs); padding: 0 var(--space-sm); border: var(--rule-hair) solid var(--color-accent); color: var(--color-ink); font-size: var(--text-sm); font-weight: 500; text-decoration: none; }
+.pagebtn:hover { border-color: var(--color-focus); background: var(--color-paper-2); }
 .ariibtn .n { font-weight: 400; color: var(--color-ink-2); }
 .ariibtn .n b { font-family: var(--font-outlier); font-weight: 500; font-variant-numeric: tabular-nums; color: var(--color-ink); }
 .ariibtn[aria-pressed="true"] { border-color: var(--color-protected); background: color-mix(in oklab, var(--color-protected) 22%, var(--color-paper)); }

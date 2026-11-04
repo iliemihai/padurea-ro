@@ -1343,7 +1343,7 @@
       if (n !== hov) {
         hov = n; map.setFilter("cty-hover", ["==", ["get", "n"], n]);
         var c = DATA.alerts.filter(function (a) { return inPeriod(a) && state.conf[a.incredere] && inArii(a) && countyOf(a) === n; }).length;
-        txt = n + ": " + (c ? fmt(c) + " " + (c === 1 ? "zonă" : de(c) + "zone") : "nicio zonă") + (state.cty[n] ? " (ales)" : "");
+        txt = n + ": " + (c ? fmt(c) + " " + (c === 1 ? "zonă" : de(c) + "zone") : "nicio zonă") + (state.cty[n] ? " (ales; clic ca să-l scoți)" : " · clic ca să-l alegi");
       }
       var extra = "";
       if (map.getLayer("arii-fill") && map.getLayoutProperty("arii-fill", "visibility") !== "none") {
@@ -1390,10 +1390,16 @@
     Array.prototype.forEach.call(pick.options, function (o) { if (o.value) o.disabled = !!state.cty[o.value]; });
     pick.value = "";
     document.getElementById("cty-hint").hidden = !!k.length;
-    var pp = document.getElementById("cty-page-p"), lk = document.getElementById("cty-page");
+    /* clicul pe județ face zoom și îl alege; pagina județului se deschide doar din butoanele astea, ca să nu se confunde */
+    var pp = document.getElementById("cty-page-p"), lk = document.getElementById("cty-page"), cc = document.getElementById("ctycard");
+    var href = k.length === 1 ? "judet/" + slugJ(k[0]) + "/" : "judet/";
     if (pp && lk) {
       pp.hidden = k.length !== 1;
-      if (k.length === 1) { lk.href = "judet/" + slugJ(k[0]) + "/"; lk.textContent = "Pagina județului " + k[0]; }
+      if (k.length === 1) { lk.href = href; lk.textContent = "Deschide pagina județului " + k[0]; }
+    }
+    if (cc) {
+      cc.hidden = k.length !== 1;
+      if (k.length === 1) { cc.href = href; cc.textContent = "Pagina județului " + k[0]; }
     }
   }
   /* aceeași formă ca pipeline/judete.py: fără diacritice, litere mici, cratime */
