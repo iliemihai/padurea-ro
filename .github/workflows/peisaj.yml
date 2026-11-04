@@ -12,8 +12,7 @@ on:
         description: "Doar primele N zone (probă); gol = toate"
         type: string
         default: ""
-  schedule:
-    - cron: "17 3 * * 0"   # duminica, noaptea: zonele noi din săptămână
+  # fără program propriu: peisajul zonelor noi rulează lunar, împreună cu judecata (judecata.yml)
 
 permissions:
   contents: write

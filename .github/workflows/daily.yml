@@ -115,14 +115,8 @@ jobs:
       - name: Autorizațiile de tăiere (Inspectorul Pădurii)
         continue-on-error: true
         run: python -m pipeline.permise
-      - name: Peisajul zonelor noi
-        continue-on-error: true
-        run: python -m pipeline.peisaj
-      - name: Judecata cu context pentru zonele noi care ar fi roșii
-        continue-on-error: true
-        env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-        run: python -m pipeline.rejudeca && python -m pipeline.permise --retime
+      # Peisajul și judecata cu context (poza detaliată Esri + AI) rulează o dată pe lună, în judecata.yml, nu zilnic.
+      # Până atunci, zonele noi fără autorizație care să le acopere stau „de confirmat", nu roșii.
       - name: Paginile pe județe
         continue-on-error: true
         run: python -m pipeline.judete

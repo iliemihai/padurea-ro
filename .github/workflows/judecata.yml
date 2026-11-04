@@ -32,6 +32,8 @@ on:
         description: "Rejudecă tot ce a fost judecat cu alt model (se poate relua)"
         type: boolean
         default: false
+  schedule:
+    - cron: "23 3 4 * *"   # pe 4 ale lunii, după autorizațiile din 3: peisajul și judecata zonelor noi din lună
 
 permissions:
   contents: write
@@ -52,6 +54,14 @@ jobs:
           python-version: "3.12"
           cache: pip
       - run: pip install -r requirements.txt
+      - uses: actions/cache@v4
+        with:
+          path: data/hansen
+          key: hansen-gfc-2025
+      - name: Peisajul zonelor noi (înaintea judecății, care îl folosește)
+        if: github.event_name == 'schedule'
+        continue-on-error: true
+        run: python -m pipeline.peisaj
       - name: Judecata
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
@@ -64,9 +74,11 @@ jobs:
           OUT="${{ inputs.out }}"; OUT="${OUT:-docs/data/judecata.json}"
           [ -f "$OUT" ] || exit 0
           cp "$OUT" /tmp/judecata.json
+          cp docs/data/peisaj.json /tmp/peisaj.json
           git fetch origin main && git reset --hard origin/main
           cp /tmp/judecata.json "$OUT"
           git add "$OUT"
+          if [ "${{ github.event_name }}" = "schedule" ]; then cp /tmp/peisaj.json docs/data/peisaj.json && git add docs/data/peisaj.json; fi
           # judecata principală schimbă stările de pe hartă: le recalculăm aici, ca să nu aștepte rularea zilnică
           if [ "$OUT" = "docs/data/judecata.json" ]; then
             python -m pipeline.permise --retime && git add docs/data/permise.json
