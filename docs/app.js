@@ -10,10 +10,13 @@
   var LUNI = ["ian.", "feb.", "mar.", "apr.", "mai", "iun.", "iul.", "aug.", "sept.", "oct.", "nov.", "dec."];
   var LUNI_L = ["ianuarie", "februarie", "martie", "aprilie", "mai", "iunie", "iulie", "august", "septembrie", "octombrie", "noiembrie", "decembrie"];
 
-  var state = { days: 30, conf: { "ridicată": true, "medie": true, "scăzută": false }, shown: 40, sel: null, years: [21, 25], cty: {}, arii: false, ariiMode: false, faraAut: false, culoare: "aut" };
+  /* harta pornește cu tăierile fără autorizație care să le acopere, din tot istoricul și de la orice nivel de încredere
+     (fiecare a fost văzută pe poze de analist); debifezi „Doar tăierile fără autorizație…" ca să vezi toate schimbările */
+  var state = { days: 30, conf: { "ridicată": true, "medie": true, "scăzută": true }, shown: 40, sel: null, years: [21, 25], cty: {}, arii: false, ariiMode: false, faraAut: true, culoare: "aut" };
   var DATA = { alerts: [], data_until: null, generated: null }, RUNS = [], VERIF = {}, FIRMS_FC = null, map, hansen = null;
   var AUT = {}, AUT_META = null, STIRI = {}, JUD = {}, PEIS = {}; /* judecata AI cu context și peisajul fiecărei zone */ /* și știrile care numesc locul zonei */ /* autorizațiile de tăiere (APV) din Inspectorul Pădurii, potrivite cu zonele */
   var ARH = null, ARH_LOADED = {}; /* arhiva pe luni: indexul și lunile deja aduse */
+  var confAtins = false; /* a apăsat omul pe nivelurile de încredere? */
   var COUNTY_BB = {}, RO_FC = null, PLACE_LAYERS = ["pl-5", "pl-4", "pl-3", "pl-2", "pl-01"];
   /* literele pentru numele de pe hartă (Noto Sans) stau lângă pagină, în fonts/; harta nu iese din jurul României */
   var GLYPHS = document.baseURI.replace(/[#?].*$/, "").replace(/[^/]*$/, "") + "fonts/{fontstack}/{range}.pbf";
@@ -99,14 +102,21 @@
     getJSON("data/permise.json").catch(function () { return null; }),
     getJSON("data/stiri.json").catch(function () { return null; }),
     getJSON("data/judecata.json").catch(function () { return null; }),
-    getJSON("data/peisaj.json").catch(function () { return null; })
+    getJSON("data/peisaj.json").catch(function () { return null; }),
+    getJSON("data/rosii.json").catch(function () { return null; })
   ]).then(function (res) {
     JUD = (res[9] && res[9].zone) || {}; PEIS = (res[10] && res[10].zone) || {};
     AUT = (res[7] && res[7].zone) || {}; AUT_META = res[7] || null;
     STIRI = (res[8] && res[8].zone) || {};
+    Object.keys(STIRI).forEach(function (k) { STIRI[k] = (STIRI[k] || []).filter(stireBuna); if (!STIRI[k].length) delete STIRI[k]; });
     ARH = res[6] && res[6].luni && res[6].luni.length ? res[6] : null;
     FIRMS_FC = res[5] || { type: "FeatureCollection", features: [] };
     if (res[0]) { DATA = res[0]; DATA.alerts = (DATA.alerts || []).filter(isPublic); }
+    /* zonele roșii din arhivă vin gata, într-un fișier mic: vederea de pornire nu are nevoie de toată arhiva */
+    if (DATA && res[11] && res[11].alerts) {
+      var have0 = {}; DATA.alerts.forEach(function (a) { have0[a.id] = 1; });
+      res[11].alerts.forEach(function (a) { if (!have0[a.id] && isPublic(a)) { a._arh = true; DATA.alerts.push(a); have0[a.id] = 1; } });
+    }
     VERIF = (res[4] && res[4].zone) || {};
     RUNS = res[1] || [];
     try { initMap(res[2], res[3]); } catch (e) { mapMissing(); }
@@ -260,7 +270,8 @@
     return ARH_LOADED[m];
   }
   function ensureArchive() {
-    if (!ARH || !DATA.data_until) return Promise.resolve();
+    /* doar roșiile: le avem pe toate din rosii.json */
+    if (!ARH || !DATA.data_until || state.faraAut) return Promise.resolve();
     var s = periodStart(), rec = DATA.recent_de_la || s;
     var need = ARH.luni.filter(function (m) {
       if (ARH_LOADED[m.luna]) return false;
@@ -281,13 +292,13 @@
     nd.addEventListener("input", function () { setPeriod(+nd.value); });
     var cov = coverageDays();
     if (cov) nd.max = String(Math.max(7, cov));
-    setPeriod(defaultDays(), true);
+    setPeriod(state.faraAut ? +nd.max : defaultDays(), true);
 
     var cb = document.getElementById("conf");
     CONF.forEach(function (c) {
       var b = el("button", "chip"); b.type = "button"; b.setAttribute("aria-pressed", String(state.conf[c[0]]));
       b.appendChild(key(c[0])); b.appendChild(el("span", null, c[0])); b.appendChild(el("span", "n"));
-      b.addEventListener("click", function () { state.conf[c[0]] = !state.conf[c[0]]; b.setAttribute("aria-pressed", String(state.conf[c[0]])); state.shown = 40; renderAll(); });
+      b.addEventListener("click", function () { confAtins = true; state.conf[c[0]] = !state.conf[c[0]]; b.setAttribute("aria-pressed", String(state.conf[c[0]])); state.shown = 40; renderAll(); });
       b.dataset.conf = c[0];
       cb.appendChild(b);
     });
@@ -316,7 +327,16 @@
     oa.addEventListener("change", function () { setOnlyArii(oa.checked); });
     var fa = document.getElementById("only-fara-aut");
     if (DATA.alerts.some(autGrija)) document.getElementById("tg-fara-aut").hidden = false;
-    fa.addEventListener("change", function () { state.faraAut = fa.checked; state.shown = 40; renderAll(); });
+    fa.checked = state.faraAut;
+    fa.addEventListener("change", function () {
+      state.faraAut = fa.checked; state.shown = 40;
+      /* cu toate schimbările, nivelul „scăzută" (des alarme false) pornește ascuns, dacă nu l-ai ales tu */
+      if (!fa.checked && !confAtins) {
+        state.conf["scăzută"] = false;
+        var c = document.querySelector('#conf .chip[data-conf="scăzută"]'); if (c) c.setAttribute("aria-pressed", "false");
+      }
+      renderAll(); ensureArchive();
+    });
     if (areAut()) {
       document.getElementById("culoare").hidden = false;
       document.getElementById("culoare").addEventListener("click", function (e) {
@@ -743,6 +763,9 @@
     return out.concat(VERIF[a.id] || []).concat(STIRI[a.id] || []);
   }
   function inPresa(a) { return !!(STIRI[a.id] && STIRI[a.id].length); }
+  /* doar știrile care vorbesc chiar despre tăieri (în titlu), nu orice știre cu numele locului */
+  var TAIERE_RE = /t[ăa]ie(r|t)|defri[șs]a|exploatar|drujb|garda forestier|mas[ăa] lemnoas|bu[șs]teni|furt de lemn|lemn furat/i;
+  function stireBuna(x) { var m = /„([^”]+)”/.exec(x.text || ""); return TAIERE_RE.test(m ? m[1] : (x.text || "")); }
   function isVerified(a) { return verifItems(a).some(function (v) { return v.potrivire !== "nimic"; }); }
   function verifBlock(items) {
     var box = el("div", "verif");

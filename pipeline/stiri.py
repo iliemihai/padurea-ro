@@ -32,7 +32,9 @@ from .permise import zone_site, OUT as PERMISE
 
 OUT = C.DOCS / "data" / "stiri.json"
 RSS = "https://news.google.com/rss/search?q={q}&hl=ro&gl=RO&ceid=RO:ro"
-CUVINTE = ["tăier", "taier", "defrișar", "defrisar", "lemn", "pădur", "padur", "garda forestier", "ocol", "silvic", "drujb", "arbori"]
+# doar cuvinte despre tăieri: „lemn", „pădure", „arbori", „ocol" singure prindeau biserici de lemn, urși în pădure, case arse
+CUVINTE = ["tăier", "taier", "tăiat", "taiat", "defrișa", "defrisa", "exploatar", "drujb", "garda forestier", "masă lemnoas",
+           "masa lemnoas", "bușteni", "busteni", "furt de lemn", "lemn furat", "tăietori", "taietori"]
 ILEGAL = ["ilegal", "fără autorizație", "fara autorizatie", "fără aviz", "contraven", "dosar penal", "amend", "garda forestier",
           "furt de lemn", "braconaj", "sesizat", "confisc"]
 PAUZA_S = 2.0          # între cereri; e un serviciu public, nu al nostru

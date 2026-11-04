@@ -655,6 +655,11 @@ def main():
     if fara:
         print("zone fără județ cunoscut în contururi:", {k: len(pe_judet[k]) for k in fara})
     pagina_index(rez, meta, upd)
+    # zonele roșii din tot istoricul, întregi: harta pornește cu ele fără să aducă toată arhiva
+    rosii = sorted((a for a in zone.values() if (verd.get(a["id"]) or {}).get("stare") in ("fara", "neacoperit")),
+                   key=lambda a: a.get("first_seen") or "", reverse=True)
+    (DOCS / "data" / "rosii.json").write_text(json.dumps({"generated": dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%MZ"),
+                                                          "alerts": rosii}, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     print(f"{len(rez)} pagini de județ -> {OUT}; roșii: {sum(r['rosu'] for r in rez)}")
 
 

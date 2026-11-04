@@ -82,7 +82,7 @@ jobs:
           # judecata principală schimbă stările de pe hartă: le recalculăm aici, ca să nu aștepte rularea zilnică
           if [ "$OUT" = "docs/data/judecata.json" ]; then
             python -m pipeline.permise --retime && git add docs/data/permise.json
-            python -m pipeline.judete && git add -A docs/judet
+            python -m pipeline.judete && git add -A docs/judet docs/data/rosii.json
           fi
           git commit -m "Judecata: $(date -u +%Y-%m-%d)" || echo "nimic nou"
           git push origin HEAD:main

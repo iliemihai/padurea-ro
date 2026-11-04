@@ -64,7 +64,7 @@ jobs:
           # stările depind și de judecata cu context de pe main: le recalculăm peste ea, apoi paginile județelor
           python -m pipeline.permise --retime || true
           python -m pipeline.judete || true
-          git add -A docs/data/permise.json docs/data/stiri.json docs/data/parcele.json docs/judet
+          git add -A docs/data/permise.json docs/data/stiri.json docs/data/parcele.json docs/judet docs/data/rosii.json
           git commit -m "Autorizații: $(date -u +%Y-%m-%d)" || echo "nimic nou"
           git push origin HEAD:main
       - uses: actions/configure-pages@v5
