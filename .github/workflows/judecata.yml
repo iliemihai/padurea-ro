@@ -36,8 +36,9 @@ on:
 permissions:
   contents: write
 
+# rulările care scriu în fișiere diferite (probele de evaluare) pot merge în paralel cu cea principală
 concurrency:
-  group: judecata
+  group: judecata-${{ inputs.out || 'principal' }}
   cancel-in-progress: false
 
 jobs:
