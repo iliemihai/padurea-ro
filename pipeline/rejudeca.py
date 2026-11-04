@@ -136,7 +136,8 @@ def plansa(a, esri, esri_date, larg):
         img.paste(im, (i * (S + 12), 30))
         d.text((i * (S + 12) + 4, 6), lab, fill="black", font=_font(18))
     buf = io.BytesIO(); img.save(buf, "PNG")
-    return buf.getvalue(), [p[0].split(" ")[0] for p in panouri]
+    nume = {"DETAILED": "poza detaliată", "BEFORE": "înainte", "AFTER": "după", "AFTER,": "vederea largă"}
+    return buf.getvalue(), [nume.get(p[0].split(" ")[0], p[0]) for p in panouri]
 
 
 # ---------------------------------------------------------------- fișa de context
@@ -177,6 +178,15 @@ def fisa(a, p, v):
     return "\n".join(r) if r else "- (no extra facts available)"
 
 
+def _taie(t, n):
+    """Taie la n caractere, dar la sfârșit de propoziție."""
+    if len(t) <= n:
+        return t
+    cut = t[:n]
+    k = max(cut.rfind(". "), cut.rfind(".\n"))
+    return (cut[: k + 1] if k > n // 2 else cut).strip()
+
+
 # ---------------------------------------------------------------- întrebarea
 def intreaba(png, a, context, esri_date, model=None):
     model = model or C.CLAUDE_MODEL
@@ -198,6 +208,7 @@ def intreaba(png, a, context, esri_date, model=None):
         txt = "".join(b.get("text", "") for b in r.get("content", []) if b.get("type") == "text")
         _raw({"model": model, "rejudeca": a["id"], "text": txt})
         import re
+        j = None
         for m in reversed(list(re.finditer(r"\{.*\}", txt, re.S))):
             try:
                 j = json.loads(m.group(0)); break
@@ -212,7 +223,7 @@ def intreaba(png, a, context, esri_date, model=None):
         except (TypeError, ValueError):
             conf = 0.5
         return {"categorie": cat if cat in CATEGORII else "neclar", "padure_inainte": pi if pi in ("da", "partial", "nu") else None,
-                "incredere": round(conf, 2), "motiv": str(j.get("motiv", ""))[:400], "detalii": str(j.get("detalii", ""))[:500], "model": model}
+                "incredere": round(conf, 2), "motiv": _taie(str(j.get("motiv", "")), 450), "detalii": _taie(str(j.get("detalii", "")), 800), "model": model}
     raise RuntimeError(last)
 
 
