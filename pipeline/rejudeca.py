@@ -349,7 +349,10 @@ def planse_oarbe(args, zone, verd, peis):
     for f in args.exclude:
         folosite |= {v["id"] for v in json.loads(pathlib.Path(f).read_text(encoding="utf-8")).values()}
     ids = []
-    if args.strat == "v1":
+    if args.ids:
+        # zone alese de mână (de ex. ca să verificăm o regiune): în ordinea dată, fără amestec
+        ids = [k for k in args.ids if k in zone and zone[k].get("img_after")]
+    elif args.strat == "v1":
         for stari, n in ((("fara", "neacoperit"), 60), (("vegetatie",), 15), (("nu_taiere",), 15), (("acoperit",), 10)):
             c = sorted(k for k, v in verd.items() if v.get("stare") in stari and k in zone and zone[k].get("img_after") and k not in folosite)
             ids += rnd.sample(c, min(n, len(c)))
@@ -363,7 +366,8 @@ def planse_oarbe(args, zone, verd, peis):
                    and P._stare_permis(zone[k], v)[0] in ("fara", "neacoperit"))
         print(f"holdout: {len(c)} zone posibil roșii, aleg 120", flush=True)
         ids = rnd.sample(c, min(120, len(c)))
-    rnd.shuffle(ids)
+    if not args.ids:
+        rnd.shuffle(ids)
     if args.limit:
         ids = ids[: args.limit]
     out = pathlib.Path(args.planse); out.mkdir(parents=True, exist_ok=True)
