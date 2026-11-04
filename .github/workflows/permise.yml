@@ -61,7 +61,10 @@ jobs:
           mkdir -p /tmp/gen && for f in permise.json stiri.json parcele.json; do [ -f docs/data/$f ] && cp docs/data/$f /tmp/gen/; done
           git fetch origin main && git reset --hard origin/main
           cp /tmp/gen/* docs/data/
-          git add -A docs/data/permise.json docs/data/stiri.json docs/data/parcele.json
+          # stările depind și de judecata cu context de pe main: le recalculăm peste ea, apoi paginile județelor
+          python -m pipeline.permise --retime || true
+          python -m pipeline.judete || true
+          git add -A docs/data/permise.json docs/data/stiri.json docs/data/parcele.json docs/judet
           git commit -m "Autorizații: $(date -u +%Y-%m-%d)" || echo "nimic nou"
           git push origin HEAD:main
       - uses: actions/configure-pages@v5
