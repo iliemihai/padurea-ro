@@ -427,13 +427,14 @@ def parcele_apv(con):
     from shapely.ops import unary_union
     from shapely.strtree import STRtree
 
-    pol, bykey = [], {}
+    pol, bykey, strat_pol = [], {}, []
     for fid, strat, up, ua, gj in con.execute("SELECT fid,strat,up,ua,json FROM parcela"):
         g = shape(json.loads(gj)["geometry"])
         if not g.is_valid:
             g = g.buffer(0)
         bykey.setdefault((str(up), ua), []).append(len(pol))
         pol.append(g)
+        strat_pol.append(strat)
     tree = STRtree(pol) if pol else None
 
     out, pe_parcela = {}, {}
@@ -472,10 +473,10 @@ def parcele_apv(con):
                    "end": max((p[1] for p in per), default=None)}
         for i in alese:
             pe_parcela.setdefault(i, []).append(nr)
-    return out, pol, pe_parcela
+    return out, pol, pe_parcela, strat_pol
 
 
-def potriveste(zone, apv, parcele_pol=None, apv_pe_parcela=None, raza_m=RAZA_M):
+def potriveste(zone, apv, parcele_pol=None, apv_pe_parcela=None, raza_m=RAZA_M, parcele_strat=None):
     """Pentru fiecare zonă, autorizația care o explică cel mai bine.
 
     Căutăm pe două căi, pentru că raza singură nu e de ajuns. Punctul unei autorizații e de multe ori
@@ -499,13 +500,19 @@ def potriveste(zone, apv, parcele_pol=None, apv_pe_parcela=None, raza_m=RAZA_M):
         vazut, cands = set(), []
         # cât din zonă cade în parcelele de amenajament publicate (stat + privat): 1.0 = pădure cu amenajament;
         # 0 = în afara lor: pășune împădurită, zăvoi, aliniament sau pădure privată fără amenajament în registru
-        amenaj = None
+        # și din ce strat vin parcelele: amenajamentele publicate pentru pădurile statului sau pentru cele private
+        amenaj, prop = None, None
         if ptree is not None:
-            hits = [parcele_pol[int(i)] for i in ptree.query(g, predicate="intersects")]
+            idx = [int(i) for i in ptree.query(g, predicate="intersects")]
             amenaj = 0.0
-            if hits:
+            if idx:
                 from shapely.ops import unary_union
-                amenaj = round(min(1.0, unary_union(hits).intersection(g).area / max(g.area, 1e-12)), 2)
+                amenaj = round(min(1.0, unary_union([parcele_pol[i] for i in idx]).intersection(g).area / max(g.area, 1e-12)), 2)
+            if parcele_strat:
+                prop = {}
+                for strat, nume in (("harti-amenajistice-stat", "stat"), ("harti-amenajistice-privat", "privat")):
+                    sel = [parcele_pol[i] for i in idx if parcele_strat[i] == strat]
+                    prop[nume] = round(min(1.0, unary_union(sel).intersection(g).area / max(g.area, 1e-12)), 2) if sel else 0.0
 
         def pune(nr):
             if nr in vazut:
@@ -531,7 +538,7 @@ def potriveste(zone, apv, parcele_pol=None, apv_pe_parcela=None, raza_m=RAZA_M):
             pune(nrs[int(i)])
         if not cands:
             st, mo = clasifica(a, None)
-            rezultat[zid] = {"stare": st, "motiv": mo, "fel": fel_schimbare(a), "n_apv": 0, "amenajament": amenaj}
+            rezultat[zid] = {"stare": st, "motiv": mo, "fel": fel_schimbare(a), "n_apv": 0, "amenajament": amenaj, "proprietate": prop}
             continue
         cut = interval_taiere(a)[:2]
         rang = {"acoperit": 0, "expirat": 1, "neinceput": 2}
@@ -553,6 +560,7 @@ def potriveste(zone, apv, parcele_pol=None, apv_pe_parcela=None, raza_m=RAZA_M):
         rec["fel"] = fel_schimbare(a)
         rec["fereastra"] = interval_taiere(a)[2]
         rec["amenajament"] = amenaj
+        rec["proprietate"] = prop
         ha_zona = a.get("ha") or 0
         if rec["volum_m3"] and supra > 0 and ha_zona * M3_PER_HA > 3 * float(rec["volum_m3"]):
             rec["volum_suspect"] = True
@@ -695,8 +703,8 @@ def cmd_run(args):
     adu_parcele(con, celule(geoms, RAZA_M, TILE))
 
     print("potrivesc...")
-    apv, parcele_pol, apv_pe_parcela = parcele_apv(con)
-    rez, parcele = potriveste(tinta, apv, parcele_pol, apv_pe_parcela, raza_m=args.raza)
+    apv, parcele_pol, apv_pe_parcela, parcele_strat = parcele_apv(con)
+    rez, parcele = potriveste(tinta, apv, parcele_pol, apv_pe_parcela, raza_m=args.raza, parcele_strat=parcele_strat)
     vechi.update(rez)
     scrie(vechi, parcele)
 

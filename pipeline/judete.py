@@ -308,6 +308,28 @@ def contur(a):
     return f'<svg viewBox="0 0 1000 1000" preserveAspectRatio="none" aria-hidden="true"><path d="{d}"/></svg>'
 
 
+def teren(v):
+    """Al cui e terenul, după amenajamentele silvice publicate în Inspectorul Pădurii (None = încă necalculat)."""
+    pr, am = v.get("proprietate"), v.get("amenajament")
+    if pr is None or am is None:
+        return None
+    if am < 0.2:
+        return "afara"
+    if (pr.get("stat") or 0) >= 0.5:
+        return "stat"
+    if (pr.get("privat") or 0) >= 0.5:
+        return "privat"
+    return "mixt"
+
+
+TEREN_T = {"stat": "pădure de stat", "privat": "pădure privată", "mixt": "parțial de stat, parțial privată sau fără amenajament",
+           "afara": "în afara amenajamentelor silvice publicate"}
+TEREN_LUNG = {"stat": "Terenul: pădure de stat, după amenajamentul silvic publicat.",
+              "privat": "Terenul: pădure privată, după amenajamentul silvic publicat.",
+              "mixt": "Terenul: o parte în pădure de stat, o parte privată sau fără amenajament publicat.",
+              "afara": "Terenul: în afara amenajamentelor silvice publicate (pășune, mal de apă sau pădure privată fără amenajament în registru)."}
+
+
 def card_zona(a, v, j):
     st = v.get("stare")
     ib, ia = a.get("img_before") or {}, a.get("img_after") or {}
@@ -334,6 +356,9 @@ def card_zona(a, v, j):
             per = f", valabilă {zi(v.get('start'))} – {zi(v.get('end'))}" if v.get("start") else ""
             dist = f", la {fmt(v.get('dist_m') or 0)} m" if v.get("dist_m") is not None else ""
             rows.append(f'<span class="mono">APV {e(v["apv"])}</span> · {e((v.get("ocol") or "").title())}{e(per)}{e(dist)}')
+    t = teren(v)
+    if t:
+        rows.append(e(TEREN_LUNG[t]))
     ce = (j or {}).get("motiv")
     if ce:
         rows.append(f'<b>Ce se vede în poze:</b> {e(ce)}')
@@ -435,6 +460,22 @@ def pagina_judet(nume, zs, verd, jud, meta, feat, luni, upd):
             for a in rosii:
                 o.append(card_zona(a, verd.get(a["id"]) or {}, jud.get(a["id"])))
             o.append("</div></section>")
+
+        # al cui e terenul, pentru locurile fără autorizație
+        per_t = defaultdict(lambda: [0, 0.0])
+        for a in rosii:
+            t = teren(verd.get(a["id"]) or {}) or "necunoscut"
+            per_t[t][0] += 1
+            per_t[t][1] += a.get("ha") or 0
+        if rosii and any(k != "necunoscut" for k in per_t):
+            ordine = ["stat", "privat", "mixt", "afara", "necunoscut"]
+            nume_t = dict(TEREN_T, necunoscut="încă necalculat")
+            rows = [[e(nume_t[k]), fmt(per_t[k][0]), fmt(per_t[k][1], 1)] for k in ordine if k in per_t]
+            o.append('<section class="sec"><h2>Al cui e terenul</h2><p class="sub">Pentru locurile fără autorizație care să le acopere, '
+                     'după hărțile amenajamentelor silvice publicate în Inspectorul Pădurii: pădurile statului sunt administrate de '
+                     'ocoalele Romsilva, cele private de ocoale private sau de regim.</p>')
+            o.append(tabel(["Terenul", "locuri", "ha"], rows, {1, 2}))
+            o.append("</section>")
 
         # pe comune
         per_uat = defaultdict(lambda: {"n": 0, "ha": 0.0, "r": 0, "rha": 0.0, "v": 0})
@@ -543,7 +584,7 @@ def pagina_judet(nume, zs, verd, jud, meta, feat, luni, upd):
 def scrie_date(d, zs, verd, jud):
     cols = ["id", "judet", "uat", "localitate", "lat", "lon", "ha", "prima_data", "poza_inainte", "poza_dupa", "stare", "stare_text",
             "motiv", "apv", "ocol", "apv_de_la", "apv_pana_la", "apv_distanta_m", "arie_protejata", "analist_categorie",
-            "analist_incredere", "ce_se_vede", "link"]
+            "analist_incredere", "ce_se_vede", "teren", "parte_stat", "parte_privat", "parte_amenajament", "link"]
     buf = io.StringIO()
     w = csv.writer(buf)
     w.writerow(cols)
@@ -560,7 +601,10 @@ def scrie_date(d, zs, verd, jud):
                "apv": v.get("apv") or "", "ocol": v.get("ocol") or "", "apv_de_la": v.get("start") or "", "apv_pana_la": v.get("end") or "",
                "apv_distanta_m": v.get("dist_m") if v.get("apv") else "", "arie_protejata": arii,
                "analist_categorie": j.get("categorie") or "", "analist_incredere": j.get("incredere") if j else "",
-               "ce_se_vede": j.get("motiv") or "", "link": f"https://iliemihai.github.io/padurea-ro/#a={a['id']}"}
+               "ce_se_vede": j.get("motiv") or "", "teren": TEREN_T.get(teren(v) or "", ""),
+               "parte_stat": (v.get("proprietate") or {}).get("stat", ""), "parte_privat": (v.get("proprietate") or {}).get("privat", ""),
+               "parte_amenajament": v.get("amenajament") if v.get("amenajament") is not None else "",
+               "link": f"https://iliemihai.github.io/padurea-ro/#a={a['id']}"}
         w.writerow([row[c] for c in cols])
         feats.append({"type": "Feature", "geometry": a.get("geometry"), "properties": row})
     (d / "zone.csv").write_text("﻿" + buf.getvalue(), encoding="utf-8")
