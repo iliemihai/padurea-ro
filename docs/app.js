@@ -1390,7 +1390,14 @@
     Array.prototype.forEach.call(pick.options, function (o) { if (o.value) o.disabled = !!state.cty[o.value]; });
     pick.value = "";
     document.getElementById("cty-hint").hidden = !!k.length;
+    var pp = document.getElementById("cty-page-p"), lk = document.getElementById("cty-page");
+    if (pp && lk) {
+      pp.hidden = k.length !== 1;
+      if (k.length === 1) { lk.href = "judet/" + slugJ(k[0]) + "/"; lk.textContent = "Pagina județului " + k[0]; }
+    }
   }
+  /* aceeași formă ca pipeline/judete.py: fără diacritice, litere mici, cratime */
+  function slugJ(n) { return n.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, ""); }
   function toggleCounty(n, fly) {
     if (state.cty[n]) delete state.cty[n]; else state.cty[n] = true;
     state.shown = 40;

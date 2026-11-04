@@ -123,6 +123,9 @@ jobs:
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: python -m pipeline.rejudeca && python -m pipeline.permise --retime
+      - name: Paginile pe județe
+        continue-on-error: true
+        run: python -m pipeline.judete
       - uses: actions/upload-artifact@v4
         with:
           name: rezultat
@@ -135,7 +138,7 @@ jobs:
         run: |
           git config user.name "padurea-ro bot"
           git config user.email "actions@users.noreply.github.com"
-          git add -A docs/data docs/img data/neconfirmate.json
+          git add -A docs/data docs/img docs/judet data/neconfirmate.json
           git commit -m "Date noi: $(date -u +%Y-%m-%d)" || echo "nimic nou"
           git pull --rebase origin main && git push origin HEAD:main
       - uses: actions/configure-pages@v5

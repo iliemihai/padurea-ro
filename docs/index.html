@@ -9,7 +9,7 @@
 <meta property="og:description" content="Schimbări în pădurile României, văzute din satelit, actualizate zilnic.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23030201'/%3E%3Crect x='11' y='11' width='10' height='10' fill='%23f97c3d'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
-<link rel="stylesheet" href="style.css?v=202611041400">
+<link rel="stylesheet" href="style.css?v=202611041500">
 </head>
 <body>
 <div class="app">
@@ -55,6 +55,8 @@
       <select id="cty-pick" class="pick" aria-labelledby="h-cty"><option value="">Toată țara</option></select>
       <div class="chips ctys" id="ctys" hidden></div>
       <p class="hint" id="cty-hint">Sau dă clic pe un județ pe hartă. Poți alege mai multe.</p>
+      <p class="hint" id="cty-page-p" hidden><a id="cty-page" href="judet/">Pagina județului</a>: locurile fără autorizație, pe luni, ocoale, date de descărcat.</p>
+      <p class="hint"><a href="judet/">Toate județele</a>, fiecare cu pagina lui.</p>
       <div id="top-cty" class="topcty" hidden>
         <h3 class="lbl">Județele cu cele mai multe tăieri, în perioada aleasă</h3>
         <div class="tophead" aria-hidden="true"><span></span><span>județ</span><span>zone</span><span>ha</span><span class="r">fără aut.</span></div>
@@ -152,6 +154,6 @@
   </main>
 </div>
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-<script src="app.js?v=202611041400"></script>
+<script src="app.js?v=202611041500"></script>
 </body>
 </html>
