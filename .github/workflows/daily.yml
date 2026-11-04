@@ -115,6 +115,14 @@ jobs:
       - name: Autorizațiile de tăiere (Inspectorul Pădurii)
         continue-on-error: true
         run: python -m pipeline.permise
+      - name: Peisajul zonelor noi
+        continue-on-error: true
+        run: python -m pipeline.peisaj
+      - name: Judecata cu context pentru zonele noi care ar fi roșii
+        continue-on-error: true
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: python -m pipeline.rejudeca && python -m pipeline.permise --retime
       - uses: actions/upload-artifact@v4
         with:
           name: rezultat
