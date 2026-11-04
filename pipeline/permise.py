@@ -304,28 +304,66 @@ PARCELA_REALA = ("exact", "cheie", "spațial")
 SUPRA_MIN = 0.2    # cât din zonă trebuie să acopere parcela ca să vorbim despre perioada ei
 
 
+# judecata cu context (rejudeca.py) și peisajul (peisaj.py), când există: le încărcăm o dată, la pornire
+JUDECATA, PEISAJ = {}, {}
+JUD_NU_TAIERE = {"pasune": "pasune", "santier": "santier", "camp": "camp", "foc": "incendiu", "sezon_nori": "sezon", "altceva": "altceva"}
+PEISAJ_NU_TAIERE = {"camp": "camp", "coridor": "santier", "cariera": "santier"}
+
+
+def incarca_context():
+    global JUDECATA, PEISAJ
+    for nume, cale in (("JUDECATA", C.DOCS / "data" / "judecata.json"), ("PEISAJ", C.DOCS / "data" / "peisaj.json")):
+        try:
+            globals()[nume] = json.loads(cale.read_text(encoding="utf-8")).get("zone", {}) if cale.exists() else {}
+        except Exception:
+            globals()[nume] = {}
+    print(f"context: {len(JUDECATA)} judecăți cu context, {len(PEISAJ)} peisaje")
+
+
 def clasifica(a, permis):
     """Starea unei zone, de la cel mai îngrijorător la cel mai liniștitor.
 
-      nu_taiere   nu e tăiere de lemn (drum, agricol, incendiu...): autorizațiile de tăiere nu se aplică
+      nu_taiere   nu e tăiere de lemn (drum/șantier, câmp, incendiu, sezon...): autorizațiile de tăiere nu se aplică
+      vegetatie   copaci răzleți scoși de pe pășune: cere autorizație de la ocol (art. 60), dar nu o putem verifica în registru
       fara        nicio autorizație în jur
       neacoperit  există autorizație pe parcelă, dar nu acoperă tăierea; `motiv` spune de ce:
                     afara (parcela nu cuprinde zona), expirat, neinceput
       probabil    există autorizație în zonă, dar amenajamentul nu publică parcela ei: nu putem confirma
       acoperit    parcela autorizată acoperă zona, în intervalul tăierii
+      nejudecat   ar fi roșie, dar nimeni (AI cu context) n-a confirmat încă pe poze că e pădure tăiată
 
+    Ordinea: întâi „e tăiere de pădure?” (judecata cu context > peisaj > AI-ul simplu > forma), apoi „are autorizație?”.
     Ca să afirmăm că o autorizație NU acoperă tăierea, trebuie întâi să știm unde e parcela ei.
     Întoarce (stare, motiv).
     """
-    fel = fel_schimbare(a)
-    if fel != "taiere":
-        return "nu_taiere", fel
+    j = JUDECATA.get(a["id"]) or {}
+    p = PEISAJ.get(a["id"]) or {}
+    jc = j.get("categorie")
+    if jc in JUD_NU_TAIERE:
+        if jc == "pasune":
+            return "vegetatie", "pasune"
+        return "nu_taiere", JUD_NU_TAIERE[jc]
+    if jc in ("taiere_rasa", "rarire"):
+        # judecata cu context spune tăiere; peisajul o contrazice doar dacă AI-ul nu e sigur
+        if p.get("fel") in PEISAJ_NU_TAIERE and (j.get("incredere") or 0) < 0.8:
+            return "nejudecat", "contrazis"
+        fel = "taiere"
+    else:
+        if p.get("fel") in PEISAJ_NU_TAIERE:
+            return "nu_taiere", PEISAJ_NU_TAIERE[p["fel"]]
+        fel = fel_schimbare(a)
+        if fel != "taiere":
+            return "nu_taiere", fel
     stare, motiv = _stare_permis(a, permis)
     # ca să spunem „fără autorizație", trebuie ca cineva să fi văzut pozele și să fi zis „tăiere";
     # în eșantionul verificat, zonele roșii fără părerea AI erau câmp sau sat, nu pădure tăiată.
     # pentru verde (există autorizație) nu cerem asta: a spune că există hârtie nu acuză pe nimeni.
-    if stare in ("fara", "neacoperit") and (a.get("ai") or {}).get("categorie") != "taiere":
+    confirmat = jc in ("taiere_rasa", "rarire") or (not j and (a.get("ai") or {}).get("categorie") == "taiere")
+    if stare in ("fara", "neacoperit") and not confirmat:
         return "nejudecat", None
+    if stare in ("fara", "neacoperit") and p.get("fel") == "pasune_cu_copaci" and jc != "taiere_rasa":
+        # copaci răzleți, fără judecată clară de tăiere rasă: nu acuzăm
+        return "vegetatie", "pasune"
     return stare, motiv
 
 
@@ -565,6 +603,7 @@ def grid_raze(lat, raza_m, pas):
 
 # ---------------------------------------------------------------- comenzi
 def cmd_retime(args):
+    incarca_context()
     """Recalculează doar stările, din ce avem deja. Fără rețea."""
     zone, vechi = zone_site(args.judet), citeste_existent()
     import collections
@@ -586,6 +625,7 @@ def cmd_retime(args):
 
 
 def cmd_run(args):
+    incarca_context()
     from shapely.geometry import shape
     zone = zone_site(args.judet)
     vechi = {} if args.full else citeste_existent()

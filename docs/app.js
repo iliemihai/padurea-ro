@@ -12,7 +12,7 @@
 
   var state = { days: 30, conf: { "ridicată": true, "medie": true, "scăzută": false }, shown: 40, sel: null, years: [21, 25], cty: {}, arii: false, ariiMode: false, faraAut: false, culoare: "aut" };
   var DATA = { alerts: [], data_until: null, generated: null }, RUNS = [], VERIF = {}, FIRMS_FC = null, map, hansen = null;
-  var AUT = {}, AUT_META = null, STIRI = {}; /* și știrile care numesc locul zonei */ /* autorizațiile de tăiere (APV) din Inspectorul Pădurii, potrivite cu zonele */
+  var AUT = {}, AUT_META = null, STIRI = {}, JUD = {}, PEIS = {}; /* judecata AI cu context și peisajul fiecărei zone */ /* și știrile care numesc locul zonei */ /* autorizațiile de tăiere (APV) din Inspectorul Pădurii, potrivite cu zonele */
   var ARH = null, ARH_LOADED = {}; /* arhiva pe luni: indexul și lunile deja aduse */
   var COUNTY_BB = {}, RO_FC = null, PLACE_LAYERS = ["pl-5", "pl-4", "pl-3", "pl-2", "pl-01"];
   /* literele pentru numele de pe hartă (Noto Sans) stau lângă pagină, în fonts/; harta nu iese din jurul României */
@@ -97,8 +97,11 @@
     getJSON("data/firms.geojson").catch(function () { return null; }),
     getJSON("data/arhiva/index.json").catch(function () { return null; }),
     getJSON("data/permise.json").catch(function () { return null; }),
-    getJSON("data/stiri.json").catch(function () { return null; })
+    getJSON("data/stiri.json").catch(function () { return null; }),
+    getJSON("data/judecata.json").catch(function () { return null; }),
+    getJSON("data/peisaj.json").catch(function () { return null; })
   ]).then(function (res) {
+    JUD = (res[9] && res[9].zone) || {}; PEIS = (res[10] && res[10].zone) || {};
     AUT = (res[7] && res[7].zone) || {}; AUT_META = res[7] || null;
     STIRI = (res[8] && res[8].zone) || {};
     ARH = res[6] && res[6].luni && res[6].luni.length ? res[6] : null;
@@ -144,7 +147,7 @@
      Pentru fiecare zonă căutăm în Inspectorul Pădurii autorizațiile din jur și le comparăm cu data schimbării.
      Zonele neverificate nu primesc nimic: lipsa unei autorizații în datele noastre nu dovedește o tăiere ilegală. */
   /* ordinea e de la cel mai îngrijorător la cel mai liniștitor; culorile vin din foaia de stil */
-  var AUT_ORD = ["fara", "neacoperit", "probabil", "acoperit", "nu_taiere", "nejudecat", "nev"];
+  var AUT_ORD = ["fara", "neacoperit", "vegetatie", "probabil", "acoperit", "nu_taiere", "nejudecat", "nev"];
   var AUT_T = {
     fara: { cls: "a-fara", scurt: "fără autorizație", badge: "fără autorizație", grija: true,
             lung: "Nu am găsit nicio autorizație de tăiere în jurul zonei." },
@@ -153,6 +156,8 @@
                   motiv: { afara: "Schimbarea cade în afara parcelei autorizate.",
                            expirat: "Autorizația se terminase înainte ca pădurea să fie încă întreagă aici.",
                            neinceput: "Autorizația începe după ce schimbarea se vedea deja." } },
+    vegetatie: { cls: "a-vegetatie", scurt: "copaci scoși de pe pășune", badge: "copaci scoși de pe pășune",
+                 lung: "Aici nu era pădure închisă, ci copaci răzleți pe pășune sau fâneață. Și tăierea lor cere o autorizație de la ocolul silvic (Codul silvic, art. 60), dar aceste autorizații nu apar sigur în registrul public, așa că nu putem spune dacă există. Nu e dovadă de ilegalitate; e un loc de întrebat primăria și ocolul." },
     probabil: { cls: "a-probabil", scurt: "probabil cu autorizație", badge: "probabil cu autorizație",
                 lung: "Există o autorizație în zonă, dar amenajamentul nu publică harta parcelei ei, deci nu putem confirma că o acoperă. De cele mai multe ori o acoperă." },
     acoperit: { cls: "a-acoperit", scurt: "cu autorizație", badge: "cu autorizație", ok: true,
@@ -164,9 +169,13 @@
                           agricol: "Analistul AI vede teren agricol: arătură sau recoltă, nu pădure tăiată.",
                           incendiu: "Analistul AI vede urme de foc, nu de tăiere.",
                           nori: "Analistul AI crede că schimbarea vine din nori, nu de pe teren.",
-                          "toamnă": "Analistul AI crede că e doar frunza care se îngălbenește toamna." } },
+                          "toamnă": "Analistul AI crede că e doar frunza care se îngălbenește toamna.",
+                          santier: "E o lucrare, nu o exploatare de lemn: drum, cale ferată, linie electrică, conductă, carieră sau șantier. Copacii de pe traseu se scot prin scoatere din fondul forestier, aprobată de minister, nu cu APV.",
+                          camp: "E teren agricol: arat, cosit sau recoltat. Nu era pădure.",
+                          sezon: "Nu s-a schimbat nimic pe teren: e doar sezonul, norii sau lumina; pădurea arată la fel ca cea din jur." } },
     nejudecat: { cls: "a-nev", scurt: "de confirmat pe poze", badge: "de confirmat pe poze",
-                 lung: "N-am găsit o autorizație care să acopere zona, dar analistul AI n-a confirmat că e pădure tăiată. Nu dăm roșu fără asta: în verificările noastre, astfel de zone erau de multe ori câmp sau sat. Primește o stare după ce analistul vede pozele." },
+                 lung: "N-am găsit o autorizație care să acopere zona, dar analistul AI n-a confirmat că e pădure tăiată. Nu dăm roșu fără asta: în verificările noastre, astfel de zone erau de multe ori câmp sau sat. Primește o stare după ce analistul vede pozele.",
+                 motiv: { contrazis: "Analistul vede tăiere, dar hărțile de teren spun câmp, coridor sau carieră. Până nu se lămurește, nu dăm roșu." } },
     nev: { cls: "a-nev", scurt: "încă necomparată cu autorizațiile", badge: "încă necomparată",
            lung: "Zona asta e în coadă: n-a fost încă comparată cu autorizațiile din Inspectorul Pădurii. Nu e un semn, nici bun, nici rău — va primi o stare la următoarea rulare." }
   };
@@ -838,6 +847,9 @@
     box.appendChild(head);
     box.appendChild(el("p", null, t.lung));
     if (t.motiv && v.motiv && t.motiv[v.motiv]) box.appendChild(el("p", null, t.motiv[v.motiv]));
+    /* ce a văzut analistul cu context (poza detaliată, înainte/după, vederea largă, hărțile): pentru om, în cuvinte */
+    var j = JUD[a.id] || null, pz = PEIS[a.id] || null;
+    if (j && j.motiv) box.appendChild(el("p", null, "Ce se vede în poze: " + j.motiv));
 
     /* când s-a tăiat: intervalul, nu data la care am văzut noi */
     var cs = a.before_date ? zi(a.before_date, true) : (a.vara ? "vara lui " + a.vara : null);
@@ -870,14 +882,41 @@
       box.appendChild(it);
     }
 
+    /* detaliile tehnice, pentru cine vrea să verifice: jurnalist, inspector, cercetător */
+    var teh = el("details", "explain tech"), sm = el("summary", null, "Detalii tehnice"); teh.appendChild(sm);
+    var tb = el("div", "prose"); teh.appendChild(tb);
+    function rnd(k, txt) { var q = el("p", "vfit"); q.appendChild(el("b", null, k + ": ")); q.appendChild(document.createTextNode(txt)); tb.appendChild(q); }
+    if (j) {
+      if (j.detalii) rnd("Analiza imaginilor", j.detalii);
+      rnd("Judecata", (j.categorie ? { taiere_rasa: "tăiere rasă", rarire: "rărire", pasune: "pășune curățată", santier: "lucrare / șantier", camp: "teren agricol", foc: "incendiu", sezon_nori: "sezon sau nori", altceva: "altceva", neclar: "neclar" }[j.categorie] || j.categorie : "-")
+        + ", încredere " + Math.round((j.incredere || 0) * 100) + "%" + (j.padure_inainte ? ", pădure închisă înainte: " + j.padure_inainte : "")
+        + "; model " + (j.model || "") + ", intrări: " + ((j.intrari || []).join(", ") || "înainte/după") + (j.esri_data ? "; poza detaliată din " + j.esri_data : "") + ".");
+    } else if (a.ai && a.ai.motiv) {
+      rnd("Analistul AI (doar înainte/după)", a.ai.motiv + " (" + a.ai.categorie + ", " + Math.round((a.ai.incredere || 0) * 100) + "%)");
+    }
+    if (pz) {
+      var L = [];
+      if (pz.relief) L.push(pz.relief + ", " + pz.alt_m + " m, pantă " + pz.panta_grade + "°");
+      if (pz.wc_zona) L.push("în zonă (WorldCover 2021): " + Object.keys(pz.wc_zona).map(function (k) { return k + " " + pz.wc_zona[k] + "%"; }).join(", "));
+      if (pz.wc_jur) L.push("pe 500 m în jur: " + Object.keys(pz.wc_jur).map(function (k) { return k + " " + pz.wc_jur[k] + "%"; }).join(", "));
+      if (pz.coronament2000 != null) L.push("coronament în 2000 (Hansen): " + pz.coronament2000 + "% în zonă, " + pz.coronament2000_jur + "% în jur");
+      var o = pz.osm || {}, NM = { drum_mare: "drum mare", cale_ferata: "cale ferată", drum_in_lucru: "drum în lucru (OSM)", cale_ferata_in_lucru: "cale ferată în lucru (OSM)", apa: "apă", intravilan: "zonă locuită", cariera: "carieră", linie_electrica: "linie electrică", conducta: "conductă" };
+      var dd = Object.keys(NM).filter(function (k) { return o[k] && o[k].m <= 1000; }).map(function (k) { return NM[k] + " la " + o[k].m + " m"; });
+      if (dd.length) L.push(dd.join(", "));
+      if (pz.lungime_m) L.push("forma schimbării: " + pz.lungime_m + " × " + pz.latime_m + " m");
+      if (L.length) rnd("Locul", L.join("; ") + ".");
+      if (pz.fel_motiv) rnd("Felul locului, automat", ({ padure: "pădure închisă", pasune_cu_copaci: "copaci răzleți, probabil pășune împădurită", camp: "câmp", coridor: "coridor", mal: "mal de apă", sat: "marginea satului", cariera: "carieră" }[pz.fel] || pz.fel) + " (" + pz.fel_motiv + ")");
+    }
+    rnd("Satelit", "schimbarea se vede în " + (a.n_dates || "?") + " imagini Sentinel-2 (10 m), prima dată pe " + zi(a.first_seen, true) + (a.before_date ? ", ultima imagine întreagă pe " + zi(a.before_date, true) : "") + "; suprafața schimbată " + fmt(a.ha, 1) + " ha; încredere „" + (a.incredere || "") + "”.");
     /* e în pădurea cu amenajament, sau în afara ei (pășune cu copaci, zăvoi, pădure fără amenajament publicat)? */
     if (v.amenajament != null && v.stare !== "nu_taiere") {
       var am = el("p", "vfit");
       if (v.amenajament >= 0.5) am.textContent = "Locul e în fondul forestier cu amenajament publicat (parcele u.a.): orice tăiere aici trece prin APV.";
       else if (v.amenajament > 0) am.textContent = "Doar " + Math.round(v.amenajament * 100) + "% din zonă cade în parcelele de amenajament publicate; restul poate fi pășune cu copaci, zăvoi sau pădure fără amenajament în registru.";
       else am.textContent = "Locul nu cade în nicio parcelă de amenajament publicată. Poate fi pășune împădurită, zăvoi sau aliniament (copaci din afara fondului forestier) ori pădure privată fără amenajament în registru. Și acolo, tăierea arborilor cere autorizație de exploatare de la ocolul silvic (Codul silvic, art. 60), dar nu e sigur că apare în Inspectorul Pădurii. Uită-te la „Detaliat, înainte”: pădure închisă sau copaci răzleți?";
-      box.appendChild(am);
+      tb.appendChild(am);
     }
+    box.appendChild(teh);
     box.appendChild(el("p", "vfit", "Harta parcelelor e publicată doar în parte, mai ales pentru pădurile private, iar autorizațiile se pot prelungi. O zonă fără autorizație găsită nu e o dovadă de tăiere ilegală — e un motiv de verificat."));
     var lk = el("a", null, "Caută în Inspectorul Pădurii"); lk.href = "https://inspectorulpadurii.ro"; lk.target = "_blank"; lk.rel = "noopener";
     box.appendChild(lk);

@@ -31,6 +31,7 @@
      Albastrul rămâne doar al ariilor protejate, ca să nu se încurce cu starea autorizației. */
   --color-aut-fara: oklch(62% 0.22 27);
   --color-aut-neacoperit: oklch(62% 0.22 27);
+  --color-aut-vegetatie: oklch(74% 0.15 80);   /* chihlimbar: copaci răzleți, de întrebat, nu de acuzat */
   --color-aut-probabil: oklch(62% 0.12 165);
   --color-aut-acoperit: oklch(62% 0.12 165);
   --color-aut-nu_taiere: oklch(58% 0.012 80);
@@ -136,6 +137,7 @@ button:disabled { opacity: 0.55; cursor: not-allowed; }
 .key.un { background: none; border: 1.5px dashed var(--color-data-un); }
 .key.a-fara { background: var(--color-aut-fara); }
 .key.a-neacoperit { background: var(--color-aut-neacoperit); }
+.key.a-vegetatie { background: var(--color-aut-vegetatie); }
 .key.a-probabil { background: none; border: 2px solid var(--color-aut-probabil); }
 .key.a-nu_taiere { background: var(--color-aut-nu_taiere); }
 .key.a-acoperit { background: var(--color-aut-acoperit); }
@@ -439,3 +441,8 @@ body.noscroll { overflow-y: clip; }
 @media (max-width: 24rem) {
   .chips { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* detaliile tehnice din fișa autorizației: pentru cine verifică */
+.verif details.tech { margin: var(--space-xs) 0; }
+.verif details.tech summary { cursor: pointer; color: var(--color-ink-2); font-size: 0.9em; }
+.verif details.tech .prose p { margin: 4px 0; }
