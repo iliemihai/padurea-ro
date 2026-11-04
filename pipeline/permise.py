@@ -366,9 +366,11 @@ def clasifica(a, permis):
     # ca să spunem „fără autorizație", trebuie ca cineva să fi văzut pozele și să fi zis „tăiere";
     # în eșantionul verificat, zonele roșii fără părerea AI erau câmp sau sat, nu pădure tăiată.
     # pentru verde (există autorizație) nu cerem asta: a spune că există hârtie nu acuză pe nimeni.
-    confirmat = jc in ("taiere_rasa", "rarire") or (not j and (a.get("ai") or {}).get("categorie") == "taiere")
+    # judecata cu context trebuie să fie și destul de sigură (>= 0.6) ca să punem roșu
+    confirmat = (jc in ("taiere_rasa", "rarire") and (j.get("incredere") or 0) >= 0.6) \
+        or (not j and (a.get("ai") or {}).get("categorie") == "taiere")
     if stare in ("fara", "neacoperit") and not confirmat:
-        return "nejudecat", None
+        return "nejudecat", ("nesigur" if jc in ("taiere_rasa", "rarire") else ("neclar" if jc == "neclar" else None))
     if stare in ("fara", "neacoperit") and p.get("fel") == "pasune_cu_copaci" and jc != "taiere_rasa":
         # copaci răzleți, fără judecată clară de tăiere rasă: nu acuzăm
         return "vegetatie", "pasune"

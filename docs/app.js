@@ -175,7 +175,9 @@
                           sezon: "Nu s-a schimbat nimic pe teren: e doar sezonul, norii sau lumina; pădurea arată la fel ca cea din jur." } },
     nejudecat: { cls: "a-nev", scurt: "de confirmat pe poze", badge: "de confirmat pe poze",
                  lung: "N-am găsit o autorizație care să acopere zona, dar analistul AI n-a confirmat că e pădure tăiată. Nu dăm roșu fără asta: în verificările noastre, astfel de zone erau de multe ori câmp sau sat. Primește o stare după ce analistul vede pozele.",
-                 motiv: { contrazis: "Analistul vede tăiere, dar hărțile de teren spun câmp, coridor sau carieră. Până nu se lămurește, nu dăm roșu." } },
+                 motiv: { contrazis: "Analistul vede tăiere, dar hărțile de teren spun câmp, coridor sau carieră. Până nu se lămurește, nu dăm roșu.",
+                          nesigur: "Analistul crede că e pădure tăiată, dar cu încredere mică (sub 60%): pozele sunt neclare sau schimbarea e la limită. Nu dăm roșu pe o bănuială.",
+                          neclar: "Analistul n-a putut spune ce s-a întâmplat aici din poze. Rămâne de verificat cu o imagine mai bună." } },
     nev: { cls: "a-nev", scurt: "încă necomparată cu autorizațiile", badge: "încă necomparată",
            lung: "Zona asta e în coadă: n-a fost încă comparată cu autorizațiile din Inspectorul Pădurii. Nu e un semn, nici bun, nici rău — va primi o stare la următoarea rulare." }
   };
