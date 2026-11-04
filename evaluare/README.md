@@ -31,3 +31,36 @@ optimiste. Cifra care contează e cea de pe eșantionul 2 (holdout), pe care pro
 
 Unde nu e roșu: zonele „vegetație” n-au conținut nicio tăiere de pădure (0 din 14 etichete clare), dar nici nu erau toate
 pășuni curățate (și câmp, foc, nimic) — textul de pe hartă spune deci doar „nu pare pădure tăiată”.
+
+## 2026-11-04 — eșantionul 2, holdout (120 de zone)
+
+Ales la întâmplare (`--strat holdout --seed 23`) din toate cele 421 de zone care pot ieși roșii (nicio autorizație nu le
+acoperă), fără zonele din eșantionul 1. Promptul v2 nu le-a văzut. Etichetat orb de Claude înainte de a rula judecătorul.
+
+Din cele 120: 47 tăieri reale (43 rase, 4 rărituri), 14 neclare, restul altceva (20 nimic real, 10 câmp, 10 șantier,
+9 foc, 8 pășune, 2 altceva). Deci „fără autorizație” singur e tăiere reală doar în **39%** din cazuri.
+
+| Judecător | roșii | precizia roșului | fără neclare | tăieri reale prinse (recall) |
+|---|---|---|---|---|
+| fără filtru (orice zonă fără autorizație) | 120 | 39% | — | 47/47 |
+| v1: Haiku, prompt fără capcane, prag 0,6 | 61 | 62% (IC 50–73) | 76% | 38/47 = 81% |
+| **v2: Sonnet, prompt cu capcane, prag 0,5** | 34 | **88% (IC 73–95)** | **100% (IC 89–100)** | 30/47 = 64% |
+| v2: Sonnet, prag 0,6 | 26 | 100% (IC 87–100) | 100% | 26/47 = 55% |
+
+Cele 4 roșii „greșite” la prag 0,5 sunt zone pe care nici eticheta oarbă nu le-a putut lămuri; niciuna nu e clar altceva.
+Cele 17 tăieri scăpate au toate încredere mică (0,4–0,55) și categorii de ezitare: plantații tăiate în lunca Dunării
+luate drept „altceva”, fâșii pe mal, pădure tânără luată drept pășune, o pată pe versant luată drept alunecare.
+
+**Regula pentru stările care nu acuză (de la 2026-11-04):** publicăm o concluzie doar când analistul nu ghicește
+(încredere ≥ 0,5, pe scara din prompt: sub 0,5 = „ghicesc”). Sub 0,5, „nu e tăiere” și „pășune” devin „de confirmat”.
+Pe holdout, cu regula asta:
+
+| Stare pe hartă | zone | corect | fără neclare |
+|---|---|---|---|
+| roșu (tăiere fără autorizație care s-o acopere) | 34 | 88% | 100% |
+| nu e tăiere de pădure | 38 | 79% | 86% |
+| pășune, nu pădure | 10 | 100% | 100% |
+| de confirmat | 38 | — | (10 tăieri reale, 21 altceva, 7 neclare) |
+
+**De făcut:** etichete de om pe aceleași 120 de zone (pagina `eticheteaza.html` le are), ca precizia să nu depindă doar
+de etichetele lui Claude. Abia apoi cifra poate fi publicată pe site.

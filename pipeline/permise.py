@@ -306,15 +306,25 @@ SUPRA_MIN = 0.2    # cât din zonă trebuie să acopere parcela ca să vorbim de
 
 # judecata cu context (rejudeca.py) și peisajul (peisaj.py), când există: le încărcăm o dată, la pornire
 JUDECATA, PEISAJ = {}, {}
-# încrederea minimă a judecătorului cu context ca să punem roșu, pe model, calibrată pe eșantionul etichetat orb (evaluare/):
-#   Sonnet + promptul cu capcane: 0.5 -> precizie 83%, 30/35 tăieri reale păstrate; 0.6 -> 88%, dar doar 23/35
-#   Haiku, promptul vechi: 0.6 -> 58%; 0.7 -> 69% (judecățile vechi, până le înlocuiește Sonnet)
+# încrederea minimă a judecătorului cu context ca să punem roșu, pe model, calibrată pe eșantioane etichetate orb (evaluare/):
+#   Sonnet + promptul cu capcane, holdout de 120: 0.5 -> precizie 88% (100% fără neclare), recall 64%; 0.6 -> 100%, recall 55%
+#   Haiku, promptul vechi: 0.6 -> 62% pe holdout (judecățile vechi, până le înlocuiește Sonnet)
 PRAG_ROSU = {"claude-sonnet": 0.5, "": 0.7}
 
 
 def _prag(j):
     m = j.get("model") or ""
     return next((v for k, v in sorted(PRAG_ROSU.items(), key=lambda x: -len(x[0])) if m.startswith(k)), 0.7)
+
+
+# încrederea minimă ca să spunem public „nu e tăiere de pădure" / „pășune, nu pădure" (doar pentru judecătorul Sonnet;
+# judecățile vechi Haiku rămân cum erau până le înlocuiește rejudecarea)
+PRAG_NU = {"claude-sonnet": 0.5, "": 0.0}
+
+
+def _prag_nu(j):
+    m = j.get("model") or ""
+    return next((v for k, v in sorted(PRAG_NU.items(), key=lambda x: -len(x[0])) if m.startswith(k)), 0.0)
 JUD_NU_TAIERE = {"pasune": "pasune", "santier": "santier", "camp": "camp", "foc": "incendiu", "sezon_nori": "sezon", "altceva": "altceva"}
 PEISAJ_NU_TAIERE = {"camp": "camp", "coridor": "santier", "cariera": "santier"}
 
@@ -349,6 +359,14 @@ def clasifica(a, permis):
     p = PEISAJ.get(a["id"]) or {}
     jc = j.get("categorie")
     if jc in JUD_NU_TAIERE:
+        if (j.get("incredere") or 0) < _prag_nu(j):
+            # judecătorul înclină spre „nu e tăiere", dar nu e sigur: pe eșantionul holdout, aici erau
+            # 13 din cele 17 tăieri reale scăpate. Nu afirmăm nimic: dacă un permis acoperă zona, starea
+            # permisului; altfel „de confirmat".
+            st0, m0 = _stare_permis(a, permis)
+            if st0 in ("acoperit", "probabil"):
+                return st0, m0
+            return "nejudecat", "nesigur_nu"
         if jc == "pasune":
             return "vegetatie", "pasune"
         return "nu_taiere", JUD_NU_TAIERE[jc]
