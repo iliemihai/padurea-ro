@@ -7,14 +7,20 @@ import pipeline.permise as P
 from pipeline.permise import zone_site
 
 J = json.load(open(sys.argv[1]))["zone"]; et = json.load(open(sys.argv[2])); ch = json.load(open(sys.argv[3]))
+if "etichete" in et:  # fișierul descărcat din pagina de etichetare: {id_zonă: {"et": ...}} -> {"001": eticheta}
+    pe_id = {v["id"]: nn for nn, v in ch.items()}
+    et = {pe_id[z]: e["et"] for z, e in et["etichete"].items() if z in pe_id}
+    print(f"etichete de om: {len(et)} din {len(ch)} zone")
 praguri = [float(x) for x in sys.argv[4:]] or [0.5, 0.6]
 P.incarca_context()
 baza = dict(P.JUDECATA)
 zone = zone_site(None)
 verd = json.load(open("docs/data/permise.json"))["zone"]
 TAIERE = {"taiere_rasa", "rarire"}
+NU_TAIERE = {"santier", "camp", "foc", "nimic", "pasune", "altceva"}
 OK = {"fara": TAIERE, "neacoperit": TAIERE, "acoperit": TAIERE, "probabil": TAIERE,
-      "vegetatie": {"pasune"}, "nu_taiere": {"santier", "camp", "foc", "nimic", "pasune"}, "nejudecat": None}
+      # „pășune, nu pădure": pe hartă spune în primul rând „nu e pădure tăiată"
+      "vegetatie": NU_TAIERE, "nu_taiere": NU_TAIERE, "nejudecat": None}
 
 def wilson(k, n, z=1.96):
     if not n: return (0, 0)
@@ -41,7 +47,10 @@ for prag in praguri:
             print(f"  {st:10s} n={len(rows):3d}  corect {pct(k, len(rows))}  | fără neclar {pct(k, kc)}  | {lab}")
         else:
             print(f"  {st:10s} n={len(rows):3d}  | {lab}")
-    # recall: din toate tăierile reale fără autorizație valabilă (stare veche roșie sau nejudecată), câte ies roșii
-    tai = [(nn, e) for nn, e in et.items() if e in TAIERE and ch[nn]["stare"] in ("fara", "neacoperit")]
-    ies = sum(1 for nn, e in tai if any(nn == r[0] for r in g["rosu"]))
-    print(f"  tăieri reale (după mine) din roșiile vechi care rămân roșii: {ies}/{len(tai)}")
+    # recall: din tăierile reale (după etichete) din zonele fără autorizație care să le acopere, câte ies roșii
+    rosii = {r[0] for r in g["rosu"]}
+    tai = [nn for nn, e in et.items() if e in TAIERE and P._stare_permis(zone[ch[nn]["id"]], verd[ch[nn]["id"]])[0] in ("fara", "neacoperit")]
+    print(f"  tăieri reale fără autorizație care ies roșii (recall): {pct(sum(nn in rosii for nn in tai), len(tai))}")
+    scapate = [(nn, et[nn], next(st for st, rows in g.items() if any(r[0] == nn for r in rows))) for nn in tai if nn not in rosii]
+    if scapate:
+        print("  scăpate:", ", ".join(f"{nn}({e}->{st})" for nn, e, st in scapate))

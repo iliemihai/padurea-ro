@@ -67,5 +67,9 @@ jobs:
           git fetch origin main && git reset --hard origin/main
           cp /tmp/judecata.json "$OUT"
           git add "$OUT"
+          # judecata principală schimbă stările de pe hartă: le recalculăm aici, ca să nu aștepte rularea zilnică
+          if [ "$OUT" = "docs/data/judecata.json" ]; then
+            python -m pipeline.permise --retime && git add docs/data/permise.json
+          fi
           git commit -m "Judecata: $(date -u +%Y-%m-%d)" || echo "nimic nou"
           git push origin HEAD:main

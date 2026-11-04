@@ -6,6 +6,8 @@ context și locul pe hartă, apoi 8 butoane. Etichetele se țin în browser și 
 
     python -m pipeline.etichete                       scrie docs/eticheteaza.html cu eșantionul (sămânță fixă)
     python -m pipeline.etichete --raport etichete.json   precizia pe stare, pe categoria AI, pe felul de loc
+    python -m pipeline.etichete --din-cheie evaluare/<data>/cheie.json   pagina pe un eșantion de evaluare deja ales
+                                                     (aceleași zone pe care le-a etichetat și Claude, ca să comparăm)
 
 Eșantionul: 45 roșii (fără/neacoperit), 15 nejudecate, 15 probabile, 25 verzi (acoperit, martor).
 """
@@ -43,7 +45,7 @@ def esantion(zone, verd, seed=2026):
     return ids
 
 
-def scrie_html(ids, zone):
+def scrie_html(ids, zone, cheie_ls="etichete"):
     """Pagina, cu eșantionul în ea; datele (poze, context) le ia din docs/data la deschidere."""
     date = {k: {kk: zone[k].get(kk) for kk in ("id", "lat", "lon", "bbox", "chip_bbox", "ha", "first_seen", "county", "localitate", "img_before", "img_after", "n_dates", "arii")} for k in ids}
     html = """<!doctype html>
@@ -83,7 +85,8 @@ var Z = __ZONE__;
 var ET = __ET__;
 var ESRI = "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/export?bboxSR=4326&imageSR=3857&size=700,700&format=jpg&f=image&bbox=";
 var i = 0, lab = {}, peis = {}, dataDone = false;
-try { lab = JSON.parse(localStorage.getItem("etichete") || "{}"); i = +localStorage.getItem("etichete_i") || 0; } catch (e) {}
+var KEY = "__KEY__";
+try { lab = JSON.parse(localStorage.getItem(KEY) || "{}"); i = +localStorage.getItem(KEY + "_i") || 0; } catch (e) {}
 fetch("data/peisaj.json").then(function (r) { return r.json(); }).then(function (j) { peis = j.zone || {}; render(); }).catch(function () { render(); });
 function outline(a, bb) {
   if (!bb) return "";
@@ -122,19 +125,19 @@ function render() {
   document.getElementById("esri").href = "https://www.arcgis.com/home/webmap/viewer.html?center=" + cx + "," + cy + "&level=17&basemapUrl=https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer";
   document.getElementById("cnt").textContent = Object.keys(lab).length + " etichetate";
   document.querySelectorAll(".bt button").forEach(function (b) { b.addEventListener("click", function () { lab[id] = { et: b.dataset.k, nota: document.getElementById("nota").value, cand: new Date().toISOString().slice(0, 10) }; save(); i++; render(); window.scrollTo(0, 0); }); });
-  try { localStorage.setItem("etichete_i", i); } catch (e) {}
+  try { localStorage.setItem(KEY + "_i", i); } catch (e) {}
 }
-function save() { try { localStorage.setItem("etichete", JSON.stringify(lab)); } catch (e) {} }
+function save() { try { localStorage.setItem(KEY, JSON.stringify(lab)); } catch (e) {} }
 document.getElementById("prev").onclick = function () { i--; render(); };
 document.getElementById("next").onclick = function () { i++; render(); };
 document.getElementById("skip").onclick = function () { i++; render(); };
 document.getElementById("nota").addEventListener("change", function () { var id = IDS[i]; if (lab[id]) { lab[id].nota = this.value; save(); } });
 document.getElementById("dl").onclick = function () {
-  var blob = new Blob([JSON.stringify({ cine: "om", cand: new Date().toISOString(), etichete: lab }, null, 1)], { type: "application/json" });
+  var blob = new Blob([JSON.stringify({ cine: "om", esantion: KEY, cand: new Date().toISOString(), etichete: lab }, null, 1)], { type: "application/json" });
   var u = URL.createObjectURL(blob), x = document.createElement("a"); x.href = u; x.download = "etichete.json"; x.click();
 };
 </script></body></html>"""
-    html = html.replace("__IDS__", json.dumps(ids)).replace("__ZONE__", json.dumps(date, ensure_ascii=False)).replace("__ET__", json.dumps(ETICHETE, ensure_ascii=False))
+    html = html.replace("__KEY__", cheie_ls).replace("__IDS__", json.dumps(ids)).replace("__ZONE__", json.dumps(date, ensure_ascii=False)).replace("__ET__", json.dumps(ETICHETE, ensure_ascii=False))
     OUT_HTML.write_text(html, encoding="utf-8")
 
 
@@ -223,13 +226,20 @@ def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--raport")
     ap.add_argument("--seed", type=int, default=2026)
+    ap.add_argument("--din-cheie", help="ia zonele, în ordine, dintr-un cheie.json de evaluare (evaluare/*/cheie.json)")
     a = ap.parse_args(argv)
     if a.raport:
         return raport(a.raport)
     zone = zone_site()
     verd = json.loads(PERMISE.read_text(encoding="utf-8")).get("zone", {})
-    ids = esantion(zone, verd, a.seed)
-    scrie_html(ids, zone)
+    if a.din_cheie:
+        import pathlib
+        ch = json.loads(pathlib.Path(a.din_cheie).read_text(encoding="utf-8"))
+        ids = [ch[k]["id"] for k in sorted(ch) if ch[k]["id"] in zone]
+        scrie_html(ids, zone, "etichete_" + pathlib.Path(a.din_cheie).parent.name)
+    else:
+        ids = esantion(zone, verd, a.seed)
+        scrie_html(ids, zone)
     c = Counter(verd.get(k, {}).get("stare") for k in ids)
     print(f"{len(ids)} zone în eșantion -> {OUT_HTML}; compoziție (ascunsă în pagină): {dict(c)}")
 
