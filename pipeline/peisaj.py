@@ -55,37 +55,58 @@ def _bbox_pad(g, pad_m):
     return [w - dlon, s - dlat, e + dlon, n + dlat]
 
 
-def _citeste(cat, colectie, bbox, asset_key=None, data=("2021-01-01", "2021-12-31")):
-    """Fereastra `bbox` (grade) dintr-o colecție în EPSG:4326: (array, transform). Lipește bucățile dacă bbox atinge două plăci."""
+_ITEMS, _SRC = {}, {}
+RO_BBOX = [20.2, 43.5, 30.0, 48.3]
+
+
+def _items(cat, colectie, data):
+    """Plăcile colecției peste toată România, căutate o singură dată."""
+    if colectie not in _ITEMS:
+        _ITEMS[colectie] = list(cat.search(collections=[colectie], bbox=RO_BBOX, datetime=f"{data[0]}/{data[1]}" if data else None, max_items=400).items())
+        log(f"  {colectie}: {len(_ITEMS[colectie])} plăci")
+    return _ITEMS[colectie]
+
+
+def _src(it, asset_key):
+    """Fișierul deschis (COG, citim doar ferestre), ținut deschis între zone."""
     import rasterio
-    from rasterio.merge import merge
-    from rasterio.windows import from_bounds
-    from rasterio.io import MemoryFile
-    items = list(cat.search(collections=[colectie], bbox=bbox, datetime=f"{data[0]}/{data[1]}" if data else None).items())
-    if not items:
-        return None, None
-    srcs = []
-    for it in items[:4]:
+    if it.id not in _SRC:
         asset = it.assets.get(asset_key) if asset_key else None
         if asset is None:
             asset = next(a for a in it.assets.values() if a.href.split("?")[0].endswith(".tif"))
-        src = rasterio.open(asset.href)
+        _SRC[it.id] = rasterio.open(asset.href)
+    return _SRC[it.id]
+
+
+def _citeste(cat, colectie, bbox, asset_key=None, data=("2021-01-01", "2021-12-31")):
+    """Fereastra `bbox` (grade) dintr-o colecție în EPSG:4326: (array, transform). Lipește bucățile dacă bbox atinge două plăci."""
+    from rasterio.merge import merge
+    from rasterio.windows import from_bounds
+    from rasterio.io import MemoryFile
+    from shapely.geometry import box, shape
+    cerut = box(*bbox)
+    items = [it for it in _items(cat, colectie, data) if shape(it.geometry).intersects(cerut)]
+    if not items:
+        return None, None
+    bucati = []
+    for it in items[:4]:
+        src = _src(it, asset_key)
         w = from_bounds(*bbox, transform=src.transform)
         arr = src.read(1, window=w, boundless=True, fill_value=src.nodata if src.nodata is not None else 0)
         tr = src.window_transform(w)
+        bucati.append((arr, tr, src.crs, src.nodata))
+    if len(bucati) == 1:
+        return bucati[0][0], bucati[0][1]
+    srcs = []
+    for arr, tr, crs, nd in bucati:
         mem = MemoryFile()
-        with mem.open(driver="GTiff", height=arr.shape[0], width=arr.shape[1], count=1, dtype=arr.dtype, crs=src.crs, transform=tr, nodata=src.nodata) as d:
+        with mem.open(driver="GTiff", height=arr.shape[0], width=arr.shape[1], count=1, dtype=arr.dtype, crs=crs, transform=tr, nodata=nd) as d:
             d.write(arr, 1)
         srcs.append(mem.open())
-        src.close()
-    if len(srcs) == 1:
-        a = srcs[0].read(1); tr = srcs[0].transform
-    else:
-        a, tr = merge(srcs)
-        a = a[0]
-    for s in srcs:
-        s.close()
-    return a, tr
+    a, tr = merge(srcs)
+    for s_ in srcs:
+        s_.close()
+    return a[0], tr
 
 
 def _masca(g, shape, tr):
@@ -254,7 +275,11 @@ def peisaj(cat, a, hansen_tc):
     # WorldCover: în zonă și pe inelul de 500 m
     try:
         bb = _bbox_pad(g, INEL_M + 50)
-        arr, tr = _citeste(cat, "esa-worldcover", bb, "map")
+        try:
+            arr, tr = _citeste(cat, "esa-worldcover", bb, "map")
+        except Exception:
+            _SRC.clear(); _ITEMS.pop("esa-worldcover", None)
+            arr, tr = _citeste(cat, "esa-worldcover", bb, "map")
         if arr is not None:
             mz = _masca(g, arr.shape, tr)
             from shapely.affinity import scale
@@ -266,7 +291,11 @@ def peisaj(cat, a, hansen_tc):
     # DEM
     try:
         bb = _bbox_pad(g, 200)
-        arr, tr = _citeste(cat, "cop-dem-glo-30", bb, "data", data=None)
+        try:
+            arr, tr = _citeste(cat, "cop-dem-glo-30", bb, "data", data=None)
+        except Exception:
+            _SRC.clear(); _ITEMS.pop("cop-dem-glo-30", None)
+            arr, tr = _citeste(cat, "cop-dem-glo-30", bb, "data", data=None)
         if arr is not None and arr.size > 4:
             mz = _masca(g, arr.shape, tr)
             a_ = arr.astype("float32")
