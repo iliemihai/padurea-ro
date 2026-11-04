@@ -187,6 +187,22 @@ def _taie(t, n):
     return (cut[: k + 1] if k > n // 2 else cut).strip()
 
 
+def _json_din(txt):
+    """Primul obiect JSON complet din text (ignoră ``` și textul din jur)."""
+    txt = txt.replace("```json", "").replace("```", "")
+    dec = json.JSONDecoder()
+    i = txt.find("{")
+    while i != -1:
+        try:
+            j, _ = dec.raw_decode(txt, i)
+            if isinstance(j, dict) and "categorie" in j:
+                return j
+        except ValueError:
+            pass
+        i = txt.find("{", i + 1)
+    return None
+
+
 # ---------------------------------------------------------------- întrebarea
 def intreaba(png, a, context, esri_date, model=None):
     model = model or C.CLAUDE_MODEL
@@ -194,27 +210,28 @@ def intreaba(png, a, context, esri_date, model=None):
     content = [{"type": "image", "source": {"type": "base64", "media_type": "image/png", "data": base64.b64encode(png).decode()}},
                {"type": "text", "text": text}]
     headers = {"Content-Type": "application/json", "x-api-key": os.environ["ANTHROPIC_API_KEY"], "anthropic-version": "2023-06-01"}
-    body = {"model": model, "max_tokens": 1024, "messages": [{"role": "user", "content": content}]}
+    body = {"model": model, "max_tokens": 3000, "messages": [{"role": "user", "content": content}]}
     last = ""
-    for attempt in range(4):
+    scurt = 0  # de câte ori am cerut un răspuns mai scurt / doar JSON
+    for attempt in range(6):
         try:
             r = _post("https://api.anthropic.com/v1/messages", body, headers, timeout=180)
         except urllib.error.HTTPError as exc:
             detail = exc.read()[:300].decode("utf-8", "replace")
             last = f"HTTP {exc.code}: {detail}"
-            if exc.code in (429, 500, 502, 503, 529) and attempt < 3:
+            if exc.code in (429, 500, 502, 503, 529) and attempt < 5:
                 time.sleep(8 * (attempt + 1)); continue
             raise RuntimeError(last)
         txt = "".join(b.get("text", "") for b in r.get("content", []) if b.get("type") == "text")
-        _raw({"model": model, "rejudeca": a["id"], "text": txt})
-        import re
-        j = None
-        for m in reversed(list(re.finditer(r"\{.*\}", txt, re.S))):
-            try:
-                j = json.loads(m.group(0)); break
-            except ValueError:
-                j = None
-        if not j:
+        _raw({"model": model, "rejudeca": a["id"], "text": txt, "stop": r.get("stop_reason")})
+        j = _json_din(txt)
+        if not j or r.get("stop_reason") == "max_tokens":
+            # răspuns tăiat sau fără JSON valid: mai cerem o dată, explicit doar JSON și mai scurt
+            if scurt < 2:
+                scurt += 1
+                body["messages"] = [{"role": "user", "content": content + [{"type": "text", "text":
+                    "Răspunde NUMAI cu obiectul JSON cerut, fără text în afara lui și fără ```; «motiv» sub 400 de caractere, «detalii» sub 700."}]}]
+                continue
             raise RuntimeError("fără JSON: " + txt[:160])
         cat = str(j.get("categorie", "neclar")).strip().lower()
         pi = str(j.get("padure_inainte", "")).strip().lower()
