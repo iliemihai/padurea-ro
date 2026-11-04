@@ -16,6 +16,18 @@ on:
         description: "Doar primele N zone (probă); gol = toate"
         type: string
         default: ""
+      ids:
+        description: "Doar aceste zone (ID-uri despărțite prin spațiu)"
+        type: string
+        default: ""
+      model:
+        description: "Modelul (gol = cel din config)"
+        type: string
+        default: ""
+      out:
+        description: "Fișier de ieșire (gol = docs/data/judecata.json)"
+        type: string
+        default: ""
 
 permissions:
   contents: write
@@ -38,16 +50,17 @@ jobs:
       - name: Judecata
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-        run: python -m pipeline.rejudeca ${{ inputs.full && '--full' || '' }} ${{ inputs.martori && '--si-martori' || '' }} ${{ inputs.limit && format('--limit {0}', inputs.limit) || '' }}
+        run: python -m pipeline.rejudeca ${{ inputs.full && '--full' || '' }} ${{ inputs.martori && '--si-martori' || '' }} ${{ inputs.limit && format('--limit {0}', inputs.limit) || '' }} ${{ inputs.ids && format('--ids {0}', inputs.ids) || '' }} ${{ inputs.model && format('--model {0}', inputs.model) || '' }} ${{ inputs.out && format('--out {0}', inputs.out) || '' }}
       - name: Salvez în repo
         if: always()
         run: |
           git config user.name "padurea-ro bot"
           git config user.email "actions@users.noreply.github.com"
-          [ -f docs/data/judecata.json ] || exit 0
-          cp docs/data/judecata.json /tmp/judecata.json
+          OUT="${{ inputs.out }}"; OUT="${OUT:-docs/data/judecata.json}"
+          [ -f "$OUT" ] || exit 0
+          cp "$OUT" /tmp/judecata.json
           git fetch origin main && git reset --hard origin/main
-          cp /tmp/judecata.json docs/data/judecata.json
-          git add docs/data/judecata.json
+          cp /tmp/judecata.json "$OUT"
+          git add "$OUT"
           git commit -m "Judecata: $(date -u +%Y-%m-%d)" || echo "nimic nou"
           git push origin HEAD:main

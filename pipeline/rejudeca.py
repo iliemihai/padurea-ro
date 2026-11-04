@@ -62,9 +62,20 @@ Pick exactly one category:
 
 Also answer "padure_inainte": "da" if DETAILED BEFORE (or BEFORE, if no detailed image) shows closed forest canopy over most of the outline, "partial" if a mix of crowns and open ground, "nu" if open land with few or no trees.
 
-Be strict about "taiere_rasa": it needs closed forest BEFORE and open ground AFTER with sharp edges. If the detailed image shows grass between the crowns, prefer "pasune". If the strip continues beyond the outline along a road, railway or line, prefer "santier". If the AFTER image shows the same brown over the whole wide view, prefer "sezon_nori".
+Be strict about "taiere_rasa": it needs closed forest BEFORE and open ground AFTER with sharp edges. A wrong "taiere_rasa" publicly accuses someone of illegal logging, so when in doubt choose the other category or "neclar".
 
-Answer only with a JSON object with the keys:
+Check these traps, in order, before choosing "taiere_rasa":
+ a) Season or light. Compare the outline with OTHER forest in "AFTER, WIDE". If whole hillsides or many patches far from the outline show the same brown, orange, purple or grey tone, it is autumn colour, leaf-off, snow, haze or shadow: "sezon_nori". This is the most common error from October to April (AFTER date {d1}). A real cut is a bare patch that stands out from forest that stays green.
+ b) Fire. Dark brown to black, irregular, spreading over pasture and scrub as well as trees, often several patches in the wide view: "foc".
+ c) Not closed forest before. In DETAILED BEFORE, if grass or soil shows between separate crowns, or the trees are shrubs, young regrowth, a hedge, orchard rows or a tree line along a field or a river bank, it is not a closed forest: "pasune", "camp" or "altceva". Tree canopy in 2000 below 40% and land cover with much pasture or cropland point the same way, but the detailed picture decides.
+ d) Works. A strip that continues beyond the outline, a geometric platform, bright white or grey ground (gravel, rock), machinery, next to a road, railway, quarry or village edge: "santier".
+ e) Fields. Straight edges that match neighbouring parcels, ploughing or harvest tone: "camp".
+ f) Floodplain and wetlands near big rivers: water level and reed or willow colour change with the season; prefer "altceva" or "sezon_nori" unless a sharp rectangular cut is obvious.
+ g) Nothing visible. If the outline looks the same in BEFORE and AFTER, or the "change" is only inside an existing clearing, answer "sezon_nori" or "altceva", not a cut.
+Only when none of these applies, and the AFTER picture shows new bare ground, slash or stumps with sharp edges inside forest that stays green around it, answer "taiere_rasa" (or "rarire" when crowns remain).
+Confidence: 0.8 or more only when the evidence is unmistakable in two pictures; 0.6 when plausible but one trap is possible; below 0.5 when guessing.
+
+First write two or three short lines of reasoning in English going through the traps, then the JSON object with the keys:
   "categorie", "padure_inainte", "incredere" (0–1),
   "motiv": one or two plain sentences in Romanian for a reader with no technical background, saying what is seen and why that means this category (call the pictures «înainte», «după», «poza detaliată», and the area «zona marcată»),
   "detalii": one or two technical sentences in Romanian for a journalist: the visual evidence (edges, texture, colour, continuation outside the outline) and which facts above support or contradict it."""
@@ -254,6 +265,8 @@ def main(argv=None):
     ap.add_argument("--ids", nargs="*")
     ap.add_argument("--fara-esri", action="store_true")
     ap.add_argument("--fara-larg", action="store_true")
+    ap.add_argument("--model", help="modelul (implicit config.CLAUDE_MODEL)")
+    ap.add_argument("--out", help="fișierul de ieșire (implicit docs/data/judecata.json)")
     ap.add_argument("--planse", help="doar planșele + fișa neutră, pentru evaluare oarbă, în acest director (fără model)")
     ap.add_argument("--seed", type=int, default=11)
     args = ap.parse_args(argv)
@@ -267,6 +280,10 @@ def main(argv=None):
 
     if args.planse:
         return planse_oarbe(args, zone, verd, peis)
+    global OUT
+    if args.out:
+        OUT = pathlib.Path(args.out)
+        vechi = json.loads(OUT.read_text(encoding="utf-8")).get("zone", {}) if OUT.exists() else {}
 
     if args.ids:
         tinta = [k for k in args.ids if k in zone]
@@ -298,7 +315,7 @@ def main(argv=None):
         png, intrari = plansa(a, esri, esri_date, larg)
         context = fisa(a, peis.get(zid), verd.get(zid))
         try:
-            j = intreaba(png, a, context, esri_date)
+            j = intreaba(png, a, context, esri_date, model=args.model)
         except Exception as e:
             print("  eroare la", zid, repr(e)[:160], flush=True); continue
         j["intrari"] = intrari
