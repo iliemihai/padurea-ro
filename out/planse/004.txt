@@ -1,0 +1,11 @@
+Esri: 2025-06-04; S2 înainte 2025-08-29 / după 2026-06-30
+- relief: câmpie, 19 m altitude, slope 9°
+- land cover inside the outline (ESA WorldCover 2021): copaci 100%
+- land cover within 500 m around: copaci 57%, pasune 33%, arabil 2%, apa 8%
+- tree canopy density in 2000 (Hansen): 64% inside, 40% around (closed forest is usually above 60%)
+- nearest any road or track: 415 m (track)
+- nearest river or lake: 539 m (river Brațul Borcea (Dunărea))
+- nearest built-up area: 739 m (residential)
+- shape of the flagged area: 400 m long, 318 m wide (elongation 1.3)
+- flagged area: 5.1 ha, seen changed in 22 satellite images
+- inside a protected area: Brațul Borcea

@@ -1,0 +1,13 @@
+Esri: 2025-05-22; S2 înainte 2026-05-11 / după 2026-06-30
+- relief: câmpie, 18 m altitude, slope 3°
+- land cover inside the outline (ESA WorldCover 2021): copaci 100%
+- land cover within 500 m around: copaci 72%, pasune 20%, arabil 7%, mlastina 1%
+- tree canopy density in 2000 (Hansen): 60% inside, 26% around (closed forest is usually above 60%)
+- nearest major road: 171 m (trunk)
+- nearest any road or track: 171 m (trunk)
+- nearest railway: 251 m (rail)
+- nearest river or lake: 298 m (lac)
+- nearest built-up area: 622 m (residential)
+- shape of the flagged area: 239 m long, 160 m wide (elongation 1.5)
+- flagged area: 2.2 ha, seen changed in 13 satellite images
+- inside a protected area: Coridorul Ialomiței, Coridorul Ialomiței

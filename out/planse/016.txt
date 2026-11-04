@@ -1,0 +1,10 @@
+Esri: 2025-06-08; S2 înainte 2026-05-31 / după 2026-06-30
+- relief: câmpie, 70 m altitude, slope 14°
+- land cover inside the outline (ESA WorldCover 2021): copaci 87%, pasune 7%, arabil 6%
+- land cover within 500 m around: copaci 53%, pasune 5%, arabil 42%
+- tree canopy density in 2000 (Hansen): 12% inside, 24% around (closed forest is usually above 60%)
+- nearest major road: 1221 m (secondary)
+- nearest any road or track: 805 m (track)
+- shape of the flagged area: 200 m long, 159 m wide (elongation 1.3)
+- flagged area: 1.6 ha, seen changed in 7 satellite images
+- inside a protected area: Dumbrăveni - Valea Urluia - Lacul Vederoasa, Aliman - Adamclisi

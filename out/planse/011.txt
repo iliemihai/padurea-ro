@@ -1,0 +1,12 @@
+Esri: 2025-06-15; S2 înainte 2026-04-24 / după 2026-06-30
+- relief: câmpie, 82 m altitude, slope 5°
+- land cover inside the outline (ESA WorldCover 2021): copaci 99%, arabil 1%
+- land cover within 500 m around: copaci 61%, pasune 18%, arabil 19%, construit 1%, apa 2%
+- tree canopy density in 2000 (Hansen): 72% inside, 36% around (closed forest is usually above 60%)
+- nearest major road: 486 m (secondary)
+- nearest any road or track: 0 m (track)
+- nearest river or lake: 313 m (river Prahova)
+- nearest built-up area: 206 m (residential)
+- shape of the flagged area: 279 m long, 199 m wide (elongation 1.4)
+- flagged area: 3.8 ha, seen changed in 9 satellite images
+- inside a protected area: Coridorul Ialomiței, Coridorul Ialomiței

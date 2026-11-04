@@ -1,0 +1,10 @@
+Esri: 2025-05-22; S2 înainte 2026-04-26 / după 2026-06-30
+- relief: câmpie, 40 m altitude, slope 3°
+- land cover inside the outline (ESA WorldCover 2021): copaci 100%
+- land cover within 500 m around: copaci 83%, pasune 2%, arabil 15%
+- tree canopy density in 2000 (Hansen): 33% inside, 37% around (closed forest is usually above 60%)
+- nearest river or lake: 587 m (canal)
+- nearest power line: 1055 m (LEA)
+- shape of the flagged area: 199 m long, 160 m wide (elongation 1.2)
+- flagged area: 2.4 ha, seen changed in 16 satellite images
+- inside a protected area: Berteștii de Sus - Gura Ialomiței

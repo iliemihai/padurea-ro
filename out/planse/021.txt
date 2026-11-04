@@ -1,0 +1,10 @@
+Esri: 2025-06-04; S2 înainte 2026-07-10 / după 2026-09-01
+- relief: câmpie, 14 m altitude, slope 6°
+- land cover inside the outline (ESA WorldCover 2021): copaci 100%
+- land cover within 500 m around: copaci 97%, apa 2%
+- tree canopy density in 2000 (Hansen): 64% inside, 72% around (closed forest is usually above 60%)
+- nearest any road or track: 784 m (track)
+- nearest river or lake: 0 m (canal Canal Turcescu)
+- shape of the flagged area: 366 m long, 112 m wide (elongation 3.2)
+- flagged area: 2.1 ha, seen changed in 12 satellite images
+- inside a protected area: Canaralele Dunării, Dunăre - Ostroave

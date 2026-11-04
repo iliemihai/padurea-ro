@@ -1,0 +1,9 @@
+Esri: 2023-04-14; S2 înainte 2026-05-31 / după 2026-08-29
+- relief: câmpie, 17 m altitude, slope 7°
+- land cover inside the outline (ESA WorldCover 2021): copaci 100%
+- land cover within 500 m around: copaci 66%, pasune 8%, arabil 25%
+- tree canopy density in 2000 (Hansen): 45% inside, 39% around (closed forest is usually above 60%)
+- nearest any road or track: 132 m (track)
+- shape of the flagged area: 199 m long, 79 m wide (elongation 2.5)
+- flagged area: 1.1 ha, seen changed in 25 satellite images
+- inside a protected area: Bordușani - Borcea, Brațul Borcea

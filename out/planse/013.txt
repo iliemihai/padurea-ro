@@ -1,0 +1,9 @@
+Esri: 2025-05-20; S2 înainte 2026-04-04 / după 2026-06-30
+- relief: câmpie, 77 m altitude, slope 7°
+- land cover inside the outline (ESA WorldCover 2021): copaci 100%
+- land cover within 500 m around: copaci 51%, arabil 49%
+- tree canopy density in 2000 (Hansen): 79% inside, 39% around (closed forest is usually above 60%)
+- nearest any road or track: 1186 m (track)
+- nearest power line: 1162 m (LEA)
+- shape of the flagged area: 298 m long, 154 m wide (elongation 1.9)
+- flagged area: 2.9 ha, seen changed in 10 satellite images

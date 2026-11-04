@@ -1,0 +1,11 @@
+Esri: 2025-04-16; S2 înainte 2025-08-29 / după 2026-06-30
+- relief: câmpie, 23 m altitude, slope 6°
+- land cover inside the outline (ESA WorldCover 2021): copaci 100%
+- land cover within 500 m around: copaci 80%, pasune 1%, apa 19%, mlastina 1%
+- tree canopy density in 2000 (Hansen): 80% inside, 62% around (closed forest is usually above 60%)
+- nearest major road: 1270 m (trunk)
+- nearest any road or track: 103 m (track)
+- nearest river or lake: 0 m (lac)
+- shape of the flagged area: 254 m long, 169 m wide (elongation 1.5)
+- flagged area: 2.9 ha, seen changed in 21 satellite images
+- inside a protected area: Parcul Natural Balta Mică a Brăilei, Balta Mică a Brăilei

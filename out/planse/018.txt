@@ -1,0 +1,11 @@
+Esri: 2024-07-12; S2 înainte 2026-05-31 / după 2026-06-30
+- relief: câmpie, 128 m altitude, slope 8°
+- land cover inside the outline (ESA WorldCover 2021): copaci 100%
+- land cover within 500 m around: copaci 30%, pasune 33%, arabil 33%, construit 3%
+- tree canopy density in 2000 (Hansen): 14% inside, 2% around (closed forest is usually above 60%)
+- nearest major road: 488 m (secondary)
+- nearest any road or track: 141 m (track)
+- nearest built-up area: 242 m (residential)
+- shape of the flagged area: 159 m long, 119 m wide (elongation 1.3)
+- flagged area: 1.3 ha, seen changed in 8 satellite images
+- inside a protected area: Dumbrăveni - Valea Urluia - Lacul Vederoasa
