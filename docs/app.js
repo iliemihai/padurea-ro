@@ -159,7 +159,10 @@
     vegetatie: { cls: "a-vegetatie", scurt: "pășune, nu pădure", badge: "pășune, nu pădure",
                  lung: "Analistul nu vede pădure tăiată: înainte era pășune, fâneață sau teren cu copaci răzleți și tufăriș, nu pădure închisă. Dacă s-au scos copaci de pe pășune, și asta cere autorizație de la ocolul silvic (Codul silvic, art. 60), dar aceste autorizații nu apar sigur în registrul public, așa că nu putem spune dacă există. Nu e dovadă de ilegalitate." },
     probabil: { cls: "a-probabil", scurt: "probabil cu autorizație", badge: "probabil cu autorizație",
-                lung: "Există o autorizație în zonă, dar amenajamentul nu publică harta parcelei ei, deci nu putem confirma că o acoperă. De cele mai multe ori o acoperă." },
+                lung: "Am găsit o autorizație de tăiere pentru locul ăsta, dar registrul nu ne lasă să confirmăm că acoperă exact tăierea pe care o vedem.",
+                motiv: { _: "Amenajamentul nu publică harta parcelei autorizației, deci nu știm exact unde e. De cele mai multe ori o acoperă.",
+                         fara_parcela: "Amenajamentul nu publică harta parcelei autorizației, deci nu știm exact unde e. De cele mai multe ori o acoperă.",
+                         dupa_termen: "Autorizația acoperă chiar locul, dar se terminase înainte să vedem schimbarea. Cel mai des e o tăiere făcută toamna sau iarna, cât autorizația era valabilă, pe care satelitul o vede abia primăvara, când pădurea din jur înverzește; sau scosul lemnului după tăiere. De aceea nu o arătăm cu roșu." } },
     acoperit: { cls: "a-acoperit", scurt: "cu autorizație", badge: "cu autorizație", ok: true,
                 lung: "Parcela autorizată acoperă zona, iar autorizația era valabilă când s-a tăiat." },
     nu_taiere: { cls: "a-nu_taiere", scurt: "nu e tăiere de pădure", badge: "nu e tăiere de pădure",
@@ -849,7 +852,8 @@
     head.appendChild(el("b", null, t.badge));
     box.appendChild(head);
     box.appendChild(el("p", null, t.lung));
-    if (t.motiv && v.motiv && t.motiv[v.motiv]) box.appendChild(el("p", null, t.motiv[v.motiv]));
+    var mt = t.motiv ? (v.motiv && t.motiv[v.motiv]) || t.motiv._ : null;
+    if (mt) box.appendChild(el("p", null, mt));
     /* ce a văzut analistul cu context (poza detaliată, înainte/după, vederea largă, hărțile): pentru om, în cuvinte */
     var j = JUD[a.id] || null, pz = PEIS[a.id] || null;
     if (j && j.motiv) box.appendChild(el("p", null, "Ce se vede în poze: " + j.motiv));

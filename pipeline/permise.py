@@ -302,6 +302,8 @@ def fel_schimbare(a):
 
 PARCELA_REALA = ("exact", "cheie", "spațial")
 SUPRA_MIN = 0.2    # cât din zonă trebuie să acopere parcela ca să vorbim despre perioada ei
+SUPRA_DUPA_TERMEN = 0.3   # zona e în parcela autorizată...
+ZILE_DUPA_TERMEN = 365    # ...iar autorizația se terminase cu cel mult un an înainte: „probabil", nu roșu
 
 
 # judecata cu context (rejudeca.py) și peisajul (peisaj.py), când există: le încărcăm o dată, la pornire
@@ -416,8 +418,16 @@ def _stare_permis(a, permis):
     if t == "acoperit":
         return "acoperit", None
     if reala and supra > SUPRA_MIN:
+        if t == "expirat" and supra >= SUPRA_DUPA_TERMEN and permis.get("end"):
+            # Autorizația acoperă chiar locul, dar se terminase înainte de intervalul în care vedem schimbarea.
+            # La verificarea pe poze (Bărăgan, 2026-11-05), aproape toate erau tăieri făcute toamna sau iarna,
+            # cât autorizația era valabilă, văzute abia primăvara, când pădurea din jur înverzește (sau scosul
+            # lemnului după tăiere): tăietura se vedea deja în poza „înainte". Nu le dăm roșu.
+            zile = (cs - dt.date.fromisoformat(permis["end"])).days
+            if zile <= ZILE_DUPA_TERMEN:
+                return "probabil", "dupa_termen"
         return "neacoperit", t
-    return "probabil", None
+    return "probabil", "fara_parcela"
 
 
 # ---------------------------------------------------------------- potrivirea

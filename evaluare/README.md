@@ -64,3 +64,28 @@ Pe holdout, cu regula asta:
 
 **De făcut:** etichete de om pe aceleași 120 de zone (pagina `eticheteaza.html` le are), ca precizia să nu depindă doar
 de etichetele lui Claude. Abia apoi cifra poate fi publicată pe site.
+
+## 2026-11-05 — verificare pe poze: cele 21 de zone roșii din Bărăgan și lunca Dunării
+
+Întrebarea: în câmpie, unde pădurea e puțină, zonele roșii sunt chiar pădure? Am desenat planșele pentru toate cele 21
+(`python -m pipeline.rejudeca --planse ... --ids ...`) și le-am verificat una câte una.
+
+- **Sunt pădure: da.** Toate 21 cad în parcele de amenajament silvic (fond forestier; 18 de stat, 3 private), au 87–100%
+  copaci în WorldCover 2021, iar poza detaliată arată pădure închisă: plantații de plop și salcie în lunca Dunării și a
+  Borcei, salcâm și stejar în Bărăgan. 19 sunt tăieri clare, 1 probabilă, 1 neclară.
+- **Dar 11 din 21 erau roșii din motivul greșit.** Erau „autorizația nu acoperă tăierea: expirase”, deși autorizația
+  acoperea chiar locul (66–100% din zonă). Pe poze, tăietura se vedea deja în poza „înainte” din aprilie–mai: tăieri
+  făcute toamna sau iarna, cât autorizația era valabilă, văzute abia primăvara, când pădurea din jur înverzește.
+  Fereastra „între poza înainte și prima detecție” e greșită pentru pădurile de foioase în sezonul fără frunze.
+
+Regula nouă (`pipeline/permise.py`, `_stare_permis`): dacă parcela autorizată acoperă cel puțin 30% din zonă și
+autorizația se terminase cu cel mult un an înainte de fereastră, zona e „probabil cu autorizație” (motiv `dupa_termen`),
+nu roșie. Pe toată țara: 23 de zone au trecut din roșu în „probabil”; roșiile au scăzut de la 132 la 109.
+
+Ce rămâne roșu în regiune: 2 „fără nicio autorizație în jur” și 8 „în afara parcelei autorizate” (autorizația cea mai
+apropiată la 66–495 m). Acestea din urmă sunt de verificat cu ocolul: pot fi tăieri în afara parcelei sau autorizații
+pe care registrul nu le leagă de loc.
+
+Atenție pentru evaluare: precizia măsurată pe eșantioane („roșu = pădure tăiată”) nu prinde greșelile de felul ăsta,
+pentru că eticheta oarbă spune doar dacă e tăiere, nu dacă e acoperită de autorizație. A doua întrebare se verifică
+separat, cu registrul.
