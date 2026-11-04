@@ -139,30 +139,48 @@ def relief(alt, panta):
 
 
 # ---------------------------------------------------------------- OpenStreetMap
-def osm_in_jur(lat, lon, raza=RAZA_OSM_M):
-    """Cea mai apropiată: drum mare, drum oarecare, cale ferată, apă curgătoare sau lac, zonă locuită, carieră."""
+def _q_osm(puncte, raza):
+    """Elementele OSM din jurul mai multor puncte, într-o singură cerere (loturile fac Overpass de 20 de ori mai ieftin)."""
     import requests
-    q = f"""[out:json][timeout:60];
-(
-  way(around:{raza},{lat},{lon})[highway~"^(motorway|trunk|primary|secondary|tertiary|unclassified|residential|track|service|motorway_link|trunk_link|primary_link|construction|proposed)$"];
-  way(around:{raza},{lat},{lon})[railway~"^(rail|construction|proposed|narrow_gauge)$"];
-  way(around:{raza},{lat},{lon})[waterway~"^(river|stream|canal)$"];
-  way(around:{raza},{lat},{lon})[natural=water];
-  way(around:{raza},{lat},{lon})[landuse~"^(residential|industrial|quarry|farmland|farmyard|meadow|orchard|vineyard)$"];
-  way(around:{raza},{lat},{lon})[power=line];
-  way(around:{raza},{lat},{lon})[man_made=pipeline];
-);
-out tags geom;"""
+    ar = lambda tag: "\n".join(f'  way(around:{raza},{lat},{lon}){tag};' for lat, lon in puncte)
+    taguri = ['[highway~"^(motorway|trunk|primary|secondary|tertiary|unclassified|residential|track|service|motorway_link|trunk_link|primary_link|construction|proposed)$"]',
+              '[railway~"^(rail|construction|proposed|narrow_gauge)$"]', '[waterway~"^(river|stream|canal)$"]', '[natural=water]',
+              '[landuse~"^(residential|industrial|quarry)$"]', '[power=line]', '[man_made=pipeline]']
+    q = "[out:json][timeout:180];\n(\n" + "\n".join(ar(t) for t in taguri) + "\n);\nout tags geom;"
     for incercare in range(3):
         try:
-            r = requests.post(OVERPASS, data={"data": q}, timeout=90, headers={"User-Agent": "padurea-ro/1.0 (+https://github.com/iliemihai/padurea-ro)"})
+            r = requests.post(OVERPASS, data={"data": q}, timeout=200, headers={"User-Agent": "padurea-ro/1.0 (+https://github.com/iliemihai/padurea-ro)"})
             if r.status_code == 429 or r.status_code >= 500:
-                time.sleep(20 * (incercare + 1)); continue
+                time.sleep(30 * (incercare + 1)); continue
             r.raise_for_status()
             return r.json().get("elements", [])
         except Exception as e:
-            log("  overpass:", repr(e)[:100]); time.sleep(10 * (incercare + 1))
+            log("  overpass:", repr(e)[:100]); time.sleep(15 * (incercare + 1))
     return None
+
+
+_OSM_LOT = {}
+
+
+def osm_lot(zone_lot, raza=RAZA_OSM_M):
+    """Pregătește, pentru un lot de zone, elementele OSM; fiecare zonă își ia apoi doar ce e în raza ei."""
+    from shapely.geometry import shape, LineString
+    puncte = [(shape(a["geometry"]).centroid.y, shape(a["geometry"]).centroid.x) for a in zone_lot]
+    el = _q_osm(puncte, raza)
+    if el is None:
+        return
+    for a, (lat, lon) in zip(zone_lot, puncte):
+        dlat = raza / 111320.0; dlon = dlat / max(math.cos(math.radians(lat)), 0.2)
+        aproape = []
+        for e in el:
+            g = e.get("geometry") or []
+            if any(abs(p["lat"] - lat) <= dlat and abs(p["lon"] - lon) <= dlon for p in g[:: max(1, len(g) // 40)]):
+                aproape.append(e)
+        _OSM_LOT[a["id"]] = aproape
+
+
+def osm_in_jur(a):
+    return _OSM_LOT.get(a["id"])
 
 
 def distante_osm(g, elems):
@@ -243,9 +261,9 @@ def fel_loc(p):
         return "sat", "la marginea zonei locuite, cu copaci răzleți"
     if "apa" in o and o["apa"]["m"] <= 40 and alung >= 2.5:
         return "mal", "fâșie de-a lungul apei (" + str(o["apa"]["ce"]) + ")"
-    if cor is not None and cor < 40 or copaci < 60:
+    if copaci < 60 or (cor is not None and cor < 40 and copaci < 85 and j.get("pasune", 0) >= 20):
         return "pasune_cu_copaci", f"coronament rar: {copaci}% copaci în zonă" + (f", {cor}% coronament în 2000" if cor is not None else "") + (f", {j.get('pasune')}% pășune în jur" if j.get("pasune") else "")
-    return "padure", f"{copaci}% copaci în zonă" + (f", {cor}% coronament în 2000" if cor is not None else "") + (f", {j.get('copaci', 0)}% copaci în jur" if j else "")
+    return "padure", f"{copaci}% copaci în zonă" + (f", {cor}% coronament în 2000" + (" (pădure tânără sau neînregistrată atunci)" if cor < 40 else "") if cor is not None else "") + (f", {j.get('copaci', 0)}% copaci în jur" if j else "")
 
 
 FEL_T = {
@@ -322,7 +340,7 @@ def peisaj(cat, a, hansen_tc):
         except Exception as e:
             log("  hansen:", a["id"], repr(e)[:100])
     # OSM
-    el = osm_in_jur(lat, g.centroid.x)
+    el = osm_in_jur(a)
     if el is not None:
         p["osm"] = distante_osm(g, el)
     p["fel"], p["fel_motiv"] = fel_loc(p)
@@ -334,7 +352,7 @@ def main(argv=None):
     ap.add_argument("--full", action="store_true")
     ap.add_argument("--limit", type=int)
     ap.add_argument("--ids", nargs="*")
-    ap.add_argument("--pauza", type=float, default=1.0, help="secunde între cererile Overpass")
+    ap.add_argument("--pauza", type=float, default=0.0, help="secunde între zone")
     args = ap.parse_args(argv)
 
     zone = zone_site()
@@ -367,7 +385,11 @@ def main(argv=None):
         log("fără Hansen treecover:", repr(e)[:100])
 
     rez, n = dict(vechi), 0
-    for zid, a in tinta.items():
+    lista = list(tinta.items())
+    LOT = 25
+    for zid, a in lista:
+        if zid not in _OSM_LOT and n % LOT == 0:
+            osm_lot([x for _, x in lista[n:n + LOT]])
         try:
             rez[zid] = peisaj(cat, a, hansen_tc)
             n += 1
