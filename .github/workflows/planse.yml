@@ -1,0 +1,40 @@
+name: Planșe pentru evaluare oarbă
+
+# Planșele (Esri înainte, Sentinel înainte/după, vedere largă) pentru un eșantion de zone, fără model,
+# pe ramura „planse”. Cheia (ce stare are fiecare) e separată, ca evaluatorul să nu o vadă dinainte.
+on:
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: "Câte planșe (gol = tot eșantionul de 100)"
+        type: string
+        default: ""
+      seed:
+        description: "Sămânța eșantionului"
+        type: string
+        default: "11"
+
+permissions:
+  contents: write
+
+jobs:
+  planse:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - run: python -m pipeline.rejudeca --planse out/planse --seed "${{ inputs.seed }}" ${{ inputs.limit && format('--limit {0}', inputs.limit) || '' }}
+      - name: Pe ramura „planse”
+        run: |
+          git config user.name "padurea-ro bot"
+          git config user.email "actions@users.noreply.github.com"
+          git checkout --orphan planse
+          git rm -rfq --cached . && git clean -fdq -e out
+          git add -f out/planse
+          git commit -qm "planse $(date -u +%Y-%m-%dT%H:%M)"
+          git push -f origin planse

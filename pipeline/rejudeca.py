@@ -22,6 +22,7 @@ import datetime as dt
 import io
 import json
 import os
+import pathlib
 import random
 import time
 import urllib.error
@@ -253,14 +254,19 @@ def main(argv=None):
     ap.add_argument("--ids", nargs="*")
     ap.add_argument("--fara-esri", action="store_true")
     ap.add_argument("--fara-larg", action="store_true")
+    ap.add_argument("--planse", help="doar planșele + fișa neutră, pentru evaluare oarbă, în acest director (fără model)")
+    ap.add_argument("--seed", type=int, default=11)
     args = ap.parse_args(argv)
-    if not os.environ.get("ANTHROPIC_API_KEY"):
+    if not os.environ.get("ANTHROPIC_API_KEY") and not args.planse:
         raise SystemExit("lipsește ANTHROPIC_API_KEY")
 
     zone = zone_site()
     verd = json.loads(PERMISE.read_text(encoding="utf-8")).get("zone", {}) if PERMISE.exists() else {}
     peis = json.loads(PEISAJ.read_text(encoding="utf-8")).get("zone", {}) if PEISAJ.exists() else {}
     vechi = json.loads(OUT.read_text(encoding="utf-8")).get("zone", {}) if OUT.exists() else {}
+
+    if args.planse:
+        return planse_oarbe(args, zone, verd, peis)
 
     if args.ids:
         tinta = [k for k in args.ids if k in zone]
@@ -307,6 +313,40 @@ def main(argv=None):
     OUT.write_text(json.dumps({"generated": dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%MZ"), "zone": rez}, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     from collections import Counter
     print(f"{n} judecate în {int(time.time() - t0)} s -> {OUT}; categorii: {dict(Counter(v['categorie'] for v in rez.values()))}", flush=True)
+
+
+def planse_oarbe(args, zone, verd, peis):
+    """Eșantion stratificat pe stările de acum (60 roșii, 15 vegetație, 15 nu_taiere, 10 acoperit), amestecat.
+    Scrie NN.png (planșa) și NN.txt (fișa fără registru și fără ghicirea de peisaj), plus cheie.json separat."""
+    rnd = random.Random(args.seed)
+    ids = []
+    for stari, n in ((("fara", "neacoperit"), 60), (("vegetatie",), 15), (("nu_taiere",), 15), (("acoperit",), 10)):
+        c = [k for k, v in verd.items() if v.get("stare") in stari and k in zone and zone[k].get("img_after")]
+        ids += rnd.sample(c, min(n, len(c)))
+    rnd.shuffle(ids)
+    if args.limit:
+        ids = ids[: args.limit]
+    out = pathlib.Path(args.planse); out.mkdir(parents=True, exist_ok=True)
+    cat = None
+    if not args.fara_larg:
+        try:
+            from .sat import client
+            cat = client()
+        except Exception as e:
+            print("fără Planetary Computer:", repr(e)[:100], flush=True)
+    cheie = {}
+    for i, zid in enumerate(ids, 1):
+        a = zone[zid]
+        esri, esri_date = (None, None) if args.fara_esri else _esri(a)
+        larg = None if cat is None else _larg(cat, a)
+        png, intrari = plansa(a, esri, esri_date, larg)
+        (out / f"{i:03d}.png").write_bytes(png)
+        p = dict(peis.get(zid) or {}); p.pop("fel", None); p.pop("fel_motiv", None)
+        (out / f"{i:03d}.txt").write_text(f"Esri: {esri_date}; S2 înainte {(a.get('img_before') or {}).get('date')} / după {(a.get('img_after') or {}).get('date')}\n" + fisa(a, p, None), encoding="utf-8")
+        cheie[f"{i:03d}"] = {"id": zid, "stare": verd[zid].get("stare"), "motiv": verd[zid].get("motiv")}
+        print(f"  {i}/{len(ids)} {zid}", flush=True)
+    (out / "cheie.json").write_text(json.dumps(cheie, ensure_ascii=False, indent=1), encoding="utf-8")
+    print(f"{len(ids)} planșe -> {out}", flush=True)
 
 
 if __name__ == "__main__":
