@@ -346,11 +346,19 @@ def clasifica(a, permis):
     if jc in ("taiere_rasa", "rarire"):
         # judecata cu context spune tăiere; peisajul o contrazice doar dacă AI-ul nu e sigur
         if p.get("fel") in PEISAJ_NU_TAIERE and (j.get("incredere") or 0) < 0.8:
+            st0, m0 = _stare_permis(a, permis)
+            if st0 in ("acoperit", "probabil"):
+                return st0, m0
             return "nejudecat", "contrazis"
         fel = "taiere"
     else:
         if p.get("fel") in PEISAJ_NU_TAIERE:
-            return "nu_taiere", PEISAJ_NU_TAIERE[p["fel"]]
+            # forma de coridor/câmp/carieră spune „nu e tăiere" doar când nu există un permis care să explice
+            # schimbarea; o tăiere autorizată de-a lungul unui drum e tot o tăiere cu permis
+            st0, m0 = _stare_permis(a, permis)
+            if st0 not in ("acoperit", "probabil"):
+                return "nu_taiere", PEISAJ_NU_TAIERE[p["fel"]]
+            return st0, m0
         fel = fel_schimbare(a)
         if fel != "taiere":
             return "nu_taiere", fel
