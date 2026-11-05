@@ -10,6 +10,10 @@ DOCS = Path(os.environ.get("PADUREA_DOCS") or ROOT / "docs")   # site-ul public 
 PENDING = Path(os.environ.get("PADUREA_PENDING") or DATA / "neconfirmate.json")  # zonele încă neconfirmate (nu pe site)
 EXPIRED = Path(os.environ["PADUREA_EXPIRED"]) if os.environ.get("PADUREA_EXPIRED") else None  # doar la testul pe trecut
 
+# Adresa publică a site-ului, folosită în linkurile permanente, în date și în imaginile de previzualizare.
+# Cu un domeniu propriu: variabila de repo SITE_URL (Settings → Secrets and variables → Actions → Variables) și docs/CNAME.
+SITE_URL = (os.environ.get("SITE_URL") or "https://iliemihai.github.io/padurea-ro/").rstrip("/") + "/"
+
 PC_URL = "https://planetarycomputer.microsoft.com/api/stac/v1"
 RO_BBOX = [20.2, 43.6, 29.75, 48.3]
 

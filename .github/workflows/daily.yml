@@ -31,6 +31,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
+  SITE_URL: ${{ vars.SITE_URL }}   # gol = https://iliemihai.github.io/padurea-ro/ (vezi pipeline/config.py)
   LOCAL_MODEL: qwen3.5:4b
   JUDGE_MAX_PER_GROUP: "60"
   PYTHONUNBUFFERED: "1"
@@ -120,6 +121,9 @@ jobs:
       - name: Paginile pe județe
         continue-on-error: true
         run: python -m pipeline.judete
+      - name: Paginile zonelor, datele deschise, fluxul și metodologia
+        continue-on-error: true
+        run: python -m pipeline.deschis
       - uses: actions/upload-artifact@v4
         with:
           name: rezultat
@@ -132,7 +136,7 @@ jobs:
         run: |
           git config user.name "padurea-ro bot"
           git config user.email "actions@users.noreply.github.com"
-          git add -A docs/data docs/img docs/judet data/neconfirmate.json
+          git add -A docs/data docs/img docs/judet docs/zona docs/date docs/metodologie docs/feed.xml docs/og.jpg docs/index.html data/neconfirmate.json
           git commit -m "Date noi: $(date -u +%Y-%m-%d)" || echo "nimic nou"
           git pull --rebase origin main && git push origin HEAD:main
       - uses: actions/configure-pages@v5

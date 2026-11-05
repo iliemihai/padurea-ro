@@ -244,7 +244,7 @@ def svg_harta(geom, puncte, titlu_aria):
     for cls, a, lab in sorted(puncte, key=lambda t: t[0] == "rosu"):
         x, yy = px(a["lon"]), py(a["lat"])
         r = 5 if cls == "rosu" else 3.5
-        o.append(f'<a href="../../#a={e(a["id"])}" class="pt" data-v="{e(ha_t(a.get("ha") or 0))}" data-l="{e(lab)}">'
+        o.append(f'<a href="../../zona/{e(a["id"])}/" class="pt" data-v="{e(ha_t(a.get("ha") or 0))}" data-l="{e(lab)}">'
                  f'<title>{e(lab)}</title><circle class="hit" cx="{x:.1f}" cy="{yy:.1f}" r="12"/>'
                  f'<circle class="dot s-{cls}" cx="{x:.1f}" cy="{yy:.1f}" r="{r}"/></a>')
     o.append("</svg>")
@@ -252,6 +252,24 @@ def svg_harta(geom, puncte, titlu_aria):
 
 
 # ---------------------------------------------------------------- bucăți de pagină
+NAV = [("", "Harta"), ("judet/", "Județe"), ("metodologie/", "Cum lucrăm"), ("date/", "Date")]
+
+
+def nav(rel, cur=None):
+    """Meniul de sus, același pe toate paginile statice; cur = calea paginii curente („judet/”)."""
+    cur_a = ' aria-current="page"'
+    return "".join(f'<a href="{rel}{h}"{cur_a if h == cur else ""}>{t}</a>' for h, t in NAV)
+
+
+def og_meta(cale, img=None):
+    """Adresa canonică și imaginea de previzualizare (cea a site-ului, dacă pagina n-are una a ei)."""
+    url = C.SITE_URL + cale
+    img = img or C.SITE_URL + "og.jpg"
+    return (f'<link rel="canonical" href="{e(url)}">\n<meta property="og:url" content="{e(url)}">\n'
+            f'<meta property="og:image" content="{e(img)}">\n<meta property="og:image:width" content="1200">\n'
+            f'<meta property="og:image:height" content="630">\n<meta name="twitter:card" content="summary_large_image">\n')
+
+
 CAP = """<!doctype html>
 <html lang="ro">
 <head>
@@ -262,13 +280,13 @@ CAP = """<!doctype html>
 <meta property="og:title" content="{title}">
 <meta property="og:description" content="{desc}">
 <meta property="og:type" content="article">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23030201'/%3E%3Crect x='11' y='11' width='10' height='10' fill='%23f97c3d'/%3E%3C/svg%3E">
+{extra}<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23030201'/%3E%3Crect x='11' y='11' width='10' height='10' fill='%23f97c3d'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="{rel}judet/judet.css?v={ver}">
 </head>
 <body>
 <header class="top"><div class="wrap">
   <a class="home" href="{rel}">Pădurea RO</a>
-  <nav aria-label="Navigare"><a href="{rel}">Harta</a><a href="{rel}judet/"{cur_j}>Județe</a></nav>
+  <nav aria-label="Navigare">{nav}</nav>
 </div></header>
 <main class="wrap">
 """
@@ -368,7 +386,7 @@ def card_zona(a, v, j):
     return (f'<article class="zcard"><div class="zhead"><p class="zt"><b>{e(ha_t(a.get("ha") or 0))}</b> · {e(loc_t(a))}</p>'
             f'<p class="zd">văzută schimbată prima dată pe {e(zi(a.get("first_seen")))}</p></div>'
             f'{poze}<div class="zbody">' + "".join(f"<p>{r}</p>" for r in rows) + tag +
-            f'<p><a class="go" href="../../#a={e(a["id"])}">Vezi zona pe hartă</a></p></div></article>')
+            f'<p><a class="go" href="../../zona/{e(a["id"])}/">Pagina zonei</a> · <a class="go" href="../../#a={e(a["id"])}">pe hartă</a></p></div></article>')
 
 
 def tabel(cap, rows, num_cols, cls="tbl"):
@@ -407,7 +425,7 @@ def pagina_judet(nume, zs, verd, jud, meta, feat, luni, upd):
         lead = f"Din {zi(de_la, True)} până pe {zi(pana, True)}, satelitul nu a văzut schimbări în pădure {in_jud}."
     desc = lead
 
-    o = [CAP.format(title=e(f"{nume} · Pădurea RO"), desc=e(desc), rel="../../", ver=VER, cur_j="")]
+    o = [CAP.format(title=e(f"{nume} · Pădurea RO"), desc=e(desc), rel="../../", ver=VER, nav=nav("../../"), extra=og_meta(f"judet/{s}/"))]
     o.append(f'<p class="crumbs"><a href="../">Județe</a></p><h1>{e(nume)}</h1><p class="lead">{e(lead)}</p>')
     if zs:
         o.append('<p class="caveat">Roșu nu înseamnă automat ilegal: autorizația poate exista fără să fie publicată, '
@@ -581,30 +599,38 @@ def pagina_judet(nume, zs, verd, jud, meta, feat, luni, upd):
             "verde": cnt["verde"], "garda": g}
 
 
+COLS = ["id", "judet", "uat", "siruta", "localitate", "lat", "lon", "ha", "prima_data", "poza_inainte", "poza_dupa",
+        "incredere_semnal", "stare", "stare_text", "motiv", "apv", "ocol", "apv_de_la", "apv_pana_la", "apv_distanta_m",
+        "arie_protejata", "analist_categorie", "analist_incredere", "ce_se_vede", "teren", "parte_stat", "parte_privat",
+        "parte_amenajament", "link", "link_harta"]
+
+
+def rand(a, v, j):
+    """Rândul unei zone în datele deschise (CSV, GeoJSON, API): aceleași câmpuri peste tot."""
+    u = a.get("uat") or {}
+    arii = "; ".join(dict.fromkeys(x.get("nume") for x in (a.get("arii") or []) if isinstance(x, dict) and x.get("nume")))
+    return {"id": a["id"], "judet": judet_de(a), "uat": f"{u.get('tip') or ''} {u.get('nume') or ''}".strip(),
+            "siruta": u.get("siruta") or "", "localitate": a.get("localitate") or "", "lat": a.get("lat"), "lon": a.get("lon"),
+            "ha": a.get("ha"), "prima_data": a.get("first_seen"), "poza_inainte": a.get("before_date") or "",
+            "poza_dupa": a.get("after_date") or "", "incredere_semnal": a.get("incredere") or "",
+            "stare": v.get("stare") or "nev", "stare_text": STARE_T.get(v.get("stare") or "nev", ""), "motiv": v.get("motiv") or "",
+            "apv": v.get("apv") or "", "ocol": v.get("ocol") or "", "apv_de_la": v.get("start") or "", "apv_pana_la": v.get("end") or "",
+            "apv_distanta_m": v.get("dist_m") if v.get("apv") else "", "arie_protejata": arii,
+            "analist_categorie": j.get("categorie") or "", "analist_incredere": j.get("incredere") if j else "",
+            "ce_se_vede": j.get("motiv") or "", "teren": TEREN_T.get(teren(v) or "", ""),
+            "parte_stat": (v.get("proprietate") or {}).get("stat", ""), "parte_privat": (v.get("proprietate") or {}).get("privat", ""),
+            "parte_amenajament": v.get("amenajament") if v.get("amenajament") is not None else "",
+            "link": f"{C.SITE_URL}zona/{a['id']}/", "link_harta": f"{C.SITE_URL}#a={a['id']}"}
+
+
 def scrie_date(d, zs, verd, jud):
-    cols = ["id", "judet", "uat", "localitate", "lat", "lon", "ha", "prima_data", "poza_inainte", "poza_dupa", "stare", "stare_text",
-            "motiv", "apv", "ocol", "apv_de_la", "apv_pana_la", "apv_distanta_m", "arie_protejata", "analist_categorie",
-            "analist_incredere", "ce_se_vede", "teren", "parte_stat", "parte_privat", "parte_amenajament", "link"]
+    cols = COLS
     buf = io.StringIO()
     w = csv.writer(buf)
     w.writerow(cols)
     feats = []
     for a in sorted(zs, key=lambda a: a.get("first_seen") or "", reverse=True):
-        v = verd.get(a["id"]) or {}
-        j = jud.get(a["id"]) or {}
-        u = a.get("uat") or {}
-        arii = "; ".join(x.get("nume") for x in (a.get("arii") or []) if isinstance(x, dict) and x.get("nume"))
-        row = {"id": a["id"], "judet": judet_de(a), "uat": f"{u.get('tip') or ''} {u.get('nume') or ''}".strip(),
-               "localitate": a.get("localitate") or "", "lat": a.get("lat"), "lon": a.get("lon"), "ha": a.get("ha"),
-               "prima_data": a.get("first_seen"), "poza_inainte": a.get("before_date"), "poza_dupa": a.get("after_date"),
-               "stare": v.get("stare") or "nev", "stare_text": STARE_T.get(v.get("stare") or "nev", ""), "motiv": v.get("motiv") or "",
-               "apv": v.get("apv") or "", "ocol": v.get("ocol") or "", "apv_de_la": v.get("start") or "", "apv_pana_la": v.get("end") or "",
-               "apv_distanta_m": v.get("dist_m") if v.get("apv") else "", "arie_protejata": arii,
-               "analist_categorie": j.get("categorie") or "", "analist_incredere": j.get("incredere") if j else "",
-               "ce_se_vede": j.get("motiv") or "", "teren": TEREN_T.get(teren(v) or "", ""),
-               "parte_stat": (v.get("proprietate") or {}).get("stat", ""), "parte_privat": (v.get("proprietate") or {}).get("privat", ""),
-               "parte_amenajament": v.get("amenajament") if v.get("amenajament") is not None else "",
-               "link": f"https://iliemihai.github.io/padurea-ro/#a={a['id']}"}
+        row = rand(a, verd.get(a["id"]) or {}, jud.get(a["id"]) or {})
         w.writerow([row[c] for c in cols])
         feats.append({"type": "Feature", "geometry": a.get("geometry"), "properties": row})
     (d / "zone.csv").write_text("﻿" + buf.getvalue(), encoding="utf-8")
@@ -619,7 +645,7 @@ def pagina_index(rez, meta, upd):
     lead = (f"Din {zi(meta.get('istoric_de_la'), True)} până pe {zi(meta.get('data_until'), True)}, satelitul a văzut schimbări în pădure "
             f"sau la marginea ei în {nr(tot['n'], 'loc', 'locuri')} ({ha_t(tot['ha'])}). În {nr(tot['rosu'], 'loc', 'locuri')} "
             f"({ha_t(tot['rosu_ha'])}) pozele arată pădure tăiată și nu am găsit o autorizație care să acopere locul.")
-    o = [CAP.format(title="Județele · Pădurea RO", desc=e(lead), rel="../", ver=VER, cur_j=' aria-current="page"')]
+    o = [CAP.format(title="Județele · Pădurea RO", desc=e(lead), rel="../", ver=VER, nav=nav("../", "judet/"), extra=og_meta("judet/"))]
     o.append(f'<h1>Județele</h1><p class="lead">{e(lead)}</p>')
     o.append('<section class="sec"><p class="sub">Ordonate după hectarele fără autorizație care să le acopere. Dă clic pe un județ pentru pagina lui.</p>'
              '<div class="tblwrap"><table class="tbl idx"><thead><tr><th scope="col">Județul</th>'

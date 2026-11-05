@@ -1,0 +1,208 @@
+{
+ "name": "padurea-ro",
+ "title": "Pădurea RO: schimbări în pădurile României văzute din satelit",
+ "homepage": "https://iliemihai.github.io/padurea-ro/",
+ "licenses": [
+  {
+   "name": "CC-BY-4.0",
+   "path": "https://creativecommons.org/licenses/by/4.0/deed.ro",
+   "title": "Creative Commons Attribution 4.0"
+  }
+ ],
+ "sources": [
+  {
+   "title": "Copernicus Sentinel-2 L2A (ESA), prin Microsoft Planetary Computer"
+  },
+  {
+   "title": "ESA WorldCover 2021"
+  },
+  {
+   "title": "Hansen et al., Global Forest Change 2000–2025 (Universitatea Maryland)"
+  },
+  {
+   "title": "Agenția Europeană de Mediu: Natura 2000 și CDDA"
+  },
+  {
+   "title": "GeoNames"
+  },
+  {
+   "title": "Inspectorul Pădurii (SUMAL 2.0, Ministerul Mediului)"
+  },
+  {
+   "title": "limitele UAT: geo-spatial.org"
+  },
+  {
+   "title": "NASA FIRMS"
+  }
+ ],
+ "resources": [
+  {
+   "name": "zone",
+   "path": "zone.csv",
+   "format": "csv",
+   "encoding": "utf-8-sig",
+   "mediatype": "text/csv",
+   "schema": {
+    "primaryKey": "id",
+    "fields": [
+     {
+      "name": "id",
+      "type": "string",
+      "description": "identificatorul zonei; nu se schimbă (data primei observații, latitudinea și longitudinea × 1000)"
+     },
+     {
+      "name": "judet",
+      "type": "string",
+      "description": "județul"
+     },
+     {
+      "name": "uat",
+      "type": "string",
+      "description": "comuna, orașul sau municipiul (limitele UAT)"
+     },
+     {
+      "name": "siruta",
+      "type": "string",
+      "description": "codul SIRUTA al UAT-ului"
+     },
+     {
+      "name": "localitate",
+      "type": "string",
+      "description": "satul cel mai apropiat (GeoNames)"
+     },
+     {
+      "name": "lat",
+      "type": "number",
+      "description": "latitudinea centrului (WGS84)"
+     },
+     {
+      "name": "lon",
+      "type": "number",
+      "description": "longitudinea centrului (WGS84)"
+     },
+     {
+      "name": "ha",
+      "type": "number",
+      "description": "suprafața schimbată, în hectare"
+     },
+     {
+      "name": "prima_data",
+      "type": "date",
+      "description": "prima imagine Sentinel-2 în care se vede schimbarea"
+     },
+     {
+      "name": "poza_inainte",
+      "type": "date",
+      "description": "data imaginii „înainte” (ultima cu pădurea întreagă)"
+     },
+     {
+      "name": "poza_dupa",
+      "type": "date",
+      "description": "data imaginii „după”"
+     },
+     {
+      "name": "incredere_semnal",
+      "type": "string",
+      "description": "cât de sigur e semnalul din satelit: ridicată, medie, scăzută"
+     },
+     {
+      "name": "stare",
+      "type": "string",
+      "description": "starea față de autorizațiile de tăiere (cod)"
+     },
+     {
+      "name": "stare_text",
+      "type": "string",
+      "description": "starea, în cuvinte"
+     },
+     {
+      "name": "motiv",
+      "type": "string",
+      "description": "de ce are starea asta (cod)"
+     },
+     {
+      "name": "apv",
+      "type": "string",
+      "description": "numărul autorizației de tăiere (APV) cea mai apropiate"
+     },
+     {
+      "name": "ocol",
+      "type": "string",
+      "description": "ocolul silvic care a emis autorizația"
+     },
+     {
+      "name": "apv_de_la",
+      "type": "date",
+      "description": "autorizația, valabilă de la"
+     },
+     {
+      "name": "apv_pana_la",
+      "type": "date",
+      "description": "autorizația, valabilă până la"
+     },
+     {
+      "name": "apv_distanta_m",
+      "type": "number",
+      "description": "distanța de la zonă la autorizație, în metri"
+     },
+     {
+      "name": "arie_protejata",
+      "type": "string",
+      "description": "ariile protejate în care cade zona"
+     },
+     {
+      "name": "analist_categorie",
+      "type": "string",
+      "description": "ce vede analistul AI cu context"
+     },
+     {
+      "name": "analist_incredere",
+      "type": "number",
+      "description": "cât de sigur e analistul (0–1)"
+     },
+     {
+      "name": "ce_se_vede",
+      "type": "string",
+      "description": "ce vede analistul în poze, în cuvinte"
+     },
+     {
+      "name": "teren",
+      "type": "string",
+      "description": "al cui e terenul, după amenajamentele publicate"
+     },
+     {
+      "name": "parte_stat",
+      "type": "number",
+      "description": "partea din zonă în pădure de stat (0–1)"
+     },
+     {
+      "name": "parte_privat",
+      "type": "number",
+      "description": "partea din zonă în pădure privată (0–1)"
+     },
+     {
+      "name": "parte_amenajament",
+      "type": "number",
+      "description": "partea din zonă în amenajamente silvice publicate (0–1)"
+     },
+     {
+      "name": "link",
+      "type": "string",
+      "description": "pagina permanentă a zonei"
+     },
+     {
+      "name": "link_harta",
+      "type": "string",
+      "description": "zona, pe hartă"
+     }
+    ]
+   }
+  },
+  {
+   "name": "zone-geojson",
+   "path": "zone.geojson",
+   "format": "geojson",
+   "mediatype": "application/geo+json"
+  }
+ ]
+}

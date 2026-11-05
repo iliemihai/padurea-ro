@@ -1,0 +1,20 @@
+Datele Pădurea RO (https://iliemihai.github.io/padurea-ro/) sunt publicate sub licența Creative Commons Atribuire 4.0 Internațional (CC BY 4.0):
+https://creativecommons.org/licenses/by/4.0/deed.ro
+
+Poți să le copiezi, să le redistribui, să le transformi și să le folosești în orice scop, inclusiv comercial,
+cu condiția să menționezi sursa: „Pădurea RO” și linkul zonei sau al site-ului.
+
+Sursele din care sunt făcute datele își păstrează propriile condiții:
+  - Copernicus Sentinel-2 L2A (ESA), prin Microsoft Planetary Computer (conține date Copernicus Sentinel modificate)
+  - ESA WorldCover 2021 (CC BY 4.0)
+  - Hansen et al., Global Forest Change 2000–2025 (Universitatea Maryland) (CC BY 4.0)
+  - Agenția Europeană de Mediu: Natura 2000 și CDDA (CC BY 4.0)
+  - GeoNames (CC BY 4.0)
+  - Inspectorul Pădurii (SUMAL 2.0, Ministerul Mediului) (informații de interes public)
+  - limitele UAT: geo-spatial.org (vezi sursa)
+  - NASA FIRMS (date publice NASA)
+
+Nu fac parte din date: fundalurile hărții (Sentinel-2 cloudless de EOX, CC BY-NC-SA 4.0; Esri World Imagery; OpenStreetMap)
+și poza detaliată Esri din paginile zonelor, care se încarcă direct de la Esri.
+
+Datele arată ce se vede din satelit și ce scrie în registrul public de autorizații. Nu sunt o dovadă de ilegalitate.

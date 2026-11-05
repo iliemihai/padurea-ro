@@ -74,6 +74,29 @@ python -m pipeline.eval_judge qwen3.5:4b                          # testează ju
 - Numele localităților de pe hartă: GeoNames, în `docs/data/static/places.json`, și conturul țării în `docs/data/static/romania.geojson`; le reface `python -m pipeline.static_map`
 - Autorizațiile de tăiere (APV): [Inspectorul Pădurii](https://inspectorulpadurii.ro) (SUMAL 2.0, Ministerul Mediului), aduse de `python -m pipeline.permise` în `docs/data/permise.json`; site-ul le arată doar dacă fișierul există
 
+## Linkuri permanente, date deschise, rapoarte
+
+Ca o zonă să poată fi citată, fiecare are o pagină a ei, fără JavaScript, care nu dispare (`python -m pipeline.deschis`,
+în rularea zilnică, după paginile pe județe):
+
+- `docs/zona/<id>/` — pagina zonei: când, unde, cât, înainte/după, autorizația, cui te adresezi, textul de citare, istoricul
+  stării; `zona.json` (GeoJSON) alături; `og.jpg`, poza care apare când linkul e pus pe WhatsApp/Facebook/X (doar la zonele
+  roșii și la cele cu știri sau verificări). Dacă o zonă iese de pe hartă, pagina rămâne, cu data retragerii.
+- `docs/date/` — toate zonele (`zone.csv`, `zone.geojson`), `index.json` (intrarea în API: fișiere statice, fără cheie),
+  `datapackage.json` (câmpurile), `registru.json` (ce a fost publicat vreodată și cum s-a schimbat), licența: **CC BY 4.0**.
+- `docs/feed.xml` — fluxul Atom: zonele noi fără autorizație și rapoartele lunare.
+- `docs/metodologie/` — „Cum lucrăm”, pentru oricine; cifrele vin din `data/evaluare_2025.json` și din starea de azi.
+- `docs/embed/?a=<id>` · `?judet=<slug>` · fără nimic (zonele roșii din țară) — harta de pus în articole, ca iframe.
+- `docs/raport/<AAAA-LL>/` — raportul lunar (`python -m pipeline.raport`, workflow-ul „Raportul lunar”, pe 5 ale lunii):
+  instantaneul lunii, care nu se mai rescrie, plus un Release pe GitHub cu datele atașate.
+
+Paginile se rescriu doar când se schimbă ceva în ele (nu poartă data rulării), ca istoricul din git să crească puțin.
+
+**Domeniu propriu.** Adresa din linkuri vine din `SITE_URL` (`pipeline/config.py`). Pentru un domeniu: pune-l în
+`docs/CNAME`, fă înregistrările DNS spre GitHub Pages, bifează „Enforce HTTPS” (Settings → Pages) și setează variabila de repo
+`SITE_URL` (Settings → Secrets and variables → Actions → Variables), de exemplu `https://padurea.exemplu.ro/`. Linkurile vechi
+de pe github.io trimit singure spre domeniu.
+
 ## Autorizația de tăiere
 
 Pentru fiecare zonă căutăm în Inspectorul Pădurii autorizațiile (APV) de la mai puțin de 500 m și ne uităm la două lucruri: parcela autorizată acoperă zona schimbată, și perioada autorizației cuprinde intervalul în care s-a tăiat.

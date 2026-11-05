@@ -1,0 +1,213 @@
+{
+ "nume": "Pădurea RO, date deschise",
+ "versiune": 1,
+ "date_pana_la": "2026-11-05",
+ "istoric_de_la": "2025-10-03",
+ "licenta": "CC BY 4.0",
+ "licenta_url": "https://creativecommons.org/licenses/by/4.0/deed.ro",
+ "citare": "Pădurea RO, https://iliemihai.github.io/padurea-ro/, date CC BY 4.0.",
+ "zone": 3065,
+ "stari": {
+  "nu_taiere": 721,
+  "acoperit": 1835,
+  "probabil": 199,
+  "neacoperit": 74,
+  "vegetatie": 74,
+  "nejudecat": 127,
+  "fara": 35
+ },
+ "fisiere": {
+  "toate_zonele_csv": "https://iliemihai.github.io/padurea-ro/date/zone.csv",
+  "toate_zonele_geojson": "https://iliemihai.github.io/padurea-ro/date/zone.geojson",
+  "zonele_fara_autorizatie": "https://iliemihai.github.io/padurea-ro/data/rosii.json",
+  "registru": "https://iliemihai.github.io/padurea-ro/date/registru.json",
+  "flux_atom": "https://iliemihai.github.io/padurea-ro/feed.xml",
+  "descriere_campuri": "https://iliemihai.github.io/padurea-ro/date/datapackage.json"
+ },
+ "sabloane": {
+  "zona_pagina": "https://iliemihai.github.io/padurea-ro/zona/{id}/",
+  "zona_geojson": "https://iliemihai.github.io/padurea-ro/zona/{id}/zona.json",
+  "judet_csv": "https://iliemihai.github.io/padurea-ro/judet/{judet}/zone.csv",
+  "judet_geojson": "https://iliemihai.github.io/padurea-ro/judet/{judet}/zone.geojson"
+ },
+ "judete": [
+  {
+   "nume": "Alba",
+   "judet": "alba"
+  },
+  {
+   "nume": "Arad",
+   "judet": "arad"
+  },
+  {
+   "nume": "Argeș",
+   "judet": "arges"
+  },
+  {
+   "nume": "Bacău",
+   "judet": "bacau"
+  },
+  {
+   "nume": "Bihor",
+   "judet": "bihor"
+  },
+  {
+   "nume": "Bistrița-Năsăud",
+   "judet": "bistrita-nasaud"
+  },
+  {
+   "nume": "Botoșani",
+   "judet": "botosani"
+  },
+  {
+   "nume": "Brașov",
+   "judet": "brasov"
+  },
+  {
+   "nume": "Brăila",
+   "judet": "braila"
+  },
+  {
+   "nume": "București",
+   "judet": "bucuresti"
+  },
+  {
+   "nume": "Buzău",
+   "judet": "buzau"
+  },
+  {
+   "nume": "Caraș-Severin",
+   "judet": "caras-severin"
+  },
+  {
+   "nume": "Cluj",
+   "judet": "cluj"
+  },
+  {
+   "nume": "Constanța",
+   "judet": "constanta"
+  },
+  {
+   "nume": "Covasna",
+   "judet": "covasna"
+  },
+  {
+   "nume": "Călărași",
+   "judet": "calarasi"
+  },
+  {
+   "nume": "Dolj",
+   "judet": "dolj"
+  },
+  {
+   "nume": "Dâmbovița",
+   "judet": "dambovita"
+  },
+  {
+   "nume": "Galați",
+   "judet": "galati"
+  },
+  {
+   "nume": "Giurgiu",
+   "judet": "giurgiu"
+  },
+  {
+   "nume": "Gorj",
+   "judet": "gorj"
+  },
+  {
+   "nume": "Harghita",
+   "judet": "harghita"
+  },
+  {
+   "nume": "Hunedoara",
+   "judet": "hunedoara"
+  },
+  {
+   "nume": "Ialomița",
+   "judet": "ialomita"
+  },
+  {
+   "nume": "Iași",
+   "judet": "iasi"
+  },
+  {
+   "nume": "Ilfov",
+   "judet": "ilfov"
+  },
+  {
+   "nume": "Maramureș",
+   "judet": "maramures"
+  },
+  {
+   "nume": "Mehedinți",
+   "judet": "mehedinti"
+  },
+  {
+   "nume": "Mureș",
+   "judet": "mures"
+  },
+  {
+   "nume": "Neamț",
+   "judet": "neamt"
+  },
+  {
+   "nume": "Olt",
+   "judet": "olt"
+  },
+  {
+   "nume": "Prahova",
+   "judet": "prahova"
+  },
+  {
+   "nume": "Satu Mare",
+   "judet": "satu-mare"
+  },
+  {
+   "nume": "Sibiu",
+   "judet": "sibiu"
+  },
+  {
+   "nume": "Suceava",
+   "judet": "suceava"
+  },
+  {
+   "nume": "Sălaj",
+   "judet": "salaj"
+  },
+  {
+   "nume": "Teleorman",
+   "judet": "teleorman"
+  },
+  {
+   "nume": "Timiș",
+   "judet": "timis"
+  },
+  {
+   "nume": "Tulcea",
+   "judet": "tulcea"
+  },
+  {
+   "nume": "Vaslui",
+   "judet": "vaslui"
+  },
+  {
+   "nume": "Vrancea",
+   "judet": "vrancea"
+  },
+  {
+   "nume": "Vâlcea",
+   "judet": "valcea"
+  }
+ ],
+ "stari_explicate": {
+  "fara": "fără autorizație",
+  "neacoperit": "autorizația nu acoperă tăierea",
+  "vegetatie": "pășune, nu pădure",
+  "probabil": "probabil cu autorizație",
+  "acoperit": "cu autorizație",
+  "nu_taiere": "nu e tăiere de pădure",
+  "nejudecat": "de confirmat pe poze",
+  "nev": "încă necomparată"
+ }
+}

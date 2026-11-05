@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="ro">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pădurea RO · hartă</title>
+<meta name="robots" content="noindex">
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
+<style>
+  :root { color-scheme: dark; --paper: #030201; --paper2: #080604; --ink: #efebe4; --ink2: #cecac3; --muted: #9c9890; --rule: #24211c; --accent: #f97c3d; }
+  html, body { margin: 0; height: 100%; background: var(--paper); color: var(--ink); font: 14px/1.4 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; }
+  #map { position: absolute; inset: 0; }
+  .bar { position: absolute; z-index: 2; top: 8px; left: 8px; right: 52px; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; pointer-events: none; }
+  .bar > * { pointer-events: auto; background: rgba(3, 2, 1, 0.82); padding: 6px 10px; }
+  .brand { color: var(--ink); font-weight: 600; text-decoration: none; }
+  .brand::before { content: ""; display: inline-block; width: 9px; height: 9px; margin-right: 8px; background: var(--accent); }
+  .sub { color: var(--ink2); font-size: 12px; }
+  .maplibregl-popup-content { background: var(--paper2); color: var(--ink); border: 1px solid var(--rule); border-radius: 0; padding: 10px 12px; font-size: 13px; }
+  .maplibregl-popup-tip { display: none; }
+  .maplibregl-popup-close-button { color: var(--muted); font-size: 18px; }
+  .pop b { font-weight: 600; }
+  .pop .m { color: var(--muted); font-size: 12px; margin-top: 2px; }
+  .pop .s { display: flex; align-items: center; gap: 6px; margin-top: 6px; }
+  .pop .s i { width: 10px; height: 10px; display: inline-block; }
+  .pop a { display: inline-block; margin-top: 8px; color: var(--accent); }
+  .msg { position: absolute; inset: auto 8px 8px 8px; z-index: 2; background: rgba(3, 2, 1, 0.85); padding: 8px 10px; color: var(--ink2); }
+  .maplibregl-ctrl-attrib { background: rgba(3, 2, 1, 0.75) !important; color: var(--muted); font-size: 10px; }
+  .maplibregl-ctrl-attrib a { color: var(--ink2); }
+</style>
+</head>
+<body>
+<div class="bar"><a class="brand" id="brand" href="../" target="_blank" rel="noopener">Pădurea RO</a><span class="sub" id="sub">Se încarcă…</span></div>
+<div id="map" role="region" aria-label="Harta zonelor din Pădurea RO"></div>
+<noscript><p class="msg">Harta are nevoie de JavaScript. <a href="../">Deschide Pădurea RO</a>.</p></noscript>
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script src="embed.js"></script>
+</body>
+</html>

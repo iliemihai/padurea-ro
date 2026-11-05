@@ -638,6 +638,8 @@
     }
     var act = el("div", "actions");
     function link(t, h) { var x = el("a", null, t); x.href = h; x.target = "_blank"; x.rel = "noopener"; act.appendChild(x); }
+    /* pagina permanentă: același conținut, fără hartă, cu linkul de citat și datele zonei */
+    var pz = el("a", "perm", "Pagina zonei (link permanent)"); pz.href = "zona/" + a.id + "/"; act.appendChild(pz);
     link("Google Maps (satelit)", "https://www.google.com/maps/@?api=1&map_action=map&center=" + a.lat + "," + a.lon + "&zoom=16&basemap=satellite");
     link("OpenStreetMap", "https://www.openstreetmap.org/?mlat=" + a.lat + "&mlon=" + a.lon + "#map=15/" + a.lat + "/" + a.lon);
     link("Raportează o greșeală", REPO + "/issues/new?title=" + encodeURIComponent("Alerta " + a.id) + "&body=" + encodeURIComponent("Ce e greșit la alerta " + a.id + "?\n\n" + location.href));

@@ -1,0 +1,82 @@
+name: Raportul lunar
+
+# Pe 5 ale lunii (după autorizațiile din 3 și judecata din 4): raportul lunii trecute pe site (docs/raport/AAAA-LL/),
+# fluxul actualizat și un Release pe GitHub cu datele lunii atașate. Cine apasă „Watch → Releases” primește anunțul.
+# Dacă legi repo-ul de Zenodo (zenodo.org → GitHub), fiecare Release primește și un DOI, de citat în rapoarte și studii.
+on:
+  schedule:
+    - cron: "41 6 5 * *"
+  workflow_dispatch:
+    inputs:
+      luna:
+        description: "Luna (AAAA-LL); gol = luna trecută"
+        default: ""
+      refa:
+        description: "Rescrie raportul, dacă există deja"
+        type: boolean
+        default: false
+      release:
+        description: "Fă și Release-ul pe GitHub"
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: raport
+  cancel-in-progress: false
+
+env:
+  SITE_URL: ${{ vars.SITE_URL }}
+
+jobs:
+  raport:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Luna
+        id: luna
+        run: |
+          L="${{ inputs.luna }}"
+          [ -z "$L" ] && L=$(date -u -d "$(date -u +%Y-%m-01) -1 day" +%Y-%m)
+          echo "luna=$L" >> "$GITHUB_OUTPUT"
+      - name: Raportul
+        run: python -m pipeline.raport --luna "${{ steps.luna.outputs.luna }}" $([ "${{ inputs.refa }}" = "true" ] && echo --refa)
+      - name: Fluxul și datele
+        run: python -m pipeline.deschis
+      - name: Salvez în repo
+        run: |
+          git config user.name "padurea-ro bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A docs/raport docs/feed.xml docs/date
+          git commit -m "Raportul lunar: ${{ steps.luna.outputs.luna }}" || echo "nimic nou"
+          git pull --rebase origin main && git push origin HEAD:main
+      - name: Release pe GitHub
+        if: (inputs.release || 'true') == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          L="${{ steps.luna.outputs.luna }}"
+          if gh release view "raport-$L" >/dev/null 2>&1; then echo "Release-ul raport-$L există deja"; exit 0; fi
+          cp "docs/raport/$L/zone.csv" "padurea-ro-$L.csv"
+          cp "docs/raport/$L/zone.geojson" "padurea-ro-$L.geojson"
+          gh release create "raport-$L" "padurea-ro-$L.csv" "padurea-ro-$L.geojson" docs/date/LICENTA.txt \
+            --title "Raportul lunar: $L" --notes-file "out/raport_$L.md"
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs
+      - id: deploy
+        uses: actions/deploy-pages@v4
