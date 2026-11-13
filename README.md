@@ -4,7 +4,7 @@ Hartă publică a schimbărilor din pădurile României, din imagini de satelit 
 
 **Site:** https://iliemihai.github.io/padurea-ro/
 
-Arătăm unde și când a dispărut pădurea, cu imagini înainte și după, ca oricine să poată verifica. **Nu spunem dacă o tăiere e legală sau nu**: autorizațiile nu sunt publice. O alertă înseamnă doar „aici s-a schimbat ceva și merită verificat”.
+Arătăm unde și când a dispărut pădurea, cu imagini înainte și după, ca oricine să poată verifica. **Nu spunem dacă o tăiere e legală sau nu**: arătăm doar dacă în registrul public (Inspectorul Pădurii) există o autorizație care să acopere locul. O alertă înseamnă doar „aici s-a schimbat ceva și merită verificat”.
 
 ## Cum merge
 

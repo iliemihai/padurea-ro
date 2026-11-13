@@ -24,6 +24,7 @@ from urllib.parse import quote
 
 from . import config as C
 from . import og, writer
+from .permise import RAZA_M
 from .judete import (CAP, COADA, COLS, GARZI, MOTIV_NEACOPERIT, STARE_T, TEREN_LUNG, contur, e, fmt, ha_t, incarca, judet_de,
                      loc_t, nav, og_meta, rand, slug, teren, zi)
 
@@ -153,6 +154,37 @@ def citare(a, url):
     unde = loc_lung(a)
     return (f"Pădurea RO, zona {a['id']}: {ha_t(a.get('ha') or 0)}, {unde}; schimbare văzută din satelit {cand_t(a)}. "
             f"{url} (consultat la [data]). Date: {LICENTA}.")
+
+
+def sesizare(a, v, st, url):
+    """Textul unei sesizări către Garda Forestieră, gata de copiat. Doar pentru zonele roșii.
+    Cere o verificare; nu afirmă că tăierea e ilegală (vezi README, „Nicăieri nu scriem «ilegal»”)."""
+    g = garda(a)
+    arii = list(dict.fromkeys(x.get("nume") for x in (a.get("arii") or []) if isinstance(x, dict) and x.get("nume")))
+    if st == "fara":
+        aut = (f"În registrul public Inspectorul Pădurii nu am găsit nicio autorizație de exploatare (APV) "
+               f"la mai puțin de {fmt(RAZA_M)} m de zonă.")
+    else:
+        m = MOTIV_NEACOPERIT.get(v.get("motiv"), "autorizația din apropiere nu acoperă zona")
+        per = f", valabilă {zi(v.get('start'), True)} – {zi(v.get('end'), True)}" if v.get("start") else ""
+        aut = (f"Cea mai apropiată autorizație din registrul public Inspectorul Pădurii este APV {v.get('apv')}"
+               f"{', ' + (v.get('ocol') or '').title() if v.get('ocol') else ''}{per}. Din datele publice, {m}.")
+    r = [f"Către Garda Forestieră {g}" if g else "Către Garda Forestieră", "",
+         "Vă semnalez o schimbare în pădure, vizibilă în imaginile din satelit, pentru care nu am găsit în registrul public "
+         "o autorizație de tăiere care să o acopere. Vă rog să verificați situația în teren.", "",
+         f"Locul: {loc_lung(a)}.",
+         f"Coordonate (centrul zonei, WGS84): {a['lat']:.5f}, {a['lon']:.5f}.",
+         f"Suprafața: aproximativ {ha_t(a.get('ha') or 0)}.",
+         f"Când: schimbarea apare în imaginile Copernicus Sentinel-2 {cand_t(a)}.",
+         f"Autorizații: {aut}"]
+    if arii:
+        r.append(f"Arie protejată: {', '.join(arii)}.")
+    r += [f"Imaginile înainte și după, conturul zonei și sursele: {url}", "",
+          "Nu afirm că tăierea este ilegală: imaginile arată doar că vegetația a dispărut, iar registrul public poate fi incomplet. "
+          "Vă rog să îmi comunicați rezultatul verificării.", "",
+          "[numele și datele de contact]"]
+    return "\n".join(r)
+
 
 
 # ---------------------------------------------------------------- registrul: ce a fost publicat vreodată
@@ -317,7 +349,12 @@ def pagina_zona(a, v, j, r, stiri, verif, ver, og_img):
              + '<li><a href="https://gfn.gov.ro/taieri-ilegale/" rel="noopener">Formularul Gărzii Forestiere Naționale</a> primește sesizări '
              'și fără nume. Trimite linkul acestei pagini, coordonatele și pozele. Dacă tăierea e în desfășurare, sună la <b>112</b>.</li>'
              '<li>Autorizațiile și transporturile de lemn se pot căuta în <a href="https://inspectorulpadurii.ro" rel="noopener">Inspectorul Pădurii</a>.</li>'
-             '</ul><p class="caveat">Pagina arată ce se vede din satelit și ce scrie în registrul public; nu e o dovadă în sine.</p></section>')
+             '</ul>'
+             + (('<details class="tview"><summary>Text de sesizare, gata de copiat</summary>'
+                 '<p class="sub">Copiază textul, completează numele și trimite-l prin formularul de mai sus. Cere o verificare; nu acuză pe nimeni.</p>'
+                 f'<textarea class="code" readonly rows="16" onclick="this.select()">{e(sesizare(a, v, st, url))}</textarea></details>')
+                if st in ROSU else "")
+             + '<p class="caveat">Pagina arată ce se vede din satelit și ce scrie în registrul public; nu e o dovadă în sine.</p></section>')
     o.append(surse_extra(i, stiri, verif))
     # cum o citezi
     o.append('<section class="sec"><h2>Cum citezi zona</h2>'
@@ -361,7 +398,7 @@ def pagina_retrasa(i, r, ver):
 
 def zona_json(a, row, r):
     props = dict(row)
-    props.update({"text": a.get("text"), "dovezi": a.get("dovezi") or [], "istoric_stari": (r or {}).get("stari") or [],
+    props.update({"text": lead(a, row.get("stare") or "nev"), "dovezi": a.get("dovezi") or [], "istoric_stari": (r or {}).get("stari") or [],
                   "pe_site_din": (r or {}).get("pe_site_din"), "licenta": LICENTA, "sursa": "Pădurea RO", "citare": citare(a, row["link"])})
     return jdump({"type": "Feature", "id": a["id"], "geometry": a.get("geometry"), "properties": props})
 

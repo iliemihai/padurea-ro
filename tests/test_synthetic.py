@@ -57,7 +57,7 @@ def main():
     detect.read_scene = fake_scene
     detect.tile_grid = lambda it: (CRS.from_epsg(32634), Affine(40, 0, 600000, 0, -40, 5200000), N, N)
     detect.county_raster = lambda grid: (np.ones((N, N), np.uint8), ["Test"])
-    detect.forest_mask = lambda cat, grid, bb, ly: np.ones((N, N), bool)
+    detect.forest_mask = lambda cat, grid, bb, ly, **kw: np.ones((N, N), bool)
     items = {"window": [item(d) for d in (5, 12, 20, 27)], "recent": [item(-40), item(-30), item(-20)], "lastyear": [item(-365)]}
     info, patches, rejected = detect.detect_tile(None, "34TXX", items, D0, D0 + dt.timedelta(days=29), None, lambda *a: True)
     print("info:", {k: info.get(k) for k in ("status", "patches", "rejected", "window_scenes")})

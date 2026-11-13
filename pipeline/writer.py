@@ -92,7 +92,8 @@ def text(a):
     if (ai and ai.get("categorie") == "incendiu") or fi.get("n"):
         s.append("Nu știm ce a provocat schimbarea. E o schimbare care merită verificată.")
     else:
-        s.append("Nu am verificat dacă există o autorizație de exploatare (unele se pot căuta în aplicația Inspectorul Pădurii). E o schimbare care merită verificată.")
+        # autorizația o caută permise.py după redactor; rezultatul e starea zonei, nu îl contrazicem aici
+        s.append("E o schimbare care merită verificată.")
     return " ".join(s)
 
 

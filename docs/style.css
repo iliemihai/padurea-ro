@@ -88,6 +88,7 @@ button:disabled { opacity: 0.55; cursor: not-allowed; }
 .seg button[aria-pressed="true"]::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 2px; background: var(--color-accent); }
 .seg button[disabled] { display: none; }
 .seg.small button { min-height: 32px; }
+#periods button { padding-inline: var(--space-3xs); }
 #base { grid-auto-flow: row; grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr)); }
 #years { grid-auto-flow: row; grid-template-columns: repeat(2, minmax(0, 1fr)); }
 
@@ -432,11 +433,11 @@ body.noscroll { overflow-y: clip; }
   .legend.open > span:not(.lgset) { display: inline-flex; }
   .legend.open { max-height: 40svh; overflow-y: auto; }
   .lgtoggle {
-    display: inline-flex; align-items: center; min-height: 32px; padding: 0;
+    display: inline-flex; align-items: center; gap: var(--space-xs); min-height: 32px; padding: 0;
     background: none; border: 0; color: var(--color-ink); font: inherit; cursor: pointer;
   }
-  .lgtoggle::after { content: " +"; color: var(--color-muted); }
-  .legend.open .lgtoggle::after { content: " −"; }
+  .lgtoggle::after { content: "+"; color: var(--color-muted); }
+  .legend.open .lgtoggle::after { content: "−"; }
 }
 @media (max-width: 60rem), (pointer: coarse) {
   .seg button, .seg.small button, .mini, .back, .more, .chip, .pick, .explain summary, .layers summary, .splitbtn, .tg, .about summary { min-height: 44px; }

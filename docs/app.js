@@ -629,7 +629,7 @@
     d.appendChild(bd);
     d.appendChild(compare(a, false));
     if (a.img_after) d.appendChild(chipControl(a));
-    if (a.text) d.appendChild(el("p", "sum", a.text));
+    if (a.text) d.appendChild(el("p", "sum", a.text.replace("Nu am verificat dacă există o autorizație de exploatare (unele se pot căuta în aplicația Inspectorul Pădurii). ", "")));
     if (a.langa) {
       var nb = el("p", "near"), go = el("button", "mini", "Vezi zona de atunci"); go.type = "button";
       nb.appendChild(document.createTextNode("Chiar lângă, o altă schimbare fusese văzută pe " + zi(a.langa.first_seen, true) + ". "));
