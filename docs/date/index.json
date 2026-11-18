@@ -1,18 +1,18 @@
 {
  "nume": "Pădurea RO, date deschise",
  "versiune": 1,
- "date_pana_la": "2026-11-17",
+ "date_pana_la": "2026-11-18",
  "istoric_de_la": "2025-10-03",
  "licenta": "CC BY 4.0",
  "licenta_url": "https://creativecommons.org/licenses/by/4.0/deed.ro",
  "citare": "Pădurea RO, https://iliemihai.github.io/padurea-ro/, date CC BY 4.0.",
- "zone": 3082,
+ "zone": 3084,
  "stari": {
-  "nu_taiere": 731,
+  "nu_taiere": 732,
   "nejudecat": 128,
+  "acoperit": 1840,
   "probabil": 200,
   "fara": 36,
-  "acoperit": 1839,
   "neacoperit": 74,
   "vegetatie": 74
  },
